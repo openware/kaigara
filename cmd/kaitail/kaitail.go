@@ -17,8 +17,7 @@ var (
 func main() {
 	flag.Parse()
 
-	client := broker.RedisClient()
-	pubsub := client.PSubscribe(*channel)
+	pubsub := broker.RedisClient.PSubscribe(*channel)
 	ch := pubsub.Channel()
 
 	re := regexp.MustCompile(`^Message<logs\.([A-z.]+?): (.+?)>$`)

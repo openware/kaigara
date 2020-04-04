@@ -11,7 +11,9 @@ import (
 	"github.com/openware/kaigara/pkg/utils"
 )
 
-func RedisClient() *redis.Client {
+var RedisClient *redis.Client = redisClient()
+
+func redisClient() *redis.Client {
 	url := utils.GetEnv("REDIS_URL", "redis://localhost:6379/0")
 	opt, err := redis.ParseURL(url)
 	if err != nil {
@@ -26,12 +28,11 @@ func RedisClient() *redis.Client {
 	return client
 }
 
-func RedisPublish(channel string, stdout io.Reader) {
-	client := RedisClient()
-	scanner := bufio.NewScanner(stdout)
+func RedisPublish(channel string, stream io.Reader) {
+	scanner := bufio.NewScanner(stream)
 	for scanner.Scan() {
 		fmt.Println(scanner.Text())
-		err := client.Publish(channel, scanner.Text()).Err()
+		err := RedisClient.Publish(channel, scanner.Text()).Err()
 		if err != nil {
 			panic(err)
 		}
