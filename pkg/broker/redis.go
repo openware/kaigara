@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"time"
 
 	"github.com/go-redis/redis/v7"
 	"github.com/openware/kaigara/pkg/utils"
@@ -39,5 +40,21 @@ func RedisPublish(channel string, stream io.Reader) {
 	}
 	if err := scanner.Err(); err != nil {
 		fmt.Fprintln(os.Stderr, "reading standard input:", err)
+	}
+}
+
+func RedisHeartBeat(pid string, c chan string) {
+	key := fmt.Sprintf("heartbeat.%s", pid)
+	RedisClient.Set(key, time.Now(), 5*time.Second)
+
+	for {
+		select {
+		case <-c:
+			RedisClient.Del(key)
+			return
+
+		case <-time.After(4 * time.Second):
+			RedisClient.Expire(key, 5*time.Second)
+		}
 	}
 }

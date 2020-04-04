@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	cmd  = flag.String("exec", "date", "Your command")
-	name = flag.String("name", "", "stream name")
+	cmd = flag.String("exec", "date", "Your command")
+	pid = flag.String("pid", "", "process unique name")
 )
 
 func runCommand(cmdName, channelName string, cmdArgs []string) {
@@ -35,7 +35,7 @@ func runCommand(cmdName, channelName string, cmdArgs []string) {
 	log.Printf("Publishing on %s and %s\n", channelOut, channelErr)
 
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(3)
 
 	go func() {
 		broker.RedisPublish(channelOut, stdout)
@@ -47,20 +47,22 @@ func runCommand(cmdName, channelName string, cmdArgs []string) {
 		wg.Done()
 	}()
 
-	wg.Wait()
+	c := make(chan string, 1)
+	go broker.RedisHeartBeat(*pid, c)
 
 	if err := cmd.Wait(); err != nil {
 		log.Fatal(err)
 	}
+
+	c <- "stop"
+
+	wg.Wait()
 }
 
 func main() {
 	flag.Parse()
-	var channelName string
-	if *name == "" {
-		channelName = *cmd
-	} else {
-		channelName = *name
+	if *pid == "" {
+		pid = cmd
 	}
-	runCommand(*cmd, channelName, flag.Args())
+	runCommand(*cmd, *pid, flag.Args())
 }
