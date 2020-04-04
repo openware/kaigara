@@ -9,7 +9,12 @@ import (
 	"github.com/openware/kaigara/pkg/broker"
 )
 
-func runCommand(cmdName string, cmdArgs []string) {
+var (
+	cmd  = flag.String("exec", "date", "Your command")
+	name = flag.String("name", "", "stream name")
+)
+
+func runCommand(cmdName, channelName string, cmdArgs []string) {
 	cmd := exec.Command(cmdName, cmdArgs...)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -19,7 +24,7 @@ func runCommand(cmdName string, cmdArgs []string) {
 	if err := cmd.Start(); err != nil {
 		log.Fatal(err)
 	}
-	channel := fmt.Sprintf("logs.%s.%s", cmdName, "stdout")
+	channel := fmt.Sprintf("logs.%s.%s", channelName, "stdout")
 	log.Printf("Publishing on %s\n", channel)
 	broker.RedisPublish(channel, stdout)
 	if err := cmd.Wait(); err != nil {
@@ -28,9 +33,12 @@ func runCommand(cmdName string, cmdArgs []string) {
 }
 
 func main() {
-	var cmd string
-
-	flag.StringVar(&cmd, "exec", "date", "Your command")
 	flag.Parse()
-	runCommand(cmd, flag.Args())
+	var channelName string
+	if *name == "" {
+		channelName = *cmd
+	} else {
+		channelName = *name
+	}
+	runCommand(*cmd, channelName, flag.Args())
 }
