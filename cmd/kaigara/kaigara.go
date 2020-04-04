@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"sync"
 
 	"github.com/openware/kaigara/pkg/broker"
 )
@@ -21,12 +22,33 @@ func runCommand(cmdName, channelName string, cmdArgs []string) {
 		log.Fatal(err)
 	}
 
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	if err := cmd.Start(); err != nil {
 		log.Fatal(err)
 	}
-	channel := fmt.Sprintf("logs.%s.%s", channelName, "stdout")
-	log.Printf("Publishing on %s\n", channel)
-	broker.RedisPublish(channel, stdout)
+	channelOut := fmt.Sprintf("logs.%s.%s", channelName, "stdout")
+	channelErr := fmt.Sprintf("logs.%s.%s", channelName, "stderr")
+	log.Printf("Publishing on %s and %s\n", channelOut, channelErr)
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func() {
+		broker.RedisPublish(channelOut, stdout)
+		wg.Done()
+	}()
+
+	go func() {
+		broker.RedisPublish(channelErr, stderr)
+		wg.Done()
+	}()
+
+	wg.Wait()
+
 	if err := cmd.Wait(); err != nil {
 		log.Fatal(err)
 	}
