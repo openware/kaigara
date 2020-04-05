@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"os"
+	"time"
 
 	"github.com/go-redis/redis/v7"
 	"github.com/openware/kaigara/pkg/utils"
@@ -28,7 +28,7 @@ func redisClient() *redis.Client {
 	return client
 }
 
-func RedisPublish(channel string, stream io.Reader) {
+func RedisPublish(channel string, stream io.ReadCloser) {
 	scanner := bufio.NewScanner(stream)
 	for scanner.Scan() {
 		fmt.Println(scanner.Text())
@@ -38,6 +38,22 @@ func RedisPublish(channel string, stream io.Reader) {
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		fmt.Fprintln(os.Stderr, "reading standard input:", err)
+		stream.Close()
+	}
+}
+
+func RedisHeartBeat(name string, quit chan int) {
+	key := fmt.Sprintf("service.%s", name)
+	RedisClient.Set(key, time.Now(), 10*time.Second)
+
+	for {
+		select {
+		case <-quit:
+			RedisClient.Del(key)
+			return
+
+		case <-time.After(10 * time.Second):
+			RedisClient.Expire(key, 10*time.Second)
+		}
 	}
 }

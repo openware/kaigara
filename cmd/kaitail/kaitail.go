@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	channel  = flag.String("c", "logs.*", "Redis channel pattern to subscribe")
+	channel  = flag.String("c", "log.*", "Redis channel pattern to subscribe")
 	showName = flag.Bool("n", false, "Show channel name")
 )
 
@@ -20,7 +20,7 @@ func main() {
 	pubsub := broker.RedisClient.PSubscribe(*channel)
 	ch := pubsub.Channel()
 
-	re := regexp.MustCompile(`^Message<logs\.([A-z.]+?): (.+?)>$`)
+	re := regexp.MustCompile(`^Message<(log\.[A-z.]+?): (.+?)>$`)
 
 	for msg := range ch {
 		rs := re.FindStringSubmatch(msg.String())

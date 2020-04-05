@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	cmd  = flag.String("exec", "date", "Your command")
-	name = flag.String("name", "", "stream name")
+	cmd = flag.String("exec", "date", "Your command")
+	svc = flag.String("name", "", "process unique name")
 )
 
 func runCommand(cmdName, channelName string, cmdArgs []string) {
@@ -27,15 +27,12 @@ func runCommand(cmdName, channelName string, cmdArgs []string) {
 		log.Fatal(err)
 	}
 
-	if err := cmd.Start(); err != nil {
-		log.Fatal(err)
-	}
-	channelOut := fmt.Sprintf("logs.%s.%s", channelName, "stdout")
-	channelErr := fmt.Sprintf("logs.%s.%s", channelName, "stderr")
+	channelOut := fmt.Sprintf("log.%s.%s", channelName, "stdout")
+	channelErr := fmt.Sprintf("log.%s.%s", channelName, "stderr")
 	log.Printf("Publishing on %s and %s\n", channelOut, channelErr)
 
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(3)
 
 	go func() {
 		broker.RedisPublish(channelOut, stdout)
@@ -47,20 +44,29 @@ func runCommand(cmdName, channelName string, cmdArgs []string) {
 		wg.Done()
 	}()
 
-	wg.Wait()
+	if err := cmd.Start(); err != nil {
+		log.Fatal(err)
+	}
+
+	quit := make(chan int)
+	go func() {
+		broker.RedisHeartBeat(channelName, quit)
+		wg.Done()
+	}()
 
 	if err := cmd.Wait(); err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("exit status 0\n")
+	quit <- 0
+
+	wg.Wait()
 }
 
 func main() {
 	flag.Parse()
-	var channelName string
-	if *name == "" {
-		channelName = *cmd
-	} else {
-		channelName = *name
+	if *svc == "" {
+		svc = cmd
 	}
-	runCommand(*cmd, channelName, flag.Args())
+	runCommand(*cmd, *svc, flag.Args())
 }
