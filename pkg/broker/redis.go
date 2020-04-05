@@ -44,7 +44,7 @@ func RedisPublish(channel string, stream io.ReadCloser) {
 
 func RedisHeartBeat(name string, quit chan int) {
 	key := fmt.Sprintf("service.%s", name)
-	RedisClient.Set(key, time.Now(), 10*time.Second)
+	RedisClient.Set(key, time.Now(), 20*time.Second)
 
 	for {
 		select {
@@ -53,7 +53,7 @@ func RedisHeartBeat(name string, quit chan int) {
 			return
 
 		case <-time.After(10 * time.Second):
-			RedisClient.Expire(key, 10*time.Second)
+			RedisClient.Expire(key, 20*time.Second)
 		}
 	}
 }
