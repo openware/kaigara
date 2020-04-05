@@ -1,6 +1,10 @@
 kind: pipeline
 name: default
 
+trigger:
+  event:
+    - push
+
 steps:
   - name: Go test
     image: golang:1.14
@@ -9,6 +13,20 @@ steps:
     commands:
       - go mod download
       - go test ./...
+
+  - name: Bump and tag
+    image: golang:1.14
+    environment:
+      GITHUB_API_KEY:
+        from_secret: github_api_key
+      GITHUB_API_USER:
+        from_secret: github_api_user
+    commands:
+      - go get github.com/guilhem/bump
+      - git remote add authenticated-origin https://$GITHUB_API_USER:$GITHUB_API_KEY@github.com/$DRONE_REPO
+      - git fetch --tags authenticated-origin
+      - bump patch --allow-dirty
+      - git push authenticated-origin --tags
     when:
-      event:
-        - push
+      branch:
+        - master
