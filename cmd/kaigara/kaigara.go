@@ -12,7 +12,7 @@ import (
 
 var (
 	cmd = flag.String("exec", "date", "Your command")
-	pid = flag.String("pid", "", "process unique name")
+	svc = flag.String("name", "", "process unique name")
 )
 
 func runCommand(cmdName, channelName string, cmdArgs []string) {
@@ -27,11 +27,8 @@ func runCommand(cmdName, channelName string, cmdArgs []string) {
 		log.Fatal(err)
 	}
 
-	if err := cmd.Start(); err != nil {
-		log.Fatal(err)
-	}
-	channelOut := fmt.Sprintf("logs.%s.%s", channelName, "stdout")
-	channelErr := fmt.Sprintf("logs.%s.%s", channelName, "stderr")
+	channelOut := fmt.Sprintf("log.%s.%s", channelName, "stdout")
+	channelErr := fmt.Sprintf("log.%s.%s", channelName, "stderr")
 	log.Printf("Publishing on %s and %s\n", channelOut, channelErr)
 
 	var wg sync.WaitGroup
@@ -47,22 +44,29 @@ func runCommand(cmdName, channelName string, cmdArgs []string) {
 		wg.Done()
 	}()
 
-	c := make(chan string, 1)
-	go broker.RedisHeartBeat(*pid, c)
+	if err := cmd.Start(); err != nil {
+		log.Fatal(err)
+	}
+
+	quit := make(chan int)
+	go func() {
+		broker.RedisHeartBeat(channelName, quit)
+		wg.Done()
+	}()
 
 	if err := cmd.Wait(); err != nil {
 		log.Fatal(err)
 	}
-
-	c <- "stop"
+	log.Printf("exit status 0\n")
+	quit <- 0
 
 	wg.Wait()
 }
 
 func main() {
 	flag.Parse()
-	if *pid == "" {
-		pid = cmd
+	if *svc == "" {
+		svc = cmd
 	}
-	runCommand(*cmd, *pid, flag.Args())
+	runCommand(*cmd, *svc, flag.Args())
 }
