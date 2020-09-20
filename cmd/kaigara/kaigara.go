@@ -1,28 +1,25 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"sync"
 
-	"github.com/openware/kaigara/pkg/broker"
+	"github.com/openware/kaigara/pkg/config"
+	"github.com/openware/kaigara/pkg/logstream"
 )
 
-var (
-	cmd = flag.String("exec", "date", "Your command")
-	svc = flag.String("name", "", "process unique name")
-)
-
-func runCommand(cmdName, channelName string, cmdArgs []string) {
-	cmd := exec.Command(cmdName, cmdArgs...)
-	stdout, err := cmd.StdoutPipe()
+func kaigaraRun(ls logstream.LogStream, cnf config.Config, channelName, cmd string, cmdArgs []string) {
+	log.Printf("Starting command: %s %v", cmd, cmdArgs)
+	c := exec.Command(cmd, cmdArgs...)
+	stdout, err := c.StdoutPipe()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	stderr, err := cmd.StderrPipe()
+	stderr, err := c.StderrPipe()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -33,28 +30,27 @@ func runCommand(cmdName, channelName string, cmdArgs []string) {
 
 	var wg sync.WaitGroup
 	wg.Add(3)
-
 	go func() {
-		broker.RedisPublish(channelOut, stdout)
+		ls.Publish(channelOut, stdout)
 		wg.Done()
 	}()
 
 	go func() {
-		broker.RedisPublish(channelErr, stderr)
+		ls.Publish(channelErr, stderr)
 		wg.Done()
 	}()
 
-	if err := cmd.Start(); err != nil {
+	if err := c.Start(); err != nil {
 		log.Fatal(err)
 	}
 
 	quit := make(chan int)
 	go func() {
-		broker.RedisHeartBeat(channelName, quit)
+		ls.HeartBeat(channelName, quit)
 		wg.Done()
 	}()
 
-	if err := cmd.Wait(); err != nil {
+	if err := c.Wait(); err != nil {
 		log.Fatal(err)
 	}
 	log.Printf("exit status 0\n")
@@ -63,10 +59,41 @@ func runCommand(cmdName, channelName string, cmdArgs []string) {
 	wg.Wait()
 }
 
-func main() {
-	flag.Parse()
-	if *svc == "" {
-		svc = cmd
+func initConfig() config.Config {
+	addr := os.Getenv("KAIGARA_VAULT_ADDR")
+	token := os.Getenv("KAIGARA_VAULT_TOKEN")
+	path := os.Getenv("KAIGARA_VAULT_CONFIG_PATH")
+	missingParam := false
+	if addr == "" {
+		log.Println("KAIGARA_VAULT_ADDR unset")
+		missingParam = true
 	}
-	runCommand(*cmd, *svc, flag.Args())
+	if token == "" {
+		log.Println("KAIGARA_VAULT_TOKEN unset")
+		missingParam = true
+	}
+	if path == "" {
+		log.Println("KAIGARA_VAULT_CONFIG_PATH unset")
+		missingParam = true
+	}
+	if missingParam {
+		log.Println("Do not start use remote config")
+		return nil
+	}
+	return config.NewVaultConfig(addr, token, path)
+}
+
+func initLogStream() logstream.LogStream {
+	url := os.Getenv("KAIGARA_REDIS_URL")
+	return logstream.NewRedisClient(url)
+}
+
+func main() {
+	svc := os.Getenv("KAIGARA_SERVICE_NAME")
+	if len(os.Args) < 1 {
+		panic("Usage: kaigara CMD [ARGS...]")
+	}
+	ls := initLogStream()
+	cnf := initConfig()
+	kaigaraRun(ls, cnf, svc, os.Args[1], os.Args[2:])
 }

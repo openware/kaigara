@@ -6,7 +6,8 @@ import (
 	"log"
 	"regexp"
 
-	"github.com/openware/kaigara/pkg/broker"
+	"github.com/openware/kaigara/pkg/logstream"
+	"github.com/openware/kaigara/pkg/utils"
 )
 
 var (
@@ -17,8 +18,8 @@ var (
 func main() {
 	flag.Parse()
 
-	pubsub := broker.RedisClient.PSubscribe(*channel)
-	ch := pubsub.Channel()
+	ls := logstream.NewRedisClient(utils.GetEnv("KAIGARA_REDIS_URL", "redis://localhost:6379/0"))
+	ch := ls.Subscribe(*channel)
 
 	re := regexp.MustCompile(`^Message<(log\.[A-z.]+?): (.+?)>$`)
 
