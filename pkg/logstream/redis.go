@@ -48,6 +48,7 @@ func (r *RedisLogStream) Publish(channel string, stream io.ReadCloser) {
 	}
 }
 
+// TODO: return a generic type to include Subscribe to the interface
 func (r *RedisLogStream) Subscribe(channel string) <-chan *redis.Message {
 	return r.client.PSubscribe(channel).Channel()
 }

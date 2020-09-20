@@ -34,9 +34,13 @@ func (vc *VaultConfig) ListEntries() map[string]interface{} {
 		panic(err)
 	}
 
+	if secret == nil || secret.Data == nil {
+		return map[string]interface{}{}
+	}
+
 	data, ok := secret.Data["data"]
-	if !ok {
-		return nil
+	if !ok || data == nil {
+		return map[string]interface{}{}
 	}
 	return data.(map[string]interface{})
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestVaultConfigStore(t *testing.T) {
+func TestVaultConfigStoreListEntriesPresent(t *testing.T) {
 	path := "test/vault_config_store"
 	config := NewVaultConfig(os.Getenv("VAULT_ADDR"), os.Getenv("VAULT_TOKEN"), path)
 	data := map[string]interface{}{
@@ -24,4 +24,12 @@ func TestVaultConfigStore(t *testing.T) {
 		"foo":  "bar",
 		"fooz": "barz",
 	}, config.ListEntries())
+}
+
+func TestVaultConfigStoreListEntriesAbsent(t *testing.T) {
+	path := "test/vault_config_store"
+	config := NewVaultConfig(os.Getenv("VAULT_ADDR"), os.Getenv("VAULT_TOKEN"), path)
+	_, err := config.client.Logical().Delete("secret/data/" + path)
+	require.NoError(t, err)
+	assert.DeepEqual(t, map[string]interface{}{}, config.ListEntries())
 }

@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 
 	"github.com/openware/kaigara/pkg/config"
@@ -14,6 +15,7 @@ import (
 func kaigaraRun(ls logstream.LogStream, cnf config.Config, channelName, cmd string, cmdArgs []string) {
 	log.Printf("Starting command: %s %v", cmd, cmdArgs)
 	c := exec.Command(cmd, cmdArgs...)
+	c.Env = cmdEnv(cnf)
 	stdout, err := c.StdoutPipe()
 	if err != nil {
 		log.Fatal(err)
@@ -57,6 +59,22 @@ func kaigaraRun(ls logstream.LogStream, cnf config.Config, channelName, cmd stri
 	quit <- 0
 
 	wg.Wait()
+}
+
+func cmdEnv(cnf config.Config) []string {
+	env := []string{}
+	for _, v := range os.Environ() {
+		if !strings.HasPrefix(v, "KAIGARA_") {
+			env = append(env, v)
+		}
+	}
+	if cnf == nil {
+		return env
+	}
+	for k, v := range cnf.ListEntries() {
+		env = append(env, strings.ToUpper(k)+"="+v.(string))
+	}
+	return env
 }
 
 func initConfig() config.Config {
