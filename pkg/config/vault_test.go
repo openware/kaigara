@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/docker/docker/pkg/testutil/assert"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,7 +20,7 @@ func TestVaultConfigStoreListEntriesPresent(t *testing.T) {
 
 	_, err := config.client.Logical().Write("secret/data/"+path, data)
 	require.NoError(t, err)
-	assert.DeepEqual(t, map[string]interface{}{
+	assert.Equal(t, map[string]interface{}{
 		"foo":  "bar",
 		"fooz": "barz",
 	}, config.ListEntries())
@@ -31,5 +31,5 @@ func TestVaultConfigStoreListEntriesAbsent(t *testing.T) {
 	config := NewVaultConfig(os.Getenv("VAULT_ADDR"), os.Getenv("VAULT_TOKEN"), path)
 	_, err := config.client.Logical().Delete("secret/data/" + path)
 	require.NoError(t, err)
-	assert.DeepEqual(t, map[string]interface{}{}, config.ListEntries())
+	assert.Equal(t, map[string]interface{}{}, config.ListEntries())
 }
