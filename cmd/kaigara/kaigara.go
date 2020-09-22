@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
-	"strings"
+	"path"
 	"sync"
 
 	"github.com/openware/kaigara/pkg/config"
@@ -15,7 +16,17 @@ import (
 func kaigaraRun(ls logstream.LogStream, cnf config.Config, channelName, cmd string, cmdArgs []string) {
 	log.Printf("Starting command: %s %v", cmd, cmdArgs)
 	c := exec.Command(cmd, cmdArgs...)
-	c.Env = cmdEnv(cnf)
+	env := config.BuildCmdEnv(cnf, os.Environ())
+	c.Env = env.Vars
+
+	for _, file := range env.Files {
+		os.MkdirAll(path.Dir(file.Path), 0750)
+		err := ioutil.WriteFile(file.Path, []byte(file.Content), 0640)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to write file %s: %s", file.Path, err.Error()))
+		}
+	}
+
 	stdout, err := c.StdoutPipe()
 	if err != nil {
 		log.Fatal(err)
@@ -59,22 +70,6 @@ func kaigaraRun(ls logstream.LogStream, cnf config.Config, channelName, cmd stri
 	quit <- 0
 
 	wg.Wait()
-}
-
-func cmdEnv(cnf config.Config) []string {
-	env := []string{}
-	for _, v := range os.Environ() {
-		if !strings.HasPrefix(v, "KAIGARA_") {
-			env = append(env, v)
-		}
-	}
-	if cnf == nil {
-		return env
-	}
-	for k, v := range cnf.ListEntries() {
-		env = append(env, strings.ToUpper(k)+"="+v.(string))
-	}
-	return env
 }
 
 func initConfig() config.Config {
