@@ -28,7 +28,6 @@ type KaigaraConfig struct {
 }
 
 var cnf = &KaigaraConfig{}
-var secretStore types.SecretStore
 
 func initConfig() {
 	err := ika.ReadConfig("", cnf)
@@ -37,26 +36,19 @@ func initConfig() {
 	}
 }
 
-func getVaultService() *vault.Service {
-	return vault.NewService(cnf.VaultAddr, cnf.VaultToken, cnf.AppName, cnf.DeploymentID)
-}
-
-func getVaultSecretStore() types.SecretStore {
-	var ss types.SecretStore
-	vs := getVaultService()
-	ss = vs
-
-	return ss
+func getVaultService(appName string) *vault.Service {
+	return vault.NewService(cnf.VaultAddr, cnf.VaultToken, appName, cnf.DeploymentID)
 }
 
 func parseScopes() []string {
 	return strings.Split(cnf.Scopes, ",")
 }
 
-func kaigaraRun(ls logstream.LogStream, secretStore types.SecretStore, cmd string, cmdArgs []string) {
+func kaigaraRun(ls logstream.LogStream, secretStores []types.SecretStore, cmd string, cmdArgs []string) {
 	log.Printf("Starting command: %s %v", cmd, cmdArgs)
 	c := exec.Command(cmd, cmdArgs...)
-	env := config.BuildCmdEnv(secretStore, os.Environ(), parseScopes())
+	env := config.BuildCmdEnv(secretStores, os.Environ(), parseScopes())
+
 	c.Env = env.Vars
 
 	for _, file := range env.Files {
@@ -123,7 +115,10 @@ func main() {
 	}
 	ls := initLogStream()
 	initConfig()
-	secretStore = getVaultSecretStore()
+	secretStores := []types.SecretStore{
+		getVaultService(cnf.AppName),
+		getVaultService("global"),
+	}
 
-	kaigaraRun(ls, secretStore, os.Args[1], os.Args[2:])
+	kaigaraRun(ls, secretStores, os.Args[1], os.Args[2:])
 }

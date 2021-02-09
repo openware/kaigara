@@ -130,13 +130,17 @@ func (vs *Service) LoadSecrets(scope string) error {
 		return err
 	}
 
+	// fmt.Println("Secret:", secret)
+
 	if vs.data == nil {
 		vs.data = make(map[string]interface{})
 	}
 
-	if secret == nil || secret.Data == nil || vs.data[scope] == nil {
+	if secret == nil || secret.Data == nil {
+		// fmt.Println("Secret or data is nil, overwriting:", vs.data[scope])
 		vs.data[scope] = make(map[string]interface{})
 	} else {
+		// fmt.Println("Secret is not nil, writing", secret.Data["data"])
 		vs.data[scope] = secret.Data["data"].(map[string]interface{})
 	}
 
@@ -144,15 +148,26 @@ func (vs *Service) LoadSecrets(scope string) error {
 }
 
 // SetSecret stores all secrets into the memory
-func (vs *Service) SetSecret(name, value, scope string) error {
-	vs.data[scope].(map[string]interface{})[name] = value
+func (vs *Service) SetSecret(name string, value interface{}, scope string) error {
+	// Secret scope only supports strings
+	if scope == "secret" {
+		encrypted, err := vs.Encrypt(fmt.Sprintf("%v", value))
+		if err != nil {
+			return err
+		}
+
+		vs.data[scope].(map[string]interface{})[name] = encrypted
+	} else {
+		vs.data[scope].(map[string]interface{})[name] = value
+	}
+
 	return nil
 }
 
 // SetSecrets inserts given data into the secret store, overwriting keys if they exist
 func (vs *Service) SetSecrets(data map[string]interface{}, scope string) error {
 	for k, v := range data {
-		vs.data[scope].(map[string]interface{})[k] = v
+		vs.SetSecret(k, v, scope)
 	}
 	return nil
 }
@@ -180,5 +195,15 @@ func (vs *Service) GetSecrets(scope string) (map[string]interface{}, error) {
 
 // GetSecret returns a secret value by name
 func (vs *Service) GetSecret(name, scope string) (interface{}, error) {
+	// Since secret scope only supports strings, return a decrypted string
+	if scope == "secret" {
+		decrypted, err := vs.Decrypt(fmt.Sprintf("%v", vs.data[scope].(map[string]interface{})[name]))
+		if err != nil {
+			return nil, err
+		}
+
+		return decrypted, nil
+	}
+
 	return vs.data[scope].(map[string]interface{})[name], nil
 }

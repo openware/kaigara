@@ -25,7 +25,7 @@ type File struct {
 
 var kfile = regexp.MustCompile("(?i)^KFILE_(.*)_(PATH|CONTENT)$")
 
-func BuildCmdEnv(secretStore types.SecretStore, currentEnv, scopes []string) *Env {
+func BuildCmdEnv(secretStores []types.SecretStore, currentEnv, scopes []string) *Env {
 	env := &Env{
 		Vars:  []string{},
 		Files: map[string]*File{},
@@ -36,42 +36,52 @@ func BuildCmdEnv(secretStore types.SecretStore, currentEnv, scopes []string) *En
 			env.Vars = append(env.Vars, v)
 		}
 	}
-	if secretStore == nil {
-		return env
-	}
-	for _, scope := range scopes {
-		err := secretStore.LoadSecrets(scope)
 
-		if err != nil {
-			panic(err)
+	for _, secretStore := range secretStores {
+
+		if secretStore == nil {
+			continue
 		}
 
-		secrets, err := secretStore.GetSecrets(scope)
-		if err != nil {
-			panic(err)
-		}
-
-		for k, v := range secrets {
-			m := kfile.FindStringSubmatch(k)
-			if m == nil {
-				env.Vars = append(env.Vars, strings.ToUpper(k)+"="+v.(string))
-				continue
+		for _, scope := range scopes {
+			err := secretStore.LoadSecrets(scope)
+			if err != nil {
+				panic(err)
 			}
-			name := strings.ToUpper(m[1])
-			suffix := strings.ToUpper(m[2])
 
-			f, ok := env.Files[name]
-			if !ok {
-				f = &File{}
-				env.Files[name] = f
+			// secretStore.SetSecret("test_"+scope, "lol", scope)
+			// val, err := secretStore.GetSecret("test_"+scope, scope)
+			// fmt.Println(scope, val)
+			// secretStore.SaveSecrets(scope)
+
+			secrets, err := secretStore.GetSecrets(scope)
+			if err != nil {
+				panic(err)
 			}
-			switch suffix {
-			case "PATH":
-				f.Path = v.(string)
-			case "CONTENT":
-				f.Content = v.(string)
-			default:
-				log.Printf("ERROR: Unexpected prefix in config key: %s", k)
+
+			for k, v := range secrets {
+				m := kfile.FindStringSubmatch(k)
+
+				if m == nil {
+					env.Vars = append(env.Vars, strings.ToUpper(k)+"="+v.(string))
+					continue
+				}
+				name := strings.ToUpper(m[1])
+				suffix := strings.ToUpper(m[2])
+
+				f, ok := env.Files[name]
+				if !ok {
+					f = &File{}
+					env.Files[name] = f
+				}
+				switch suffix {
+				case "PATH":
+					f.Path = v.(string)
+				case "CONTENT":
+					f.Content = v.(string)
+				default:
+					log.Printf("ERROR: Unexpected prefix in config key: %s", k)
+				}
 			}
 		}
 	}
