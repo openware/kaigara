@@ -14,10 +14,14 @@ Kaigara is a wrapper arround daemons. It helps to standardize the way daemons ar
 export KAIGARA_REDIS_URL=redis://localhost:6379/0
 export KAIGARA_VAULT_ADDR=http://127.0.0.1:8200
 export KAIGARA_VAULT_TOKEN=s.ozytsgX1BcTQaR5Y07SAd2VE
-export KAIGARA_VAULT_CONFIG_PATH=cluster/your_service_name
-export KAIGARA_SERVICE_NAME=YourServiceName
+export KAIGARA_APP_NAME=peatio
+export KAIGARA_DEPLOYMENT_ID=opendax_uat
 kagara service_command arguments...
 ```
+
+    Note: You need to enable the kv and transit engine during the first time
+    vault secrets enable kv
+    vault secrets enable transit
 
 ## Store an environment variable into Vault
 
