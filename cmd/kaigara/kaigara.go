@@ -7,16 +7,38 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 	"sync"
 
 	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/logstream"
+	"github.com/openware/kaigara/pkg/vault"
+	"github.com/openware/kaigara/types"
+	"github.com/openware/pkg/ika"
 )
 
-func kaigaraRun(ls logstream.LogStream, cnf config.Config, channelName, cmd string, cmdArgs []string) {
+var cnf = &config.KaigaraConfig{}
+
+func initConfig() {
+	err := ika.ReadConfig("", cnf)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func getVaultService(appName string) *vault.Service {
+	return vault.NewService(cnf.VaultAddr, cnf.VaultToken, appName, cnf.DeploymentID)
+}
+
+func parseScopes() []string {
+	return strings.Split(cnf.Scopes, ",")
+}
+
+func kaigaraRun(ls logstream.LogStream, secretStores []types.SecretStore, cmd string, cmdArgs []string) {
 	log.Printf("Starting command: %s %v", cmd, cmdArgs)
 	c := exec.Command(cmd, cmdArgs...)
-	env := config.BuildCmdEnv(cnf, os.Environ())
+	env := config.BuildCmdEnv(secretStores, os.Environ(), parseScopes())
+
 	c.Env = env.Vars
 
 	for _, file := range env.Files {
@@ -37,8 +59,8 @@ func kaigaraRun(ls logstream.LogStream, cnf config.Config, channelName, cmd stri
 		log.Fatal(err)
 	}
 
-	channelOut := fmt.Sprintf("log.%s.%s", channelName, "stdout")
-	channelErr := fmt.Sprintf("log.%s.%s", channelName, "stderr")
+	channelOut := fmt.Sprintf("log.%s.%s", cnf.AppName, "stdout")
+	channelErr := fmt.Sprintf("log.%s.%s", cnf.AppName, "stderr")
 	log.Printf("Publishing on %s and %s\n", channelOut, channelErr)
 
 	var wg sync.WaitGroup
@@ -59,7 +81,7 @@ func kaigaraRun(ls logstream.LogStream, cnf config.Config, channelName, cmd stri
 
 	quit := make(chan int)
 	go func() {
-		ls.HeartBeat(channelName, quit)
+		ls.HeartBeat(cnf.AppName, quit)
 		wg.Done()
 	}()
 
@@ -72,41 +94,21 @@ func kaigaraRun(ls logstream.LogStream, cnf config.Config, channelName, cmd stri
 	wg.Wait()
 }
 
-func initConfig() config.Config {
-	addr := os.Getenv("KAIGARA_VAULT_ADDR")
-	token := os.Getenv("KAIGARA_VAULT_TOKEN")
-	path := os.Getenv("KAIGARA_VAULT_CONFIG_PATH")
-	missingParam := false
-	if addr == "" {
-		log.Println("KAIGARA_VAULT_ADDR unset")
-		missingParam = true
-	}
-	if token == "" {
-		log.Println("KAIGARA_VAULT_TOKEN unset")
-		missingParam = true
-	}
-	if path == "" {
-		log.Println("KAIGARA_VAULT_CONFIG_PATH unset")
-		missingParam = true
-	}
-	if missingParam {
-		log.Println("Do not start use remote config")
-		return nil
-	}
-	return config.NewVaultConfig(addr, token, path)
-}
-
 func initLogStream() logstream.LogStream {
 	url := os.Getenv("KAIGARA_REDIS_URL")
 	return logstream.NewRedisClient(url)
 }
 
 func main() {
-	svc := os.Getenv("KAIGARA_SERVICE_NAME")
 	if len(os.Args) < 1 {
 		panic("Usage: kaigara CMD [ARGS...]")
 	}
 	ls := initLogStream()
-	cnf := initConfig()
-	kaigaraRun(ls, cnf, svc, os.Args[1], os.Args[2:])
+	initConfig()
+	secretStores := []types.SecretStore{
+		getVaultService(cnf.AppName),
+		getVaultService("global"),
+	}
+
+	kaigaraRun(ls, secretStores, os.Args[1], os.Args[2:])
 }
