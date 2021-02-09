@@ -4,3 +4,13 @@ services:
     image: "redis:5-alpine"
     ports:
       - "6379:6379"
+
+  vault:
+    image: vault:0.11.4
+    ports:
+      - "8200:8200"
+    environment:
+      SKIP_SETCAP: 1
+      VAULT_TOKEN: changeme
+      VAULT_DEV_ROOT_TOKEN_ID: changeme
+      VAULT_ADDR: http://vault:8200
