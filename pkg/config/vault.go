@@ -124,23 +124,23 @@ func (vs *VaultService) LoadSecrets(scope string) error {
 		return err
 	}
 	if secret == nil {
-		vs.data = make(map[string]interface{})
+		vs.data[scope] = make(map[string]interface{})
 	} else {
-		vs.data = secret.Data["data"].(map[string]interface{})
+		vs.data[scope] = secret.Data["data"].(map[string]interface{})
 	}
 	return nil
 }
 
 // SetSecret stores all secrets into the memory
-func (vs *VaultService) SetSecret(name, value string) error {
-	vs.data[name] = value
+func (vs *VaultService) SetSecret(name, value, scope string) error {
+	vs.data[scope].(map[string]interface{})[name] = value
 	return nil
 }
 
 // SetSecrets inserts given data into the secret store, overwriting keys if they exist
-func (vs *VaultService) SetSecrets(data map[string]interface{}) error {
+func (vs *VaultService) SetSecrets(data map[string]interface{}, scope string) error {
 	for k, v := range data {
-		vs.data[k] = v
+		vs.data[scope].(map[string]interface{})[k] = v
 	}
 	return nil
 }
@@ -152,7 +152,7 @@ func (vs *VaultService) SaveSecrets(scope string) error {
 	}
 
 	_, err := vs.vault.Logical().Write(vs.keyPath(scope), map[string]interface{}{
-		"data": vs.data,
+		"data": vs.data[scope],
 	})
 	if err == nil {
 		fmt.Printf("Stored secrets in vault secret: %s\n", vs.keyPath(scope))
@@ -161,11 +161,11 @@ func (vs *VaultService) SaveSecrets(scope string) error {
 }
 
 // GetSecrets returns all the secrets currently stored in Vault
-func (vs *VaultService) GetSecrets() (map[string]interface{}, error) {
-	return vs.data, nil
+func (vs *VaultService) GetSecrets(scope string) (map[string]interface{}, error) {
+	return vs.data[scope].(map[string]interface{}), nil
 }
 
 // GetSecret returns a secret value by name
-func (vs *VaultService) GetSecret(name string) (interface{}, error) {
-	return vs.data[name], nil
+func (vs *VaultService) GetSecret(name, scope string) (interface{}, error) {
+	return vs.data[scope].(map[string]interface{})[name], nil
 }
