@@ -1,4 +1,4 @@
-package config
+package vault
 
 import (
 	"encoding/base64"
@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/vault/api"
 )
 
-type VaultService struct {
+type Service struct {
 	data         map[string]interface{}
 	appName      string // Used as component Name
 	vault        *api.Client
@@ -16,13 +16,22 @@ type VaultService struct {
 }
 
 // NewService instantiate a vault service
-func NewService(addr, token, appName string) *VaultService {
+func NewService(addr, token, appName, deploymentID string) *Service {
 	if addr == "" {
 		addr = "http://localhost:8200"
 	}
 	if token == "" {
-		panic("VAULT_TOKEN is missing")
+		panic("KAIGARA_VAULT_TOKEN is missing")
 	}
+
+	if appName == "" {
+		panic("KAIGARA_APP_NAME is missing")
+	}
+
+	if deploymentID == "" {
+		panic("KAIGARA_DEPLOYMENT_ID is missing")
+	}
+
 	config := &api.Config{
 		Address: addr,
 		Timeout: time.Second * 2,
@@ -33,9 +42,10 @@ func NewService(addr, token, appName string) *VaultService {
 	}
 	client.SetToken(token)
 
-	s := &VaultService{
-		vault:   client,
-		appName: appName,
+	s := &Service{
+		vault:        client,
+		appName:      appName,
+		deploymentID: deploymentID,
 	}
 
 	ok, err := s.transitKeyExists()
@@ -52,19 +62,15 @@ func NewService(addr, token, appName string) *VaultService {
 	return s
 }
 
-func (vs *VaultService) SetDeploymentID(deploymentID string) {
-	vs.deploymentID = deploymentID
+func (vs *Service) keyPath(scope string) string {
+	return fmt.Sprintf("kv/%s/%s/%s", vs.deploymentID, vs.appName, scope)
 }
 
-func (vs *VaultService) keyPath(scope string) string {
-	return fmt.Sprintf("%s/%s/%s", vs.deploymentID, vs.appName, scope)
-}
-
-func (vs *VaultService) transitKeyName() string {
+func (vs *Service) transitKeyName() string {
 	return fmt.Sprintf("%s_kaigara_%s", vs.deploymentID, vs.appName)
 }
 
-func (vs *VaultService) transitKeyExists() (bool, error) {
+func (vs *Service) transitKeyExists() (bool, error) {
 	secret, err := vs.vault.Logical().Read("transit/keys/" + vs.transitKeyName())
 	if err != nil {
 		return false, err
@@ -72,7 +78,7 @@ func (vs *VaultService) transitKeyExists() (bool, error) {
 	return secret != nil, nil
 }
 
-func (vs *VaultService) transitKeyCreate() error {
+func (vs *Service) transitKeyCreate() error {
 	_, err := vs.vault.Logical().Write("transit/keys/"+vs.transitKeyName(), map[string]interface{}{
 		"force": true,
 	})
@@ -83,7 +89,7 @@ func (vs *VaultService) transitKeyCreate() error {
 }
 
 // Encrypt the plaintext argument and return a ciphertext string or an error
-func (vs *VaultService) Encrypt(plaintext string) (string, error) {
+func (vs *Service) Encrypt(plaintext string) (string, error) {
 	secret, err := vs.vault.Logical().Write("transit/encrypt/"+vs.transitKeyName(), map[string]interface{}{
 		"plaintext": base64.URLEncoding.EncodeToString([]byte(plaintext)),
 	})
@@ -99,7 +105,7 @@ func (vs *VaultService) Encrypt(plaintext string) (string, error) {
 }
 
 // Decrypt the given ciphertext and return the plaintext or an error
-func (vs *VaultService) Decrypt(ciphertext string) (string, error) {
+func (vs *Service) Decrypt(ciphertext string) (string, error) {
 	secret, err := vs.vault.Logical().Write("transit/decrypt/"+vs.transitKeyName(), map[string]interface{}{
 		"ciphertext": ciphertext,
 	})
@@ -117,28 +123,34 @@ func (vs *VaultService) Decrypt(ciphertext string) (string, error) {
 }
 
 // LoadSecrets loads existing secrets from vault
-func (vs *VaultService) LoadSecrets(scope string) error {
+func (vs *Service) LoadSecrets(scope string) error {
 	fmt.Println("Loading secrets...")
 	secret, err := vs.vault.Logical().Read(vs.keyPath(scope))
 	if err != nil {
 		return err
 	}
-	if secret == nil {
+
+	if vs.data == nil {
+		vs.data = make(map[string]interface{})
+	}
+
+	if secret == nil || secret.Data == nil || vs.data[scope] == nil {
 		vs.data[scope] = make(map[string]interface{})
 	} else {
 		vs.data[scope] = secret.Data["data"].(map[string]interface{})
 	}
+
 	return nil
 }
 
 // SetSecret stores all secrets into the memory
-func (vs *VaultService) SetSecret(name, value, scope string) error {
+func (vs *Service) SetSecret(name, value, scope string) error {
 	vs.data[scope].(map[string]interface{})[name] = value
 	return nil
 }
 
 // SetSecrets inserts given data into the secret store, overwriting keys if they exist
-func (vs *VaultService) SetSecrets(data map[string]interface{}, scope string) error {
+func (vs *Service) SetSecrets(data map[string]interface{}, scope string) error {
 	for k, v := range data {
 		vs.data[scope].(map[string]interface{})[k] = v
 	}
@@ -146,7 +158,8 @@ func (vs *VaultService) SetSecrets(data map[string]interface{}, scope string) er
 }
 
 // SaveSecrets saves all secrets to a Vault kv secret
-func (vs *VaultService) SaveSecrets(scope string) error {
+// TODO should save data from all scopes
+func (vs *Service) SaveSecrets(scope string) error {
 	if vs.deploymentID == "" {
 		return fmt.Errorf("Deployment ID is not set, please set deploymentID")
 	}
@@ -161,11 +174,11 @@ func (vs *VaultService) SaveSecrets(scope string) error {
 }
 
 // GetSecrets returns all the secrets currently stored in Vault
-func (vs *VaultService) GetSecrets(scope string) (map[string]interface{}, error) {
+func (vs *Service) GetSecrets(scope string) (map[string]interface{}, error) {
 	return vs.data[scope].(map[string]interface{}), nil
 }
 
 // GetSecret returns a secret value by name
-func (vs *VaultService) GetSecret(name, scope string) (interface{}, error) {
+func (vs *Service) GetSecret(name, scope string) (interface{}, error) {
 	return vs.data[scope].(map[string]interface{})[name], nil
 }

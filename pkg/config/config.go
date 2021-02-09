@@ -4,6 +4,8 @@ import (
 	"log"
 	"regexp"
 	"strings"
+
+	"github.com/openware/kaigara/types"
 )
 
 // Config is the interface definition of generic config storage
@@ -23,7 +25,7 @@ type File struct {
 
 var kfile = regexp.MustCompile("(?i)^KFILE_(.*)_(PATH|CONTENT)$")
 
-func BuildCmdEnv(cnf Config, currentEnv []string) *Env {
+func BuildCmdEnv(secretStore types.SecretStore, currentEnv, scopes []string) *Env {
 	env := &Env{
 		Vars:  []string{},
 		Files: map[string]*File{},
@@ -34,30 +36,43 @@ func BuildCmdEnv(cnf Config, currentEnv []string) *Env {
 			env.Vars = append(env.Vars, v)
 		}
 	}
-	if cnf == nil {
+	if secretStore == nil {
 		return env
 	}
-	for k, v := range cnf.ListEntries() {
-		m := kfile.FindStringSubmatch(k)
-		if m == nil {
-			env.Vars = append(env.Vars, strings.ToUpper(k)+"="+v.(string))
-			continue
-		}
-		name := strings.ToUpper(m[1])
-		suffix := strings.ToUpper(m[2])
+	for _, scope := range scopes {
+		err := secretStore.LoadSecrets(scope)
 
-		f, ok := env.Files[name]
-		if !ok {
-			f = &File{}
-			env.Files[name] = f
+		if err != nil {
+			panic(err)
 		}
-		switch suffix {
-		case "PATH":
-			f.Path = v.(string)
-		case "CONTENT":
-			f.Content = v.(string)
-		default:
-			log.Printf("ERROR: Unexpected prefix in config key: %s", k)
+
+		secrets, err := secretStore.GetSecrets(scope)
+		if err != nil {
+			panic(err)
+		}
+
+		for k, v := range secrets {
+			m := kfile.FindStringSubmatch(k)
+			if m == nil {
+				env.Vars = append(env.Vars, strings.ToUpper(k)+"="+v.(string))
+				continue
+			}
+			name := strings.ToUpper(m[1])
+			suffix := strings.ToUpper(m[2])
+
+			f, ok := env.Files[name]
+			if !ok {
+				f = &File{}
+				env.Files[name] = f
+			}
+			switch suffix {
+			case "PATH":
+				f.Path = v.(string)
+			case "CONTENT":
+				f.Content = v.(string)
+			default:
+				log.Printf("ERROR: Unexpected prefix in config key: %s", k)
+			}
 		}
 	}
 	return env
