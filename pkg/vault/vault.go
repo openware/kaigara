@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/vault/api"
 )
 
+// Service contains scoped secret data, Vault client and configuration
 type Service struct {
 	data         map[string]interface{}
 	appName      string // Used as component Name
@@ -130,17 +131,13 @@ func (vs *Service) LoadSecrets(scope string) error {
 		return err
 	}
 
-	// fmt.Println("Secret:", secret)
-
 	if vs.data == nil {
 		vs.data = make(map[string]interface{})
 	}
 
 	if secret == nil || secret.Data == nil {
-		// fmt.Println("Secret or data is nil, overwriting:", vs.data[scope])
 		vs.data[scope] = make(map[string]interface{})
 	} else {
-		// fmt.Println("Secret is not nil, writing", secret.Data["data"])
 		vs.data[scope] = secret.Data["data"].(map[string]interface{})
 	}
 
@@ -149,9 +146,13 @@ func (vs *Service) LoadSecrets(scope string) error {
 
 // SetSecret stores all secrets into the memory
 func (vs *Service) SetSecret(name string, value interface{}, scope string) error {
-	// Secret scope only supports strings
 	if scope == "secret" {
-		encrypted, err := vs.Encrypt(fmt.Sprintf("%v", value))
+		str, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("secretStore.SetSecret: %s is not a string", name)
+		}
+
+		encrypted, err := vs.Encrypt(str)
 		if err != nil {
 			return err
 		}
@@ -173,7 +174,6 @@ func (vs *Service) SetSecrets(data map[string]interface{}, scope string) error {
 }
 
 // SaveSecrets saves all secrets to a Vault kv secret
-// TODO should save data from all scopes
 func (vs *Service) SaveSecrets(scope string) error {
 	if vs.deploymentID == "" {
 		return fmt.Errorf("Deployment ID is not set, please set deploymentID")
@@ -197,7 +197,12 @@ func (vs *Service) GetSecrets(scope string) (map[string]interface{}, error) {
 func (vs *Service) GetSecret(name, scope string) (interface{}, error) {
 	// Since secret scope only supports strings, return a decrypted string
 	if scope == "secret" {
-		decrypted, err := vs.Decrypt(fmt.Sprintf("%v", vs.data[scope].(map[string]interface{})[name]))
+		str, ok := vs.data[scope].(map[string]interface{})[name].(string)
+		if !ok {
+			return nil, fmt.Errorf("secretStore.GetSecret: %s is not a string", name)
+		}
+
+		decrypted, err := vs.Decrypt(str)
 		if err != nil {
 			return nil, err
 		}

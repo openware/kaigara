@@ -23,11 +23,13 @@ type Config interface {
 	ListEntries() map[string]interface{}
 }
 
+// Env contains envrionment vars and file content and paths
 type Env struct {
 	Vars  []string
 	Files map[string]*File
 }
 
+// File contains path and content of a file fetched from env by Kaigara
 type File struct {
 	Path    string
 	Content string
@@ -35,6 +37,7 @@ type File struct {
 
 var kfile = regexp.MustCompile("(?i)^KFILE_(.*)_(PATH|CONTENT)$")
 
+// BuildCmdEnv reads secrets from all secretStores and scopes passed to it and loads them into an Env and returns a *Env
 func BuildCmdEnv(secretStores []types.SecretStore, currentEnv, scopes []string) *Env {
 	env := &Env{
 		Vars:  []string{},
@@ -60,8 +63,6 @@ func BuildCmdEnv(secretStores []types.SecretStore, currentEnv, scopes []string) 
 			}
 
 			// secretStore.SetSecret("test_"+scope, "lol", scope)
-			// val, err := secretStore.GetSecret("test_"+scope, scope)
-			// fmt.Println(scope, val)
 			// secretStore.SaveSecrets(scope)
 
 			secrets, err := secretStore.GetSecrets(scope)
