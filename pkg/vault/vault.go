@@ -228,6 +228,10 @@ func (vs *Service) ListAppNames() ([]string, error) {
 		return nil, err
 	}
 
+	if secret == nil || secret.Data == nil {
+		return nil, nil
+	}
+
 	var res []string
 	secretKeys := secret.Data["keys"].([]interface{})
 
