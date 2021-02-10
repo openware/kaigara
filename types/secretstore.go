@@ -8,6 +8,7 @@ type SecretStore interface {
 	SetSecrets(data map[string]interface{}, scope string) error
 	GetSecret(name, scope string) (interface{}, error)
 	GetSecrets(scope string) (map[string]interface{}, error)
+	ListSecrets(scope string) ([]string, error)
 	SetAppName(name string) error
 	ListAppNames() ([]string, error)
 }
