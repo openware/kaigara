@@ -1,27 +1,36 @@
 package vault
 
-// func TestVaultConfigStoreListEntriesPresent(t *testing.T) {
-// 	path := "test/vault_config_store"
-// 	config := NewVaultConfig(os.Getenv("VAULT_ADDR"), os.Getenv("VAULT_TOKEN"), path)
-// 	data := map[string]interface{}{
-// 		"data": map[string]interface{}{
-// 			"foo":  "bar",
-// 			"fooz": "barz",
-// 		},
-// 	}
+import (
+	"os"
+	"testing"
 
-// 	_, err := config.client.Logical().Write("secret/data/"+path, data)
-// 	require.NoError(t, err)
-// 	assert.Equal(t, map[string]interface{}{
-// 		"foo":  "bar",
-// 		"fooz": "barz",
-// 	}, config.ListEntries())
-// }
+	"github.com/stretchr/testify/assert"
+)
 
-// func TestVaultConfigStoreListEntriesAbsent(t *testing.T) {
-// 	path := "test/vault_config_store"
-// 	config := NewVaultConfig(os.Getenv("VAULT_ADDR"), os.Getenv("VAULT_TOKEN"), path)
-// 	_, err := config.client.Logical().Delete("secret/data/" + path)
-// 	require.NoError(t, err)
-// 	assert.Equal(t, map[string]interface{}{}, config.ListEntries())
-// }
+func TestVaultServiceSetGetSecrets(t *testing.T) {
+	vaultAddr := os.Getenv("KAIGARA_VAULT_ADDR")
+	vaultToken := os.Getenv("KAIGARA_VAULT_TOKEN")
+	scopes := []string{"private", "public", "secret"}
+	deploymentID := "opendax_uat"
+	appName := "peatio"
+
+	// Initialize Vault SecretStore
+	secretStore := NewService(vaultAddr, vaultToken, appName, deploymentID)
+
+	for _, scope := range scopes {
+		err := secretStore.LoadSecrets(scope)
+		assert.NoError(t, err)
+
+		// Set Secrets in each scope
+		err = secretStore.SetSecret("key_"+scope, "value_"+scope, scope)
+		assert.NoError(t, err)
+
+		err = secretStore.SaveSecrets(scope)
+		assert.NoError(t, err)
+
+		// Get and assert Secrets in each scope
+		secret, err := secretStore.GetSecret("key_"+scope, scope)
+		assert.NoError(t, err)
+		assert.Equal(t, "value_"+scope, secret.(string))
+	}
+}

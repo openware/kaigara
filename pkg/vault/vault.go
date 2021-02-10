@@ -17,7 +17,7 @@ type Service struct {
 	deploymentID string // Used as vault prefix
 }
 
-// NewService instantiate a vault service
+// NewService instantiates a Vault service
 func NewService(addr, token, appName, deploymentID string) *Service {
 	if addr == "" {
 		addr = "http://localhost:8200"
