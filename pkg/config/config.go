@@ -65,6 +65,11 @@ func BuildCmdEnv(secretStores []types.SecretStore, currentEnv, scopes []string) 
 			// secretStore.SetSecret("test_"+scope, "lol", scope)
 			// secretStore.SaveSecrets(scope)
 
+			// _, err = secretStore.ListAppNames()
+			// if err != nil {
+			// 	panic(err)
+			// }
+
 			secrets, err := secretStore.GetSecrets(scope)
 			if err != nil {
 				panic(err)

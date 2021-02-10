@@ -3,6 +3,7 @@ package vault
 import (
 	"encoding/base64"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/vault/api"
@@ -64,7 +65,7 @@ func NewService(addr, token, appName, deploymentID string) *Service {
 }
 
 func (vs *Service) keyPath(scope string) string {
-	return fmt.Sprintf("kv/%s/%s/%s", vs.deploymentID, vs.appName, scope)
+	return fmt.Sprintf("secret/data/%s/%s/%s", vs.deploymentID, vs.appName, scope)
 }
 
 func (vs *Service) transitKeyName() string {
@@ -211,4 +212,21 @@ func (vs *Service) GetSecret(name, scope string) (interface{}, error) {
 	}
 
 	return vs.data[scope].(map[string]interface{})[name], nil
+}
+
+// ListAppNames returns a slice containing all app names inside the deploymentID namespace
+func (vs *Service) ListAppNames() ([]string, error) {
+	secret, err := vs.vault.Logical().List(fmt.Sprintf("secret/metadata/%s", vs.deploymentID))
+	if err != nil {
+		return nil, err
+	}
+
+	var res []string
+	secretKeys := secret.Data["keys"].([]interface{})
+
+	for _, val := range secretKeys {
+		res = append(res, strings.ReplaceAll(val.(string), "/", ""))
+	}
+
+	return res, nil
 }
