@@ -90,6 +90,13 @@ func (vs *Service) transitKeyCreate() error {
 	return nil
 }
 
+// SetAppName sets the appName of a Vault service
+func (vs *Service) SetAppName(name string) error {
+	vs.appName = name
+
+	return nil
+}
+
 // Encrypt the plaintext argument and return a ciphertext string or an error
 func (vs *Service) Encrypt(plaintext string) (string, error) {
 	secret, err := vs.vault.Logical().Write("transit/encrypt/"+vs.transitKeyName(), map[string]interface{}{
@@ -219,6 +226,10 @@ func (vs *Service) ListAppNames() ([]string, error) {
 	secret, err := vs.vault.Logical().List(fmt.Sprintf("secret/metadata/%s", vs.deploymentID))
 	if err != nil {
 		return nil, err
+	}
+
+	if secret == nil || secret.Data == nil {
+		return nil, nil
 	}
 
 	var res []string
