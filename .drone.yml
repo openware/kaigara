@@ -14,12 +14,20 @@ services:
       VAULT_DEV_ROOT_TOKEN_ID: "root-token"
 
 steps:
+  - name: Enable Vault Transit
+    image: vault:1.5.3
+    environment:
+      VAULT_ADDR: 'http://vault:8200'
+      VAULT_TOKEN: 'root-token'
+    commands:
+      - vault secrets enable transit
+
   - name: Go test
     image: golang:1.14
     environment:
-      GO111MODULE: on
-      VAULT_ADDR: 'http://vault:8200'
-      VAULT_TOKEN: 'root-token'
+      GO111MODULE: "on"
+      KAIGARA_VAULT_ADDR: 'http://vault:8200'
+      KAIGARA_VAULT_TOKEN: 'root-token'
     commands:
       - go mod download
       - go test ./...
