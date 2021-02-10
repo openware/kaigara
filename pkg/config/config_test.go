@@ -1,79 +1,109 @@
 package config
 
-// import (
-// 	"testing"
+import (
+	"fmt"
+	"os"
+	"testing"
 
-// 	"github.com/stretchr/testify/assert"
-// )
+	"github.com/openware/kaigara/pkg/vault"
+	"github.com/openware/kaigara/types"
+	"github.com/stretchr/testify/assert"
+)
 
-// type MockedConfig struct {
-// 	config map[string]interface{}
-// }
+var scopes []string = []string{"public"}
+var vaultAddr string = os.Getenv("KAIGARA_VAULT_ADDR")
+var vaultToken string = os.Getenv("KAIGARA_VAULT_TOKEN")
+var deploymentID string = "kaigara_test"
+var appName string = "peatio"
+var secretStore types.SecretStore = vault.NewService(vaultAddr, vaultToken, appName, deploymentID)
 
-// func (m *MockedConfig) ListEntries() map[string]interface{} {
-// 	return m.config
-// }
+func TestBuildCmdEnvFromSecretStore(t *testing.T) {
+	secretStore.SetAppName("test1")
 
-// func TestBuildCmdEnvFilters(t *testing.T) {
-// 	cnf := &MockedConfig{
-// 		config: map[string]interface{}{
-// 			"my_var":          "my_value",
-// 			"AN_OTHER_SECRET": "secret",
-// 		},
-// 	}
-// 	env := []string{
-// 		"ANYTHING=must_be_kept",
-// 		"KAIGARA_ANYTHING=must_be_ignored",
-// 	}
-// 	r := BuildCmdEnv(cnf, env)
-// 	assert.Equal(t, map[string]*File{}, r.Files)
-// 	assert.ElementsMatch(t, []string{
-// 		"ANYTHING=must_be_kept",
-// 		"AN_OTHER_SECRET=secret",
-// 		"MY_VAR=my_value",
-// 	}, r.Vars)
-// }
+	env := []string{
+		"ANYTHING=must_be_kept",
+		"KAIGARA_ANYTHING=must_be_ignored",
+	}
 
-// func TestBuildCmdEnvFileUpperCase(t *testing.T) {
-// 	cnf := &MockedConfig{
-// 		config: map[string]interface{}{
-// 			"ANYTHING":           "must_be_set",
-// 			"KFILE_NAME_PATH":    "config/config.json",
-// 			"KFILE_NAME_CONTENT": `{"app":"example"}`,
-// 		},
-// 	}
-// 	env := []string{}
-// 	assert.Equal(t, &Env{
-// 		Vars: []string{
-// 			"ANYTHING=must_be_set",
-// 		},
-// 		Files: map[string]*File{
-// 			"NAME": {
-// 				Path:    "config/config.json",
-// 				Content: `{"app":"example"}`,
-// 			},
-// 		},
-// 	}, BuildCmdEnv(cnf, env))
-// }
+	err := secretStore.LoadSecrets(scopes[0])
+	assert.NoError(t, err)
 
-// func TestBuildCmdEnvFileLowerCase(t *testing.T) {
-// 	cnf := &MockedConfig{
-// 		config: map[string]interface{}{
-// 			"anything":           "must_be_set",
-// 			"kfile_name_path":    "config/config.json",
-// 			"kfile_name_content": `{"app":"example"}`,
-// 		},
-// 	}
-// 	env := []string{}
-// 	assert.Equal(t, &Env{
-// 		Vars: []string{
-// 			"ANYTHING=must_be_set",
-// 		},
-// 		Files: map[string]*File{
-// 			"NAME": {
-// 				Path:    "config/config.json",
-// 				Content: `{"app":"example"}`,
-// 			},
-// 		},
-// 	}, BuildCmdEnv(cnf, env))
-// }
+	err = secretStore.SetSecret("key_"+scopes[0], "value_"+scopes[0], scopes[0])
+	assert.NoError(t, err)
+
+	err = secretStore.SaveSecrets(scopes[0])
+	assert.NoError(t, err)
+
+	r := BuildCmdEnv([]types.SecretStore{secretStore}, env, scopes)
+
+	fmt.Println(r.Vars)
+	assert.Equal(t, map[string]*File{}, r.Files)
+	assert.ElementsMatch(t, []string{
+		"ANYTHING=must_be_kept",
+		"KEY_PUBLIC=value_public",
+	}, r.Vars)
+}
+
+func TestBuildCmdEnvFileUpperCase(t *testing.T) {
+	secretStore.SetAppName("test2")
+
+	err := secretStore.LoadSecrets(scopes[0])
+	assert.NoError(t, err)
+
+	err = secretStore.SetSecret("ANYTHING", "must_be_set", scopes[0])
+	assert.NoError(t, err)
+
+	err = secretStore.SetSecret("KFILE_NAME_PATH", "config/config.json", scopes[0])
+	assert.NoError(t, err)
+
+	err = secretStore.SetSecret("KFILE_NAME_CONTENT", `{"app":"example"}`, scopes[0])
+	assert.NoError(t, err)
+
+	err = secretStore.SaveSecrets(scopes[0])
+	assert.NoError(t, err)
+
+	env := []string{}
+	assert.Equal(t, &Env{
+		Vars: []string{
+			"ANYTHING=must_be_set",
+		},
+		Files: map[string]*File{
+			"NAME": {
+				Path:    "config/config.json",
+				Content: `{"app":"example"}`,
+			},
+		},
+	}, BuildCmdEnv([]types.SecretStore{secretStore}, env, scopes))
+}
+
+func TestBuildCmdEnvFileLowerCase(t *testing.T) {
+	secretStore.SetAppName("test3")
+
+	err := secretStore.LoadSecrets(scopes[0])
+	assert.NoError(t, err)
+
+	err = secretStore.SetSecret("anything", "must_be_set", scopes[0])
+	assert.NoError(t, err)
+
+	err = secretStore.SetSecret("kfile_name_path", "config/config.json", scopes[0])
+	assert.NoError(t, err)
+
+	err = secretStore.SetSecret("kfile_name_content", `{"app":"example"}`, scopes[0])
+	assert.NoError(t, err)
+
+	err = secretStore.SaveSecrets(scopes[0])
+	assert.NoError(t, err)
+
+	env := []string{}
+	assert.Equal(t, &Env{
+		Vars: []string{
+			"ANYTHING=must_be_set",
+		},
+		Files: map[string]*File{
+			"NAME": {
+				Path:    "config/config.json",
+				Content: `{"app":"example"}`,
+			},
+		},
+	}, BuildCmdEnv([]types.SecretStore{secretStore}, env, scopes))
+}

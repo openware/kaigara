@@ -221,6 +221,20 @@ func (vs *Service) GetSecret(name, scope string) (interface{}, error) {
 	return vs.data[scope].(map[string]interface{})[name], nil
 }
 
+// ListSecrets returns a slice containing all secret keys of a scope
+func (vs *Service) ListSecrets(scope string) ([]string, error) {
+	secrets := vs.data[scope].(map[string]interface{})
+	keys := make([]string, len(secrets))
+
+	i := 0
+	for k := range secrets {
+		keys[i] = k
+		i++
+	}
+
+	return keys, nil
+}
+
 // ListAppNames returns a slice containing all app names inside the deploymentID namespace
 func (vs *Service) ListAppNames() ([]string, error) {
 	secret, err := vs.vault.Logical().List(fmt.Sprintf("secret/metadata/%s", vs.deploymentID))
