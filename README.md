@@ -37,6 +37,10 @@ vault kv patch secret/cluster/your_service_name kfile_config_path=config.json
 vault kv patch secret/cluster/your_service_name kfile_config_content='{"app":"example"}'
 ```
 
+## Bulk writing secrets to the SecretStore
+
+To write secrets from the command line, save in a YAML file with a format similar to `secrets.yaml` and use `kaisave -f *filepath*`
+
 ## TODO
 
  * Detects configuration changes and apply by restarting the daemon with new environment
