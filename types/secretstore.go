@@ -11,4 +11,6 @@ type SecretStore interface {
 	ListSecrets(scope string) ([]string, error)
 	SetAppName(name string) error
 	ListAppNames() ([]string, error)
+	GetCurrentVersion(scope string) (int64, error)
+	GetLatestVersion(scope string) (int64, error)
 }
