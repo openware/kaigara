@@ -9,6 +9,7 @@ import (
 	"path"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/logstream"
@@ -36,8 +37,9 @@ func parseScopes() []string {
 
 func kaigaraRun(ls logstream.LogStream, secretStores []types.SecretStore, cmd string, cmdArgs []string) {
 	log.Printf("Starting command: %s %v", cmd, cmdArgs)
+	scopes := parseScopes()
 	c := exec.Command(cmd, cmdArgs...)
-	env := config.BuildCmdEnv(secretStores, os.Environ(), parseScopes())
+	env := config.BuildCmdEnv(secretStores, os.Environ(), scopes)
 
 	c.Env = env.Vars
 
@@ -79,6 +81,8 @@ func kaigaraRun(ls logstream.LogStream, secretStores []types.SecretStore, cmd st
 		log.Fatal(err)
 	}
 
+	go exitWhenSecretsOutdated(c, secretStores, scopes)
+
 	quit := make(chan int)
 	go func() {
 		ls.HeartBeat(cnf.AppName, quit)
@@ -99,7 +103,33 @@ func initLogStream() logstream.LogStream {
 	return logstream.NewRedisClient(url)
 }
 
+func exitWhenSecretsOutdated(c *exec.Cmd, secretStores []types.SecretStore, scopes []string) {
+	for range time.Tick(time.Second * 20) {
+		for _, secretStore := range secretStores {
+			for _, scope := range scopes {
+				current, err := secretStore.GetCurrentVersion(scope)
+				if err != nil {
+					log.Fatal(err)
+					break
+				}
+				latest, err := secretStore.GetLatestVersion(scope)
+				if err != nil {
+					log.Fatal(err)
+					break
+				}
+				if current != latest {
+					log.Printf("Found secrets updated on '%v' scope. from: v%v, to: v%v. killing process...\n", scope, current, latest)
+					if err := c.Process.Kill(); err != nil {
+						log.Fatal("Failed to kill process", err)
+					}
+				}
+			}
+		}
+	}
+}
+
 func main() {
+	log.SetPrefix("[Kaigara] ")
 	if len(os.Args) < 1 {
 		panic("Usage: kaigara CMD [ARGS...]")
 	}
