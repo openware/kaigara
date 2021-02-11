@@ -2,6 +2,7 @@ package vault
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -12,6 +13,7 @@ import (
 // Service contains scoped secret data, Vault client and configuration
 type Service struct {
 	data         map[string]interface{}
+	metadata     map[string]interface{}
 	appName      string // Used as component Name
 	vault        *api.Client
 	deploymentID string // Used as vault prefix
@@ -64,8 +66,16 @@ func NewService(addr, token, appName, deploymentID string) *Service {
 	return s
 }
 
+func (vs *Service) secretPath(directory string, scope string) string {
+	return fmt.Sprintf("secret/%s/%s/%s/%s", directory, vs.deploymentID, vs.appName, scope)
+}
+
 func (vs *Service) keyPath(scope string) string {
-	return fmt.Sprintf("secret/data/%s/%s/%s", vs.deploymentID, vs.appName, scope)
+	return vs.secretPath("data", scope)
+}
+
+func (vs *Service) metadataPath(scope string) string {
+	return vs.secretPath("metadata", scope)
 }
 
 func (vs *Service) transitKeyName() string {
@@ -143,10 +153,16 @@ func (vs *Service) LoadSecrets(scope string) error {
 		vs.data = make(map[string]interface{})
 	}
 
-	if secret == nil || secret.Data == nil {
+	if vs.metadata == nil {
+		vs.metadata = make(map[string]interface{})
+	}
+
+	if secret == nil || secret.Data == nil || secret.Data["data"] == nil {
 		vs.data[scope] = make(map[string]interface{})
+		vs.metadata[scope] = make(map[string]interface{})
 	} else {
 		vs.data[scope] = secret.Data["data"].(map[string]interface{})
+		vs.metadata[scope] = secret.Data["metadata"].(map[string]interface{})
 	}
 
 	return nil
@@ -187,11 +203,12 @@ func (vs *Service) SaveSecrets(scope string) error {
 		return fmt.Errorf("Deployment ID is not set, please set deploymentID")
 	}
 
-	_, err := vs.vault.Logical().Write(vs.keyPath(scope), map[string]interface{}{
+	metadata, err := vs.vault.Logical().Write(vs.keyPath(scope), map[string]interface{}{
 		"data": vs.data[scope],
 	})
 	if err == nil {
 		fmt.Printf("Stored secrets in vault secret: %s\n", vs.keyPath(scope))
+		vs.metadata[scope] = metadata.Data
 	}
 	return err
 }
@@ -254,4 +271,37 @@ func (vs *Service) ListAppNames() ([]string, error) {
 	}
 
 	return res, nil
+}
+
+// GetCurrentVersion returns current data version in cache
+func (vs *Service) GetCurrentVersion(scope string) (int64, error) {
+	var versionNumber int64 = -1
+	v := vs.metadata[scope].(map[string]interface{})["version"]
+	if v != nil {
+		version, err := v.(json.Number).Int64()
+		if err != nil {
+			return versionNumber, err
+		}
+		versionNumber = version
+	}
+	return versionNumber, nil
+}
+
+// GetLatestVersion returns latest data version from vault
+func (vs *Service) GetLatestVersion(scope string) (int64, error) {
+	var versionNumber int64 = -1
+	metadata, err := vs.vault.Logical().Read(vs.metadataPath(scope))
+	if err != nil {
+		return versionNumber, err
+	}
+
+	v := metadata.Data["current_version"]
+	if v != nil {
+		version, err := v.(json.Number).Int64()
+		if err != nil {
+			return versionNumber, err
+		}
+		versionNumber = version
+	}
+	return versionNumber, nil
 }
