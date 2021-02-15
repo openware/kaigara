@@ -157,7 +157,7 @@ func (vs *Service) LoadSecrets(scope string) error {
 		vs.metadata = make(map[string]interface{})
 	}
 
-	if secret == nil || secret.Data == nil || secret.Data["data"] == nil {
+	if secret == nil || secret.Data == nil || secret.Data["data"] == nil || secret.Data["metadata"] == nil {
 		vs.data[scope] = make(map[string]interface{})
 		vs.metadata[scope] = make(map[string]interface{})
 	} else {
@@ -203,12 +203,11 @@ func (vs *Service) SaveSecrets(scope string) error {
 		return fmt.Errorf("Deployment ID is not set, please set deploymentID")
 	}
 
-	metadata, err := vs.vault.Logical().Write(vs.keyPath(scope), map[string]interface{}{
+	_, err := vs.vault.Logical().Write(vs.keyPath(scope), map[string]interface{}{
 		"data": vs.data[scope],
 	})
 	if err == nil {
 		fmt.Printf("Stored secrets in vault secret: %s\n", vs.keyPath(scope))
-		vs.metadata[scope] = metadata.Data
 	}
 	return err
 }
@@ -290,11 +289,13 @@ func (vs *Service) GetCurrentVersion(scope string) (int64, error) {
 // GetLatestVersion returns latest data version from vault
 func (vs *Service) GetLatestVersion(scope string) (int64, error) {
 	var versionNumber int64 = -1
+	fmt.Println("Reading metadata for", scope)
 	metadata, err := vs.vault.Logical().Read(vs.metadataPath(scope))
 	if err != nil {
 		return versionNumber, err
 	}
 
+	fmt.Printf("Metadata: %v", metadata)
 	v := metadata.Data["current_version"]
 	if v != nil {
 		version, err := v.(json.Number).Int64()
