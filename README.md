@@ -20,28 +20,57 @@ kagara service_command arguments...
 ```
 
     Note: You need to enable the kv and transit engine during the first time
-    vault secrets enable kv
+    vault secrets enable kv -version=2
     vault secrets enable transit
 
-## Store an environment variable into Vault
+**Warning**: You **must** enable Vault kv version 2 for Kaigara to function
 
-The variable name will be upper cased.
-```
-vault kv put secret/cluster/your_service_name your_var=your_value
+## List existing secrets
+
+To list existing app names, run:
+```sh
+vault list secret/metadata/$KAIGARA_DEPLOYMENT_ID
 ```
 
-## Store a configuration file into Vault
-
+To list existing scopes for an app name, run
+```sh
+vault list secret/metadata/$KAIGARA_DEPLOYMENT_ID/$KAIGARA_APP_NAME
 ```
-vault kv patch secret/cluster/your_service_name kfile_config_path=config.json
-vault kv patch secret/cluster/your_service_name kfile_config_content='{"app":"example"}'
+
+## Read existing secrets
+
+To read existing secrets for a given app name and scope, run:
+```sh
+vault read secret/data/$KAIGARA_DEPLOYMENT_ID/$KAIGARA_APP_NAME/*scope* -format=yaml
 ```
 
 ## Bulk writing secrets to the SecretStore
 
 To write secrets from the command line, save in a YAML file with a format similar to `secrets.yaml` and use `kaisave -f *filepath*`
 
-## TODO
+**Warning**: All scopes to be used by a component **must** be initialized(e.g. `public: {}, private: {}, secret: {}`)
 
- * Detects configuration changes and apply by restarting the daemon with new environment
- * Handle a command message from redis to restart the daemon
+An example import file look similar to:
+```yaml
+secrets:
+  global:
+    scopes:
+      public:
+        key1: value1
+        key2: [value2, value3]
+        key3:
+          key4: value4
+          time:
+            to: recover
+      private:
+        key1: value1
+        key2: [value2, value3]
+      secret:
+        key1: value1
+  peatio:
+    scopes:
+      public: {}
+      private: {}
+      secret:
+        key1: value1
+```
