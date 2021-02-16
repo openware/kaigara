@@ -215,7 +215,16 @@ func (vs *Service) SaveSecrets(scope string) error {
 
 // GetSecrets returns all the secrets currently stored in Vault
 func (vs *Service) GetSecrets(scope string) (map[string]interface{}, error) {
-	return vs.data[scope].(map[string]interface{}), nil
+	res := make(map[string]interface{})
+	for k := range vs.data[scope].(map[string]interface{}) {
+		val, err := vs.GetSecret(k, scope)
+		if err != nil {
+			return nil, err
+		}
+
+		res[k] = val
+	}
+	return res, nil
 }
 
 // GetSecret returns a secret value by name
