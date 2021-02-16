@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var scopes []string = []string{"public"}
+var scopes []string = []string{"secret"}
 var vaultAddr string = os.Getenv("KAIGARA_VAULT_ADDR")
 var vaultToken string = os.Getenv("KAIGARA_VAULT_TOKEN")
 var deploymentID string = "kaigara_test"
@@ -40,7 +40,7 @@ func TestBuildCmdEnvFromSecretStore(t *testing.T) {
 	assert.Equal(t, map[string]*File{}, r.Files)
 	assert.ElementsMatch(t, []string{
 		"ANYTHING=must_be_kept",
-		"KEY_PUBLIC=value_public",
+		"KEY_SECRET=value_secret",
 	}, r.Vars)
 }
 
