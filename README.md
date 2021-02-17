@@ -4,13 +4,13 @@ Kaigara is a wrapper arround daemons. It helps to standardize the way daemons ar
 
 ## Features
 
- * Fetch configuration from vault and inject in daemon environment
- * Support the storage of configuration files into vault
+ * Fetch configuration from Vault and inject in daemon environment
+ * Support the storage of configuration files and env vars into Vault
  * Push daemon STDOUT and STDERR to redis
 
 ## Quick start
 
-```
+```sh
 export KAIGARA_REDIS_URL=redis://localhost:6379/0
 export KAIGARA_VAULT_ADDR=http://127.0.0.1:8200
 export KAIGARA_VAULT_TOKEN=s.ozytsgX1BcTQaR5Y07SAd2VE
@@ -25,30 +25,35 @@ kagara service_command arguments...
 
 **Warning**: You **must** enable Vault kv version 2 for Kaigara to function
 
-## List existing secrets
+## Manage secrets
 
-To list existing app names, run:
+To **list** existing **app names**, run:
 ```sh
 vault list secret/metadata/$KAIGARA_DEPLOYMENT_ID
 ```
 
-To list existing scopes for an app name, run
+To **list** existing scopes for an app name, run
 ```sh
 vault list secret/metadata/$KAIGARA_DEPLOYMENT_ID/$KAIGARA_APP_NAME
 ```
 
-## Read existing secrets
-
-To read existing secrets for a given app name and scope, run:
+To **read** existing secrets for a given app name and scope, run:
 ```sh
 vault read secret/data/$KAIGARA_DEPLOYMENT_ID/$KAIGARA_APP_NAME/*scope* -format=yaml
 ```
 
-## Bulk writing secrets to the SecretStore
+To **delete** existing secrets for a given app name and scope, run:
+```sh
+vault delete secret/data/$KAIGARA_DEPLOYMENT_ID/$KAIGARA_APP_NAME/*scope*
+```
+
+### Bulk writing secrets to the SecretStore
 
 To write secrets from the command line, save in a YAML file with a format similar to `secrets.yaml` and use `kaisave -f *filepath*`
 
 **Warning**: All scopes to be used by a component **must** be initialized(e.g. `public: {}, private: {}, secret: {}`)
+
+Make sure to wrap numeric and boolean values in quotes(e.g. `"4269"`, `"true"`), getting errors such as `interface{} is bool|json.Number|etc` is directly linked to unquoted values.
 
 An example import file look similar to:
 ```yaml
@@ -62,11 +67,13 @@ secrets:
           key4: value4
           time:
             to: recover
+          awesome: "true"
       private:
         key1: value1
         key2: [value2, value3]
       secret:
         key1: value1
+        leet: "1337"
   peatio:
     scopes:
       public: {}
