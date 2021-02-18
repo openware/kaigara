@@ -1,11 +1,11 @@
-# Manage the kv v2 data
+# View the kv v2 data
 path "secret/data/deployment_id/*" {
-  capabilities = ["read", "create", "update"]
+  capabilities = ["read", "list"]
 }
 
-# Manage the kv v2 metadata
+# View the kv v2 metadata
 path "secret/metadata/deployment_id/*" {
-  capabilities = ["read", "create", "update"]
+  capabilities = ["read", "list"]
 }
 
 # Manage the transit secrets engine
