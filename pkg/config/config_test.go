@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
@@ -43,8 +44,36 @@ func TestBuildCmdEnvFromSecretStore(t *testing.T) {
 	}, r.Vars)
 }
 
-func TestBuildCmdEnvFileUpperCase(t *testing.T) {
+func TestLoadNumberAndBool(t *testing.T) {
 	appName := "test2"
+
+	scopes = []string{"public"}
+	env := []string{}
+
+	err := secretStore.LoadSecrets(appName, scopes[0])
+	assert.NoError(t, err)
+
+	err = secretStore.SetSecret(appName, "key_number", json.Number("1337"), scopes[0])
+	assert.NoError(t, err)
+
+	err = secretStore.SetSecret(appName, "key_bool", true, scopes[0])
+	assert.NoError(t, err)
+
+	err = secretStore.SaveSecrets(appName, scopes[0])
+	assert.NoError(t, err)
+
+	r := BuildCmdEnv(appName, secretStore, env, scopes)
+
+	fmt.Println(r.Vars)
+	assert.Equal(t, map[string]*File{}, r.Files)
+	assert.ElementsMatch(t, []string{
+		"KEY_NUMBER=1337",
+		"KEY_BOOL=true",
+	}, r.Vars)
+}
+
+func TestBuildCmdEnvFileUpperCase(t *testing.T) {
+	appName := "test3"
 
 	err := secretStore.LoadSecrets(appName, scopes[0])
 	assert.NoError(t, err)
@@ -76,7 +105,7 @@ func TestBuildCmdEnvFileUpperCase(t *testing.T) {
 }
 
 func TestBuildCmdEnvFileLowerCase(t *testing.T) {
-	appName := "test3"
+	appName := "test4"
 
 	err := secretStore.LoadSecrets(appName, scopes[0])
 	assert.NoError(t, err)
