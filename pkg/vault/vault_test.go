@@ -15,21 +15,21 @@ func TestVaultServiceSetGetSecrets(t *testing.T) {
 	appName := "peatio"
 
 	// Initialize Vault SecretStore
-	secretStore := NewService(vaultAddr, vaultToken, appName, deploymentID)
+	secretStore := NewService(vaultAddr, vaultToken, deploymentID)
 
 	for _, scope := range scopes {
-		err := secretStore.LoadSecrets(scope)
+		err := secretStore.LoadSecrets(appName, scope)
 		assert.NoError(t, err)
 
 		// Set Secrets in each scope
-		err = secretStore.SetSecret("key_"+scope, "value_"+scope, scope)
+		err = secretStore.SetSecret(appName, "key_"+scope, "value_"+scope, scope)
 		assert.NoError(t, err)
 
-		err = secretStore.SaveSecrets(scope)
+		err = secretStore.SaveSecrets(appName, scope)
 		assert.NoError(t, err)
 
 		// Get and assert Secrets in each scope
-		secret, err := secretStore.GetSecret("key_"+scope, scope)
+		secret, err := secretStore.GetSecret(appName, "key_"+scope, scope)
 		assert.NoError(t, err)
 		assert.Equal(t, "value_"+scope, secret.(string))
 	}
