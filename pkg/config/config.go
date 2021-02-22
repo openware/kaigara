@@ -38,7 +38,7 @@ type File struct {
 var kfile = regexp.MustCompile("(?i)^KFILE_(.*)_(PATH|CONTENT)$")
 
 // BuildCmdEnv reads secrets from all secretStores and scopes passed to it and loads them into an Env and returns a *Env
-func BuildCmdEnv(secretStores []types.SecretStore, currentEnv, scopes []string) *Env {
+func BuildCmdEnv(appName string, secretStore types.SecretStore, currentEnv, scopes []string) *Env {
 	env := &Env{
 		Vars:  []string{},
 		Files: map[string]*File{},
@@ -50,55 +50,48 @@ func BuildCmdEnv(secretStores []types.SecretStore, currentEnv, scopes []string) 
 		}
 	}
 
-	for _, secretStore := range secretStores {
-
-		if secretStore == nil {
-			continue
+	for _, scope := range scopes {
+		err := secretStore.LoadSecrets(appName, scope)
+		if err != nil {
+			panic(err)
 		}
 
-		for _, scope := range scopes {
-			err := secretStore.LoadSecrets(scope)
-			if err != nil {
-				panic(err)
+		secrets, err := secretStore.GetSecrets(appName, scope)
+		if err != nil {
+			panic(err)
+		}
+
+		for k, v := range secrets {
+			// Avoid trying to put maps and slices into env
+			if _, ok := v.(map[string]interface{}); ok {
+				continue
 			}
 
-			secrets, err := secretStore.GetSecrets(scope)
-			if err != nil {
-				panic(err)
+			if _, ok := v.([]interface{}); ok {
+				continue
 			}
 
-			for k, v := range secrets {
-				// Avoid trying to put maps and slices into env
-				if _, ok := v.(map[string]interface{}); ok {
-					continue
-				}
+			m := kfile.FindStringSubmatch(k)
 
-				if _, ok := v.([]interface{}); ok {
-					continue
-				}
+			if m == nil {
+				env.Vars = append(env.Vars, strings.ToUpper(k)+"="+v.(string))
+				continue
+			}
+			name := strings.ToUpper(m[1])
+			suffix := strings.ToUpper(m[2])
 
-				m := kfile.FindStringSubmatch(k)
-
-				if m == nil {
-					env.Vars = append(env.Vars, strings.ToUpper(k)+"="+v.(string))
-					continue
-				}
-				name := strings.ToUpper(m[1])
-				suffix := strings.ToUpper(m[2])
-
-				f, ok := env.Files[name]
-				if !ok {
-					f = &File{}
-					env.Files[name] = f
-				}
-				switch suffix {
-				case "PATH":
-					f.Path = v.(string)
-				case "CONTENT":
-					f.Content = v.(string)
-				default:
-					log.Printf("ERROR: Unexpected prefix in config key: %s", k)
-				}
+			f, ok := env.Files[name]
+			if !ok {
+				f = &File{}
+				env.Files[name] = f
+			}
+			switch suffix {
+			case "PATH":
+				f.Path = v.(string)
+			case "CONTENT":
+				f.Content = v.(string)
+			default:
+				log.Printf("ERROR: Unexpected prefix in config key: %s", k)
 			}
 		}
 	}
