@@ -27,19 +27,19 @@ func initConfig() {
 	}
 }
 
-func getVaultService(appName string) *vault.Service {
-	return vault.NewService(cnf.VaultAddr, cnf.VaultToken, appName, cnf.DeploymentID)
+func getVaultService() *vault.Service {
+	return vault.NewService(cnf.VaultAddr, cnf.VaultToken, cnf.DeploymentID)
 }
 
 func parseScopes() []string {
 	return strings.Split(cnf.Scopes, ",")
 }
 
-func kaigaraRun(ls logstream.LogStream, secretStores []types.SecretStore, cmd string, cmdArgs []string) {
+func kaigaraRun(ls logstream.LogStream, secretStore types.SecretStore, cmd string, cmdArgs []string) {
 	log.Printf("Starting command: %s %v", cmd, cmdArgs)
 	scopes := parseScopes()
 	c := exec.Command(cmd, cmdArgs...)
-	env := config.BuildCmdEnv(secretStores, os.Environ(), scopes)
+	env := config.BuildCmdEnv(cnf.AppName, secretStore, os.Environ(), scopes)
 
 	c.Env = env.Vars
 
@@ -81,7 +81,7 @@ func kaigaraRun(ls logstream.LogStream, secretStores []types.SecretStore, cmd st
 		log.Fatal(err)
 	}
 
-	go exitWhenSecretsOutdated(c, secretStores, scopes)
+	go exitWhenSecretsOutdated(c, secretStore, scopes)
 
 	quit := make(chan int)
 	go func() {
@@ -103,16 +103,16 @@ func initLogStream() logstream.LogStream {
 	return logstream.NewRedisClient(url)
 }
 
-func exitWhenSecretsOutdated(c *exec.Cmd, secretStores []types.SecretStore, scopes []string) {
+func exitWhenSecretsOutdated(c *exec.Cmd, secretStore types.SecretStore, scopes []string) {
 	for range time.Tick(time.Second * 20) {
-		for _, secretStore := range secretStores {
+		for _, appName := range []string{cnf.AppName, "global"} {
 			for _, scope := range scopes {
-				current, err := secretStore.GetCurrentVersion(scope)
+				current, err := secretStore.GetCurrentVersion(appName, scope)
 				if err != nil {
 					log.Fatal(err)
 					break
 				}
-				latest, err := secretStore.GetLatestVersion(scope)
+				latest, err := secretStore.GetLatestVersion(appName, scope)
 				if err != nil {
 					log.Fatal(err)
 					break
@@ -135,10 +135,7 @@ func main() {
 	}
 	ls := initLogStream()
 	initConfig()
-	secretStores := []types.SecretStore{
-		getVaultService(cnf.AppName),
-		getVaultService("global"),
-	}
+	secretStore := getVaultService()
 
-	kaigaraRun(ls, secretStores, os.Args[1], os.Args[2:])
+	kaigaraRun(ls, secretStore, os.Args[1], os.Args[2:])
 }

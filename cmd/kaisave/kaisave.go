@@ -23,7 +23,7 @@ func initConfig() {
 }
 
 func getVaultService(appName string) *vault.Service {
-	return vault.NewService(cnf.VaultAddr, cnf.VaultToken, appName, cnf.DeploymentID)
+	return vault.NewService(cnf.VaultAddr, cnf.VaultToken, cnf.DeploymentID)
 }
 
 func initLogStream() logstream.LogStream {
@@ -66,13 +66,8 @@ func main() {
 	secretStore := getVaultService("global")
 
 	for app, scopes := range secrets.Secrets {
-		err := secretStore.SetAppName(app)
-		if err != nil {
-			panic(err)
-		}
-
 		for scope, data := range scopes.Scopes {
-			err := secretStore.LoadSecrets(scope)
+			err := secretStore.LoadSecrets(app, scope)
 			if err != nil {
 				panic(err)
 			}
@@ -80,13 +75,13 @@ func main() {
 			for k, v := range data {
 				fmt.Println("Setting", k)
 
-				err := secretStore.SetSecret(k, v, scope)
+				err := secretStore.SetSecret(app, k, v, scope)
 				if err != nil {
 					panic(err)
 				}
 			}
 
-			err = secretStore.SaveSecrets(scope)
+			err = secretStore.SaveSecrets(app, scope)
 			if err != nil {
 				panic(err)
 			}
