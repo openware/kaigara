@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"testing"
 
@@ -36,7 +35,6 @@ func TestBuildCmdEnvFromSecretStore(t *testing.T) {
 
 	r := BuildCmdEnv(appName, secretStore, env, scopes)
 
-	fmt.Println(r.Vars)
 	assert.Equal(t, map[string]*File{}, r.Files)
 	assert.ElementsMatch(t, []string{
 		"ANYTHING=must_be_kept",
@@ -64,7 +62,6 @@ func TestLoadNumberAndBool(t *testing.T) {
 
 	r := BuildCmdEnv(appName, secretStore, env, scopes)
 
-	fmt.Println(r.Vars)
 	assert.Equal(t, map[string]*File{}, r.Files)
 	assert.ElementsMatch(t, []string{
 		"KEY_NUMBER=1337",
