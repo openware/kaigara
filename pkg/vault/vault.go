@@ -134,7 +134,6 @@ func (vs *Service) Decrypt(appName, ciphertext string) (string, error) {
 // LoadSecrets loads existing secrets from vault
 func (vs *Service) LoadSecrets(appName, scope string) error {
 	vs.initTransitKey(appName)
-	fmt.Println("Loading secrets...")
 	secret, err := vs.vault.Logical().Read(vs.keyPath(appName, scope))
 	if err != nil {
 		return err
@@ -207,7 +206,6 @@ func (vs *Service) SaveSecrets(appName, scope string) error {
 		"data": vs.data[appName][scope],
 	})
 	if err == nil {
-		fmt.Printf("Stored secrets in vault secret: %s\n", vs.keyPath(appName, scope))
 		vs.metadata[appName][scope] = metadata.Data
 	}
 	return err
