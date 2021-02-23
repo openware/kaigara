@@ -158,7 +158,11 @@ func (vs *Service) LoadSecrets(appName, scope string) error {
 		vs.metadata[appName][scope] = make(map[string]interface{})
 	} else {
 		vs.data[appName][scope] = secret.Data["data"].(map[string]interface{})
-		vs.metadata[appName][scope] = secret.Data["metadata"].(map[string]interface{})
+		rawMetadata := secret.Data["metadata"]
+		if rawMetadata == nil {
+			panic("Metadata not found. Make sure you have enabled KV v2 enabled:\nvault secrets enable -version=2 -path=secret kv\n")
+		}
+		vs.metadata[appName][scope] = rawMetadata.(map[string]interface{})
 	}
 
 	return nil
