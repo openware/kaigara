@@ -12,7 +12,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.6.8 // indirect
 	github.com/hashicorp/go-rootcerts v1.0.2 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
-	github.com/openware/kaigara/pkg/vault v0.0.0-20210222134823-0ec1fca4b7ea
+	github.com/openware/kaigara/pkg/vault v0.0.0-20210223104620-492a2a068068
 	github.com/openware/pkg/ika v0.0.0-20210204083929-709d949cb0ff
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
 	github.com/stretchr/testify v1.3.0
