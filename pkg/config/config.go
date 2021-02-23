@@ -1,8 +1,10 @@
 package config
 
 import (
+	"encoding/json"
 	"log"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/openware/kaigara/types"
@@ -71,10 +73,30 @@ func BuildCmdEnv(appName string, secretStore types.SecretStore, currentEnv, scop
 				continue
 			}
 
+			var val string
+
+			// Handle bool and json.Number
+			if tmp, ok := v.(bool); ok {
+				val = strconv.FormatBool(tmp)
+			}
+
+			if tmp, ok := v.(json.Number); ok {
+				val = string(tmp)
+			}
+
+			// Skip if the var can't be asserted to string
+			if val == "" {
+				if tmp, ok := v.(string); ok {
+					val = tmp
+				} else {
+					continue
+				}
+			}
+
 			m := kfile.FindStringSubmatch(k)
 
 			if m == nil {
-				env.Vars = append(env.Vars, strings.ToUpper(k)+"="+v.(string))
+				env.Vars = append(env.Vars, strings.ToUpper(k)+"="+val)
 				continue
 			}
 			name := strings.ToUpper(m[1])
