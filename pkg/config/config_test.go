@@ -33,12 +33,22 @@ func TestBuildCmdEnvFromSecretStore(t *testing.T) {
 	err = secretStore.SaveSecrets(appName, scopes[0])
 	assert.NoError(t, err)
 
+	err = secretStore.LoadSecrets("global", "secret")
+	assert.NoError(t, err)
+
+	err = secretStore.SetSecret("global", "key_global", "value_global", scopes[0])
+	assert.NoError(t, err)
+
+	err = secretStore.SaveSecrets("global", scopes[0])
+	assert.NoError(t, err)
+
 	r := BuildCmdEnv(appName, secretStore, env, scopes)
 
 	assert.Equal(t, map[string]*File{}, r.Files)
 	assert.ElementsMatch(t, []string{
 		"ANYTHING=must_be_kept",
 		"KEY_SECRET=value_secret",
+		"KEY_GLOBAL=value_global",
 	}, r.Vars)
 }
 
