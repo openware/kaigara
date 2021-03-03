@@ -45,7 +45,53 @@ func NewService(addr, token, deploymentID string) *Service {
 		deploymentID: deploymentID,
 	}
 
+	err = s.startRenewToken(token)
+	if err != nil {
+		panic(err)
+	}
+
 	return s
+}
+
+func (vs *Service) startRenewToken(token string) error {
+	secret, err := vs.vault.Auth().Token().Lookup(token)
+	if err != nil {
+		return err
+	}
+
+	var renewable bool
+	if v, ok := secret.Data["renewable"]; ok {
+		renewable, _ = v.(bool)
+	}
+
+	if !renewable {
+		return nil
+	}
+
+	watcher, err := vs.vault.NewLifetimeWatcher(&api.LifetimeWatcherInput{
+		Secret: &api.Secret{
+			Auth: &api.SecretAuth{
+				Renewable:   renewable,
+				ClientToken: token,
+			},
+		},
+	})
+
+	if err != nil {
+		return err
+	}
+
+	go watcher.Start()
+	go func() {
+		for {
+			select {
+			case <-watcher.DoneCh():
+				return
+			case <-watcher.RenewCh():
+			}
+		}
+	}()
+	return nil
 }
 
 func (vs *Service) initTransitKey(appName string) error {
