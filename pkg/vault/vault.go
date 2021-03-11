@@ -275,7 +275,17 @@ func (vs *Service) GetSecrets(appName, scope string) (map[string]interface{}, er
 func (vs *Service) GetSecret(appName, name, scope string) (interface{}, error) {
 	// Since secret scope only supports strings, return a decrypted string
 	if scope == "secret" {
-		str, ok := vs.data[appName][scope].(map[string]interface{})[name].(string)
+		scopeSecrets, ok := vs.data[appName][scope].(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("secretStore.GetSecret: %s scope is not a map", scope)
+		}
+
+		rawValue, ok := scopeSecrets[name]
+		if !ok {
+			return nil, nil
+		}
+
+		str, ok := rawValue.(string)
 		if !ok {
 			return nil, fmt.Errorf("secretStore.GetSecret: %s is not a string", name)
 		}
