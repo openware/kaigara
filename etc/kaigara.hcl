@@ -10,7 +10,7 @@ path "secret/metadata/deployment_id/*" {
 
 # Manage the transit secrets engine
 path "transit/keys/deployment_id_kaigara_*" {
-  capabilities = ["create", "read", "list"]
+  capabilities = ["create", "update", "read", "list"]
 }
 
 # Encrypt secrets data
