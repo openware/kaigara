@@ -1,10 +1,10 @@
 package logstream
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"time"
 
 	"github.com/go-redis/redis/v7"
@@ -33,18 +33,20 @@ func NewRedisClient(url string) *RedisLogStream {
 }
 
 func (r *RedisLogStream) Publish(channel string, stream io.ReadCloser) {
-	scanner := bufio.NewScanner(stream)
-	for scanner.Scan() {
-		fmt.Println(scanner.Text())
+	buf := make([]byte, 64)
+	for {
+		n, err := stream.Read(buf)
+		os.Stdout.Write(buf[:n])
+
 		if r.client != nil {
-			err := r.client.Publish(channel, scanner.Text()).Err()
-			if err != nil {
-				panic(err)
+			e := r.client.Publish(channel, buf).Err()
+			if e != nil {
+				panic(e)
 			}
 		}
-	}
-	if err := scanner.Err(); err != nil {
-		stream.Close()
+		if err == io.EOF {
+			break
+		}
 	}
 }
 

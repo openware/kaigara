@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -50,6 +51,25 @@ func kaigaraRun(ls logstream.LogStream, secretStore types.SecretStore, cmd strin
 			panic(fmt.Sprintf("Failed to write file %s: %s", file.Path, err.Error()))
 		}
 	}
+
+	stdin, err := c.StdinPipe()
+	if err != nil {
+		panic(err)
+	}
+
+	go func() {
+		r := bufio.NewReader(os.Stdin)
+		for {
+			line, isPrefix, err := r.ReadLine()
+			if err != nil {
+				panic(err)
+			}
+			stdin.Write(line)
+			if !isPrefix {
+				stdin.Write([]byte("\n"))
+			}
+		}
+	}()
 
 	stdout, err := c.StdoutPipe()
 	if err != nil {
@@ -130,7 +150,7 @@ func exitWhenSecretsOutdated(c *exec.Cmd, secretStore types.SecretStore, scopes 
 
 func main() {
 	log.SetPrefix("[Kaigara] ")
-	if len(os.Args) < 1 {
+	if len(os.Args) < 2 {
 		panic("Usage: kaigara CMD [ARGS...]")
 	}
 	ls := initLogStream()
