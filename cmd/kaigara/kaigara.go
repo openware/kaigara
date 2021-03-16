@@ -124,8 +124,14 @@ func initLogStream() logstream.LogStream {
 }
 
 func exitWhenSecretsOutdated(c *exec.Cmd, secretStore types.SecretStore, scopes []string) {
+	appNames := []string{cnf.AppName, "global"}
+
+	if ignore, ok := os.LookupEnv("KAIGARA_IGNORE_GLOBAL"); ok && ignore == "true" {
+		appNames = appNames[:len(appNames)-1]
+	}
+
 	for range time.Tick(time.Second * 20) {
-		for _, appName := range []string{cnf.AppName, "global"} {
+		for _, appName := range appNames {
 			for _, scope := range scopes {
 				current, err := secretStore.GetCurrentVersion(appName, scope)
 				if err != nil {
