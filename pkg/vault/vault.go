@@ -354,7 +354,7 @@ func (vs *Service) GetCurrentVersion(appName, scope string) (int64, error) {
 func (vs *Service) GetLatestVersion(appName, scope string) (int64, error) {
 	var versionNumber int64 = -1
 	metadata, err := vs.vault.Logical().Read(vs.metadataPath(appName, scope))
-	if err != nil {
+	if err != nil || metadata == nil {
 		return versionNumber, err
 	}
 
