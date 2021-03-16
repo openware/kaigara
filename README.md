@@ -16,6 +16,9 @@ export KAIGARA_VAULT_ADDR=http://127.0.0.1:8200
 export KAIGARA_VAULT_TOKEN=s.ozytsgX1BcTQaR5Y07SAd2VE
 export KAIGARA_APP_NAME=peatio
 export KAIGARA_DEPLOYMENT_ID=opendax_uat
+# Optional - ignore global secret updates
+export KAIGARA_IGNORE_GLOBAL=true
+
 kagara service_command arguments...
 ```
 
