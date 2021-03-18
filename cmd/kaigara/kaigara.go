@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -57,11 +58,16 @@ func kaigaraRun(ls logstream.LogStream, secretStore types.SecretStore, cmd strin
 		panic(err)
 	}
 
+	// Read STDIN and write it to the command
 	go func() {
 		r := bufio.NewReader(os.Stdin)
 		for {
 			line, isPrefix, err := r.ReadLine()
-			if err != nil {
+			if err == io.EOF {
+				log.Printf("Reached EOF on STDIN")
+				stdin.Close()
+				break
+			} else if err != nil {
 				panic(err)
 			}
 			stdin.Write(line)
