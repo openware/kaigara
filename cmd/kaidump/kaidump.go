@@ -55,6 +55,10 @@ func main() {
 	// Initialize and write to Vault stores for every component
 	initConfig()
 	secretStore := getVaultService("global")
+	err := secretStore.LoadSecrets(*appName, *scope)
+	if err != nil {
+		panic(err)
+	}
 	
 	val, err := secretStore.GetSecret(*appName, *key, *scope)
 	if err != nil {
