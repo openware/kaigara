@@ -76,11 +76,7 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			res, err := yaml.Marshal(&secrets)
-			if err != nil {
-				panic(err)
-			}
-			scopeMap[scope] = res
+			scopeMap[scope] = secrets
 		}
 		appMap[app] = scopeMap
 	}
