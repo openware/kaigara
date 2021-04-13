@@ -9,6 +9,7 @@ import (
 	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/logstream"
 	"github.com/openware/kaigara/pkg/vault"
+
 	"github.com/openware/pkg/ika"
 //	"gopkg.in/yaml.v3"
 )
@@ -66,14 +67,11 @@ func main() {
 	}
 	fmt.Println("Value:", val)
 
-	apps, minues, err := secretStore.ListAppNames()
+	apps, err := secretStore.ListAppNames()
 	if err != nil {
 		panic(err)
 	}
-	for app := range apps {
+	for _, app := range apps {
 		fmt.Println("App name:", app)
-	}
-	for mine := range minues {
-		fmt.Println("Mine name:", mine)
 	}
 }
