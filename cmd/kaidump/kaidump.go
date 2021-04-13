@@ -12,7 +12,7 @@ import (
 
 	"github.com/openware/pkg/ika"
 	"strings" // Needed to use Split
-//	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v3"
 )
 
 var cnf = &config.KaigaraConfig{}
@@ -64,17 +64,29 @@ func main() {
 	if len(scopesList) <= 0 {
 		panic("Wrong KAIGARA_SCOPES")
 	}
+	appMap := make(map[string]interface{})
 	for _, app := range apps {
+		scopeMap := make(map[string]interface{})
 		for _, scope := range scopesList {
 			err := secretStore.LoadSecrets(app, scope)
 			if err != nil {
 				panic(err)
 			}		
-			val, err := secretStore.GetSecrets(app, scope)
+			secrets, err := secretStore.GetSecrets(app, scope)
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println("Value:", val)
+			res, err := yaml.Marshal(&secrets)
+			if err != nil {
+				panic(err)
+			}
+			scopeMap[scope] := res
 		}
+		appMap[app] := scopeMap
 	}
+	res, err := yaml.Marshal(&appMap)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(res)
 }
