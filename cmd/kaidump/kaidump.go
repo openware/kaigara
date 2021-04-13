@@ -80,9 +80,9 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			scopeMap[scope] := res
+			scopeMap[scope] = res
 		}
-		appMap[app] := scopeMap
+		appMap[app] = scopeMap
 	}
 	res, err := yaml.Marshal(&appMap)
 	if err != nil {
