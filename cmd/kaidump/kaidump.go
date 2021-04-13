@@ -11,6 +11,7 @@ import (
 	"github.com/openware/kaigara/pkg/vault"
 
 	"github.com/openware/pkg/ika"
+	"strings" // Needed to use Split
 //	"gopkg.in/yaml.v3"
 )
 
@@ -45,33 +46,35 @@ type SecretsFile struct {
 func main() {
 	// Parse flags
 	filepath := flag.String("a", "outputs.yaml", "Outputs file path to save secrets from vault")
-	appName := flag.String("appname", "global", "App name")
-	scope := flag.String("scope", "public", "Scope name")
-	key := flag.String("key", "global_key0", "Key name")
 	flag.Parse()
 	fmt.Println("Outputs:", *filepath)
-	fmt.Println("Appname:", *appName)
-	fmt.Println("Scope:", *scope)
-	fmt.Println("Key:", *key)
+
 	// Initialize and write to Vault stores for every component
 	initConfig()
 	secretStore := getVaultService("global")
-	err := secretStore.LoadSecrets(*appName, *scope)
-	if err != nil {
-		panic(err)
-	} 
-
-	val, err := secretStore.GetSecret(*appName, *key, *scope)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("Value:", val)
-
 	apps, err := secretStore.ListAppNames()
 	if err != nil {
 		panic(err)
 	}
+	scopes := os.Getenv("KAIGARA_SCOPES")
+	if scopes == nil {
+		panic("Undefined KAIGARA_SCOPES env")
+	}
+	scopesList := strings.Split(scopes, ",")
+	if scopesList == nil || len(scopesList) <= 0 {
+		panic("Wrong KAIGARA_SCOPES")
+	}
 	for _, app := range apps {
-		fmt.Println("App name:", app)
+		for _, scope := range scopesList {
+			err := secretStore.LoadSecrets(app, scope)
+			if err != nil {
+				panic(err)
+			}		
+			val, err := secretStore.GetSecrets(app, scope)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println("Value:", val)
+		}
 	}
 }
