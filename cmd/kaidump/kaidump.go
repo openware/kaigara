@@ -3,14 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
+//	"io/ioutil"
 	"os"
 
 	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/logstream"
 	"github.com/openware/kaigara/pkg/vault"
 	"github.com/openware/pkg/ika"
-	"gopkg.in/yaml.v3"
+//	"gopkg.in/yaml.v3"
 )
 
 var cnf = &config.KaigaraConfig{}
