@@ -57,11 +57,11 @@ func main() {
 		panic(err)
 	}
 	scopes := os.Getenv("KAIGARA_SCOPES")
-	if scopes == nil {
+	if scopes == "" {
 		panic("Undefined KAIGARA_SCOPES env")
 	}
 	scopesList := strings.Split(scopes, ",")
-	if scopesList == nil || len(scopesList) <= 0 {
+	if len(scopesList) <= 0 {
 		panic("Wrong KAIGARA_SCOPES")
 	}
 	for _, app := range apps {
