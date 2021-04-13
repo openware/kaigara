@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-//	"io/ioutil"
+	"io/ioutil"
 	"os"
 
 	"github.com/openware/kaigara/pkg/config"
