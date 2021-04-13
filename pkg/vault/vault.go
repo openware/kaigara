@@ -316,26 +316,26 @@ func (vs *Service) ListSecrets(appName, scope string) ([]string, error) {
 }
 
 // ListAppNames returns a slice containing all app names inside the deploymentID namespace
-func (vs *Service) ListAppNames() ([]string, error) {
+func (vs *Service) ListAppNames() ([]string, []string, error) {
 	secret, err := vs.vault.Logical().List(fmt.Sprintf("secret/metadata/%s", vs.deploymentID))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if secret == nil || secret.Data == nil {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	var res []string
+	var minues []string
 	secretKeys := secret.Data["keys"].([]interface{})
 
 	for _, val := range secretKeys {
-		fmt.Println("app1:", _)
-		fmt.Println("app2:", val)
 		res = append(res, strings.ReplaceAll(val.(string), "/", ""))
+		minues = append(minues, _)
 	}
 
-	return res, nil
+	return res, minues, nil
 }
 
 // GetCurrentVersion returns current data version in cache

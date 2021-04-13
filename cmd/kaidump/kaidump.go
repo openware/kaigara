@@ -66,12 +66,14 @@ func main() {
 	}
 	fmt.Println("Value:", val)
 
-	apps, err := secretStore.ListAppNames()
+	apps, minues, err := secretStore.ListAppNames()
 	if err != nil {
 		panic(err)
 	}
 	for app := range apps {
 		fmt.Println("App name:", app)
 	}
-
+	for mine := range minues {
+		fmt.Println("Mine name:", mine)
+	}
 }
