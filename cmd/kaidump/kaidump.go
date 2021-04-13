@@ -58,11 +58,20 @@ func main() {
 	err := secretStore.LoadSecrets(*appName, *scope)
 	if err != nil {
 		panic(err)
-	}
-	
+	} 
+
 	val, err := secretStore.GetSecret(*appName, *key, *scope)
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("Value:", val)
+
+	apps, err := secretStore.ListAppNames()
+	if err != nil {
+		panic(err)
+	}
+	for app := range apps {
+		fmt.Println("App name:", app)
+	}
+
 }
