@@ -84,3 +84,5 @@ secrets:
       secret:
         key1: value1
 ```
+To dump and outputs the secrets from vault, use `kaidump -a <output.yaml>`
+
