@@ -43,7 +43,7 @@ type SecretsFile struct {
 
 func main() {
 	// Parse flags
-	filepath := flag.String("-a", "outputs.yaml", "Outputs file path to save secrets from vault")
+	filepath := flag.String("a", "outputs.yaml", "Outputs file path to save secrets from vault")
 	flag.Parse()
 	fmt.Println("Outputs:", filepath)
 	// Initialize and write to Vault stores for every component
