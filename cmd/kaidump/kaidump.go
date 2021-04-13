@@ -47,7 +47,6 @@ func main() {
 	// Parse flags
 	filepath := flag.String("a", "outputs.yaml", "Outputs file path to save secrets from vault")
 	flag.Parse()
-	fmt.Println("Outputs:", *filepath)
 
 	// Initialize and write to Vault stores for every component
 	initConfig()
@@ -84,5 +83,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("--- m dump:\n%s\n\n", string(res))
+	fmt.Printf("--- secrets dump:\n%s\n\n", string(res))
+	err = ioutil.WriteFile(*filepath, res, 0644)
+	if err != nil {
+		panic(err)
+	}
+
+	f.Close()
 }
