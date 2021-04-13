@@ -28,21 +28,6 @@ func getVaultService(appName string) *vault.Service {
 	return vault.NewService(cnf.VaultAddr, cnf.VaultToken, cnf.DeploymentID)
 }
 
-func initLogStream() logstream.LogStream {
-	url := os.Getenv("KAIGARA_REDIS_URL")
-	return logstream.NewRedisClient(url)
-}
-
-// App contains a map of scopes(public, private, secret) with secrets to be loaded
-type App struct {
-	Scopes map[string]map[string]interface{} `yaml:"scopes"`
-}
-
-// SecretsFile contains secrets a map of Apps containing secrets to be loaded into the SecretStore
-type SecretsFile struct {
-	Secrets map[string]App `yaml:"secrets"`
-}
-
 func main() {
 	// Parse flags
 	filepath := flag.String("a", "outputs.yaml", "Outputs file path to save secrets from vault")
@@ -88,6 +73,4 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	f.Close()
 }
