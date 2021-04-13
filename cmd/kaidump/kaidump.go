@@ -50,10 +50,7 @@ func main() {
 	initConfig()
 	secretStore := getVaultService("global")
 	apps := secretStore.ListAppNames()
-	for app, scopes := range apps {
+	for app := range apps {
 		fmt.Println("App name:", app)
-		for scope, data := range scopes.Scopes {
-			fmt.Println("Scope name:", scope)
-		}
 	}
 }
