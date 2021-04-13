@@ -44,18 +44,21 @@ type SecretsFile struct {
 func main() {
 	// Parse flags
 	filepath := flag.String("a", "outputs.yaml", "Outputs file path to save secrets from vault")
+	appName := flag.String("appname", "global", "App name")
+	scope := flag.String("scope", "public", "Scope name")
+	key := flag.String("key", "global_key0", "Key name")
 	flag.Parse()
-	fmt.Println("Outputs:", filepath)
+	fmt.Println("Outputs:", *filepath)
+	fmt.Println("Appname:", *appName)
+	fmt.Println("Scope:", *scope)
+	fmt.Println("Key:", *key)
 	// Initialize and write to Vault stores for every component
 	initConfig()
 	secretStore := getVaultService("global")
-	apps, err := secretStore.ListAppNames()
+	
+	val, err := secretStore.GetSecret(appName, k, scope)
 	if err != nil {
 		panic(err)
 	}
-	if apps != nil {
-		for app := range apps {
-			fmt.Println("App name:", app)
-		}
-	}	
+	fmt.Println("Value:", val)
 }
