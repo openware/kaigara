@@ -330,6 +330,8 @@ func (vs *Service) ListAppNames() ([]string, error) {
 	secretKeys := secret.Data["keys"].([]interface{})
 
 	for _, val := range secretKeys {
+		fmt.Println("app1:", _)
+		fmt.Println("app2:", val)
 		res = append(res, strings.ReplaceAll(val.(string), "/", ""))
 	}
 
