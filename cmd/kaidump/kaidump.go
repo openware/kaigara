@@ -56,7 +56,7 @@ func main() {
 	initConfig()
 	secretStore := getVaultService("global")
 	
-	val, err := secretStore.GetSecret(appName, k, scope)
+	val, err := secretStore.GetSecret(*appName, *key, *scope)
 	if err != nil {
 		panic(err)
 	}
