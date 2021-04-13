@@ -88,5 +88,5 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(res)
+	fmt.Printf("--- m dump:\n%s\n\n", string(res))
 }
