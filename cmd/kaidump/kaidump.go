@@ -49,8 +49,13 @@ func main() {
 	// Initialize and write to Vault stores for every component
 	initConfig()
 	secretStore := getVaultService("global")
-	apps := secretStore.ListAppNames()
-	for app := range apps {
-		fmt.Println("App name:", app)
+	apps, err := secretStore.ListAppNames()
+	if err != nil {
+		panic(err)
 	}
+	if apps != nil {
+		for app := range apps {
+			fmt.Println("App name:", app)
+		}
+	}	
 }
