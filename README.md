@@ -104,5 +104,10 @@ secrets:
 ```
 
 ### Dump and output secrets from the SecretStore
+
 To dump and output secrets from vault, use `kaidump -a <output.yaml>`
 
+
+### Delete secret from the SecretStore
+
+To delete secret from vault, use `kaidel -k <key name>`
