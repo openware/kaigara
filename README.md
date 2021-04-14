@@ -61,28 +61,46 @@ Make sure to wrap numeric and boolean values in quotes(e.g. `"4269"`, `"true"`),
 An example import file look similar to:
 ```yaml
 secrets:
-  global:
-    scopes:
-      public:
-        key1: value1
-        key2: [value2, value3]
-        key3:
-          key4: value4
-          time:
-            to: recover
-          awesome: "true"
-      private:
-        key1: value1
-        key2: [value2, value3]
-      secret:
-        key1: value1
-        leet: "1337"
-  peatio:
-    scopes:
-      public: {}
-      private: {}
-      secret:
-        key1: value1
+    global:
+        scopes:
+            private:
+                global_key1: value1
+                global_key2:
+                    - value2
+                    - value3
+                global_key3:
+                    key4: value4
+            public:
+                global_key0: trustworthy
+                global_key1: true
+                global_key2:
+                    - value2
+                    - value3
+                global_key3:
+                    key4: "1337"
+                    time:
+                        to: recover
+                global_key1337: "1337"
+            secret:
+                global_key1: just a string
+    peatio:
+        scopes:
+            private:
+                key1: value1
+                key2:
+                    - value2
+                    - value3
+                key3:
+                    key4: value4
+            public:
+                key1: value1
+                key2:
+                    - value2
+                    - value3
+                key3:
+                    key4: value4
+            secret:
+                key1: value1
 ```
 
 ### Dump and output secrets from the SecretStore
