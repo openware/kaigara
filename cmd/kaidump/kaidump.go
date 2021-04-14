@@ -83,7 +83,7 @@ func main() {
 	}
 
 	// Dump secrets
-	fmt.Printf("--- secrets dump:\n%s\n\n", string(res))
+	fmt.Printf("\n%s\n\n", string(res))
 
 	// Write secrets into filepath
 	err = ioutil.WriteFile(*filepath, res, 0644)
