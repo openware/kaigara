@@ -13,19 +13,22 @@ func TestVaultServiceSetGetSecrets(t *testing.T) {
 	scopes := []string{"private", "public", "secret"}
 	deploymentID := "opendax_uat"
 	appName := "peatio"
-
+	
 	// Initialize Vault SecretStore
 	secretStore := NewService(vaultAddr, vaultToken, deploymentID)
 
 	for _, scope := range scopes {
 		err := secretStore.LoadSecrets(appName, scope)
 		assert.NoError(t, err)
-
-		// Set Secrets in each scope
+		
 		err = secretStore.SetSecret(appName, "key_"+scope, "value_"+scope, scope)
 		assert.NoError(t, err)
 
 		err = secretStore.SaveSecrets(appName, scope)
+		assert.NoError(t, err)
+
+		// Delet Secret in each scope
+		err = secretStore.DeleteSecret(appName, "key_"+scope, scope)
 		assert.NoError(t, err)
 
 		// Get and assert Secrets in each scope
