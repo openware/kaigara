@@ -1,6 +1,7 @@
 package logstream
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -44,8 +45,14 @@ func (r *RedisLogStream) Publish(channel string, stream io.ReadCloser) {
 				panic(e)
 			}
 		}
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) || errors.Is(err, os.ErrClosed){
 			break
+		}
+
+		// Debug block in case of unexpected error is returned
+		if n == 0 {
+			log.Println(fmt.Sprintf("ERR: %v", err))
+			log.Println(fmt.Sprintf("Additional infromation:\n Bytes read: %d\n,Buf: %s", n, buf))
 		}
 	}
 }
