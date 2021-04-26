@@ -368,3 +368,17 @@ func (vs *Service) GetLatestVersion(appName, scope string) (int64, error) {
 	}
 	return versionNumber, nil
 }
+
+// Delete key from Data, Metadata and Vault
+func (vs *Service) DeleteSecret(appName, name, scope string) error {
+	metadata, err := vs.vault.Logical().Delete(vs.keyPath(appName, scope))
+	if err != nil {
+		return err
+	}
+	if metadata != nil {
+		vs.metadata[appName][scope] = metadata.Data
+	}
+	delete(vs.data[appName][scope].(map[string]interface{}), name)
+	err = vs.SaveSecrets(appName, scope)
+	return err
+}
