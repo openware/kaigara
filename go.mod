@@ -10,7 +10,7 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.6.8 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
-	github.com/openware/kaigara/pkg/vault v0.0.0-20210318135639-e3b096c5ab57
+	github.com/openware/kaigara/pkg/vault v0.0.0-20210426162849-04557d766383
 	github.com/openware/pkg/ika v0.0.0-20210204083929-709d949cb0ff
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
 	github.com/stretchr/testify v1.3.0
