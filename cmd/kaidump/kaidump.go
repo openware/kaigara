@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -8,8 +9,9 @@ import (
 	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/vault"
 
-	"github.com/openware/pkg/ika"
 	"strings"
+
+	"github.com/openware/pkg/ika"
 	"gopkg.in/yaml.v3"
 )
 
@@ -46,7 +48,7 @@ func main() {
 	if len(scopesList) <= 0 {
 		panic("Wrong KAIGARA_SCOPES")
 	}
-	
+
 	// Create Secrets map
 	secretsMap := make(map[string]interface{})
 
@@ -55,7 +57,7 @@ func main() {
 
 	// Get the secrets from vault
 	for _, app := range apps {
-		
+
 		scopeMap := make(map[string]interface{})
 		scopeInit := make(map[string]interface{})
 		for _, scope := range scopesList {
@@ -76,17 +78,16 @@ func main() {
 
 	secretsMap["secrets"] = appMap
 
-	// Marshal to yaml from map
-	res, err := yaml.Marshal(&secretsMap)
-	if err != nil {
-		panic(err)
-	}
+	// Encode into YAML
+	var b bytes.Buffer
+	yamlEncoder := yaml.NewEncoder(&b)
+	yamlEncoder.SetIndent(2)
+	yamlEncoder.Encode(&secretsMap)
 
-	// Dump secrets
-	fmt.Printf("\n%s\n\n", string(res))
+	fmt.Printf("Saving the dump into %s\n", *filepath)
 
 	// Write secrets into filepath
-	err = ioutil.WriteFile(*filepath, res, 0644)
+	err = ioutil.WriteFile(*filepath, b.Bytes(), 0644)
 	if err != nil {
 		panic(err)
 	}
