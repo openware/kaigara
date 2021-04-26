@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/sh -e
 
 platforms=("darwin/amd64" "linux/amd64" "windows/amd64")
 
@@ -13,7 +13,7 @@ do
         output_os+='.exe'
     fi
 
-	env GOOS=$GOOS GOARCH=$GOARCH CGO_ENABLED=0 go build -a -ldflags '-w' -o bin/kaisave_$output_os ./cmd/kaisave
+	GOOS=$GOOS GOARCH=$GOARCH CGO_ENABLED=0 go build -a -ldflags '-w' -o bin/kaisave_$output_os ./cmd/kaisave
     if [ $? -ne 0 ]; then
         echo 'An error has occurred! Aborting the script execution...'
         exit 1
