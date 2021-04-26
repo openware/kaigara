@@ -63,24 +63,51 @@ An example import file look similar to:
 secrets:
   global:
     scopes:
-      public:
-        key1: value1
-        key2: [value2, value3]
-        key3:
+      private:
+        global_key1: value1
+        global_key2:
+          - value2
+          - value3
+        global_key3:
           key4: value4
+      public:
+        global_key0: trustworthy
+        global_key1: true
+        global_key2:
+          - value2
+          - value3
+        global_key3:
+          key4: "1337"
           time:
             to: recover
-          awesome: "true"
-      private:
-        key1: value1
-        key2: [value2, value3]
+        global_key1337: "1337"
       secret:
-        key1: value1
-        leet: "1337"
+        global_key1: just a string
   peatio:
-    scopes:
-      public: {}
-      private: {}
-      secret:
-        key1: value1
+      scopes:
+        private:
+          key1: value1
+          key2:
+            - value2
+            - value3
+          key3:
+            key4: value4
+        public:
+          key1: value1
+          key2:
+            - value2
+            - value3
+          key3:
+            key4: value4
+        secret:
+          key1: value1
 ```
+
+### Dump and output secrets from the SecretStore
+
+To dump and output secrets from vault, use `kaidump -a <output.yaml>`
+
+
+### Delete secret from the SecretStore
+
+To delete secret from vault, use `kaidel -k <key name>`
