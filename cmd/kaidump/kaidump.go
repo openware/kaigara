@@ -57,7 +57,6 @@ func main() {
 
 	// Get the secrets from vault
 	for _, app := range apps {
-
 		scopeMap := make(map[string]interface{})
 		scopeInit := make(map[string]interface{})
 		for _, scope := range scopesList {
@@ -84,11 +83,13 @@ func main() {
 	yamlEncoder.SetIndent(2)
 	yamlEncoder.Encode(&secretsMap)
 
-	fmt.Printf("Saving the dump into %s\n", *filepath)
+	fmt.Print(b.String())
 
 	// Write secrets into filepath
 	err = ioutil.WriteFile(*filepath, b.Bytes(), 0644)
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Printf("# Saved the dump into %s\n", *filepath)
 }

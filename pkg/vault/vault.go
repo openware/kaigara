@@ -369,12 +369,8 @@ func (vs *Service) GetLatestVersion(appName, scope string) (int64, error) {
 	return versionNumber, nil
 }
 
-// Delete key from Data, Metadata and vault
+// Delete key from Data, Metadata and Vault
 func (vs *Service) DeleteSecret(appName, name, scope string) error {
-	if vs.deploymentID == "" {
-		return fmt.Errorf("Deployment ID is not set, please set deploymentID")
-	}
-
 	metadata, err := vs.vault.Logical().Delete(vs.keyPath(appName, scope))
 	if err != nil {
 		return err

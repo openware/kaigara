@@ -9,6 +9,7 @@ type SecretStore interface {
 	GetSecret(appName, name, scope string) (interface{}, error)
 	GetSecrets(appName, scope string) (map[string]interface{}, error)
 	ListSecrets(appName, scope string) ([]string, error)
+	DeleteSecret(appName, name, scope string) error
 	ListAppNames() ([]string, error)
 	GetCurrentVersion(appName, scope string) (int64, error)
 	GetLatestVersion(appName, scope string) (int64, error)
