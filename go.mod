@@ -1,7 +1,7 @@
 module github.com/openware/kaigara
 
 go 1.14
-replace github.com/openware/kaigara/pkg/vault => ./pkg/vault
+
 require (
 	github.com/frankban/quicktest v1.11.3 // indirect
 	github.com/go-redis/redis/v7 v7.2.0
