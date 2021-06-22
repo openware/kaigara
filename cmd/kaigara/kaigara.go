@@ -37,11 +37,19 @@ func parseScopes() []string {
 	return strings.Split(cnf.Scopes, ",")
 }
 
+func parseAppNames() []string {
+	return strings.Split(cnf.AppNames, ",")
+}
+
+func appNamesToLoggingName() string {
+	return strings.Join(parseAppNames(), "&")
+}
+
 func kaigaraRun(ls logstream.LogStream, secretStore types.SecretStore, cmd string, cmdArgs []string) {
 	log.Printf("Starting command: %s %v", cmd, cmdArgs)
 	scopes := parseScopes()
 	c := exec.Command(cmd, cmdArgs...)
-	env := config.BuildCmdEnv(cnf.AppName, secretStore, os.Environ(), scopes)
+	env := config.BuildCmdEnv(parseAppNames(), secretStore, os.Environ(), scopes)
 
 	c.Env = env.Vars
 
@@ -87,8 +95,8 @@ func kaigaraRun(ls logstream.LogStream, secretStore types.SecretStore, cmd strin
 		log.Fatal(err)
 	}
 
-	channelOut := fmt.Sprintf("log.%s.%s", cnf.AppName, "stdout")
-	channelErr := fmt.Sprintf("log.%s.%s", cnf.AppName, "stderr")
+	channelOut := fmt.Sprintf("log.%s.%s", appNamesToLoggingName(), "stdout")
+	channelErr := fmt.Sprintf("log.%s.%s", appNamesToLoggingName(), "stderr")
 	log.Printf("Publishing on %s and %s\n", channelOut, channelErr)
 
 	var wg sync.WaitGroup
@@ -111,7 +119,7 @@ func kaigaraRun(ls logstream.LogStream, secretStore types.SecretStore, cmd strin
 
 	quit := make(chan int)
 	go func() {
-		ls.HeartBeat(cnf.AppName, quit)
+		ls.HeartBeat(appNamesToLoggingName(), quit)
 		wg.Done()
 	}()
 
@@ -130,7 +138,7 @@ func initLogStream() logstream.LogStream {
 }
 
 func exitWhenSecretsOutdated(c *exec.Cmd, secretStore types.SecretStore, scopes []string) {
-	appNames := []string{cnf.AppName, "global"}
+	appNames := append(parseAppNames(), "global")
 
 	if ignore, ok := os.LookupEnv("KAIGARA_IGNORE_GLOBAL"); ok && ignore == "true" {
 		appNames = appNames[:len(appNames)-1]
