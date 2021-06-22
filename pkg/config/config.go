@@ -15,7 +15,7 @@ type KaigaraConfig struct {
 	SecretStore  string `yaml:"secret-store" env:"KAIGARA_SECRET_STORE" env-default:"vault"`
 	VaultToken   string `yaml:"vault-token" env:"KAIGARA_VAULT_TOKEN"`
 	VaultAddr    string `yaml:"vault-addr" env:"KAIGARA_VAULT_ADDR" env-default:"http://127.0.0.1:8200"`
-	AppName      string `yaml:"vault-app-name" env:"KAIGARA_APP_NAME"`
+	AppNames     string `yaml:"vault-app-name" env:"KAIGARA_APP_NAME"`
 	DeploymentID string `yaml:"deployment-id" env:"KAIGARA_DEPLOYMENT_ID"`
 	Scopes       string `yaml:"scopes" env:"KAIGARA_SCOPES" env-default:"public"`
 }
@@ -40,7 +40,7 @@ type File struct {
 var kfile = regexp.MustCompile("(?i)^KFILE_(.*)_(PATH|CONTENT)$")
 
 // BuildCmdEnv reads secrets from all secretStores and scopes passed to it and loads them into an Env and returns a *Env
-func BuildCmdEnv(appName string, secretStore types.SecretStore, currentEnv, scopes []string) *Env {
+func BuildCmdEnv(appNames []string, secretStore types.SecretStore, currentEnv, scopes []string) *Env {
 	env := &Env{
 		Vars:  []string{},
 		Files: map[string]*File{},
@@ -52,7 +52,7 @@ func BuildCmdEnv(appName string, secretStore types.SecretStore, currentEnv, scop
 		}
 	}
 
-	for _, appName = range []string{"global", appName} {
+	for _, appName := range append([]string{"global"}, appNames...) {
 		for _, scope := range scopes {
 			err := secretStore.LoadSecrets(appName, scope)
 			if err != nil {
