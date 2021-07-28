@@ -149,12 +149,12 @@ func exitWhenSecretsOutdated(c *exec.Cmd, secretStore types.SecretStore, scopes 
 			for _, scope := range scopes {
 				current, err := secretStore.GetCurrentVersion(appName, scope)
 				if err != nil {
-					log.Fatal(err)
+					log.Println(err.Error())
 					break
 				}
 				latest, err := secretStore.GetLatestVersion(appName, scope)
 				if err != nil {
-					log.Fatal(err)
+					log.Println(err.Error())
 					break
 				}
 				if current != latest {
