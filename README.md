@@ -50,6 +50,15 @@ To **delete** existing secrets for a given app name and scope, run:
 vault delete secret/data/$KAIGARA_DEPLOYMENT_ID/$KAIGARA_APP_NAME/*scope*
 ```
 
+To delete all versions and metadata for the provided key for a given app name and scope, run:
+```sh
+vault kv metadata delete secret/$KAIGARA_DEPLOYMENT_ID/$KAIGARA_APP_NAME/*scope*
+```
+This command don't remove the underlying version data from storage, it will mark the version as deleted which allows the version to be undeleted - `vault kv undelete`, while next command will make version data permanently deleted:
+```sh
+vault kv metadata destroy secret/$KAIGARA_DEPLOYMENT_ID/$KAIGARA_APP_NAME/*scope*
+```
+
 ### Bulk writing secrets to the SecretStore
 
 To write secrets from the command line, save in a YAML file with a format similar to `secrets.yaml` and use `kaisave -f *filepath*`
