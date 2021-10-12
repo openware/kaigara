@@ -11,6 +11,7 @@ import (
 	"path"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/openware/kaigara/pkg/config"
@@ -45,7 +46,7 @@ func appNamesToLoggingName() string {
 	return strings.Join(parseAppNames(), "&")
 }
 
-func kaigaraRun(ls logstream.LogStream, secretStore types.SecretStore, cmd string, cmdArgs []string) {
+func buildProcess(secretStore types.SecretStore, cmd string, cmdArgs []string) *exec.Cmd {
 	log.Printf("Starting command: %s %v", cmd, cmdArgs)
 	scopes := parseScopes()
 	c := exec.Command(cmd, cmdArgs...)
@@ -85,6 +86,10 @@ func kaigaraRun(ls logstream.LogStream, secretStore types.SecretStore, cmd strin
 		}
 	}()
 
+	return c
+}
+
+func publishProcess(c *exec.Cmd, ls logstream.LogStream, wg *sync.WaitGroup) {
 	stdout, err := c.StdoutPipe()
 	if err != nil {
 		log.Fatal(err)
@@ -99,37 +104,55 @@ func kaigaraRun(ls logstream.LogStream, secretStore types.SecretStore, cmd strin
 	channelErr := fmt.Sprintf("log.%s.%s", appNamesToLoggingName(), "stderr")
 	log.Printf("Publishing on %s and %s\n", channelOut, channelErr)
 
-	var wg sync.WaitGroup
-	wg.Add(3)
 	go func() {
+		wg.Add(1)
+		defer wg.Done()
 		ls.Publish(channelOut, stdout)
-		wg.Done()
 	}()
 
 	go func() {
+		wg.Add(1)
+		defer wg.Done()
 		ls.Publish(channelErr, stderr)
-		wg.Done()
 	}()
+}
 
-	if err := c.Start(); err != nil {
-		log.Fatal(err)
+func kaigaraRun(ls logstream.LogStream, secretStore types.SecretStore, cmd string, cmdArgs []string) {
+	for {
+		c := buildProcess(secretStore, cmd, cmdArgs)
+
+		wg := &sync.WaitGroup{}
+		publishProcess(c, ls, wg)
+
+		if err := c.Start(); err != nil {
+			log.Fatal(err)
+		}
+
+		scopes := parseScopes()
+		restart := make(chan int, 1)
+		go exitWhenSecretsOutdated(c, secretStore, scopes, restart)
+
+		quit := make(chan int)
+		go func() {
+			wg.Add(1)
+			defer wg.Done()
+			ls.HeartBeat(appNamesToLoggingName(), quit)
+		}()
+
+		if err := c.Wait(); err != nil {
+			log.Fatal(err)
+		}
+		quit <- 0
+		wg.Wait()
+
+		select {
+		case <-restart:
+			continue
+		default:
+			log.Println("Process exited code 0")
+			return
+		}
 	}
-
-	go exitWhenSecretsOutdated(c, secretStore, scopes)
-
-	quit := make(chan int)
-	go func() {
-		ls.HeartBeat(appNamesToLoggingName(), quit)
-		wg.Done()
-	}()
-
-	if err := c.Wait(); err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("exit status 0\n")
-	quit <- 0
-
-	wg.Wait()
 }
 
 func initLogStream() logstream.LogStream {
@@ -137,7 +160,7 @@ func initLogStream() logstream.LogStream {
 	return logstream.NewRedisClient(url)
 }
 
-func exitWhenSecretsOutdated(c *exec.Cmd, secretStore types.SecretStore, scopes []string) {
+func exitWhenSecretsOutdated(c *exec.Cmd, secretStore types.SecretStore, scopes []string, restart chan int) {
 	appNames := append(parseAppNames(), "global")
 
 	if ignore, ok := os.LookupEnv("KAIGARA_IGNORE_GLOBAL"); ok && ignore == "true" {
@@ -158,10 +181,12 @@ func exitWhenSecretsOutdated(c *exec.Cmd, secretStore types.SecretStore, scopes 
 					break
 				}
 				if current != latest {
-					log.Printf("Found secrets updated on '%v' scope. from: v%v, to: v%v. killing process...\n", scope, current, latest)
-					if err := c.Process.Kill(); err != nil {
-						log.Fatal("Failed to kill process", err)
+					log.Printf("Found secrets updated on '%v' scope. from: v%v, to: v%v. restarting process...\n", scope, current, latest)
+					restart <- 0
+					if err := c.Process.Signal(syscall.SIGINT); err != nil {
+						log.Fatal("Failed to send interrupt signal to process", err)
 					}
+					return
 				}
 			}
 		}
