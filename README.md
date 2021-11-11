@@ -16,8 +16,12 @@ export KAIGARA_VAULT_ADDR=http://127.0.0.1:8200
 export KAIGARA_VAULT_TOKEN=s.ozytsgX1BcTQaR5Y07SAd2VE
 export KAIGARA_APP_NAME=peatio
 export KAIGARA_DEPLOYMENT_ID=opendax_uat
+
 # Optional - ignore global secret updates
 export KAIGARA_IGNORE_GLOBAL=true
+
+# Optional - defines which scopes kaigara will look for. Has to be set to use kaidump
+export KAIGARA_SCOPES=private,secret
 
 kagara service_command arguments...
 ```
@@ -107,6 +111,7 @@ secrets:
 
 To dump and output secrets from vault, use `kaidump -a <output.yaml>`
 
+Make sure you've set `KAIGARA_SCOPES` env before using `kaidump`
 
 ### Delete secret from the SecretStore
 
