@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/vault/api"
+	"github.com/iancoleman/strcase"
 )
 
 // Service contains scoped secret data, Vault client and configuration
@@ -334,6 +335,38 @@ func (vs *Service) ListAppNames() ([]string, error) {
 	}
 
 	return res, nil
+}
+
+func (vs *Service) PushPolicies(policies map[string]string) error {
+	err := vs.LoadSecrets("tokens", "secret")
+	if err != nil {
+		return err
+	}
+
+	for component, rules := range policies {
+		name := fmt.Sprintf("%s_%s", vs.deploymentID, component)
+		fmt.Println("Loading policy", name)
+		vs.vault.Sys().PutPolicy(name, rules)
+
+		fmt.Println("Creating token", name)
+		t := true
+		token, err := vs.vault.Auth().Token().Create(&api.TokenCreateRequest{
+			Policies:  []string{name},
+			Renewable: &t,
+			TTL:       "240h",
+			Period:    "240h",
+		})
+		if err != nil {
+			return err
+		}
+
+		keyName := strcase.ToLowerCamel(component + "_vault_token")
+		err = vs.SetSecret("tokens", keyName, token.Auth.ClientToken, "secret")
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // GetCurrentVersion returns current data version in cache
