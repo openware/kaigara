@@ -199,7 +199,7 @@ func (vs *Service) LoadSecrets(appName, scope string) error {
 		vs.metadata[appName] = make(map[string]interface{})
 	}
 
-	if secret == nil || secret.Data == nil || secret.Data["data"] == nil {
+	if secret == nil || secret.Data == nil || secret.Data["data"] == nil || secret.Data["metadata"] == nil {
 		vs.data[appName][scope] = make(map[string]interface{})
 		vs.metadata[appName][scope] = make(map[string]interface{})
 	} else {
