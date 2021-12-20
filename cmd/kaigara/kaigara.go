@@ -140,17 +140,14 @@ func kaigaraRun(ls logstream.LogStream, secretStore types.SecretStore, cmd strin
 		}()
 
 		if err := c.Wait(); err != nil {
-			log.Fatal(err)
-		}
-		quit <- 0
-		wg.Wait()
-
-		select {
-		case <-restart:
-			continue
-		default:
-			log.Println("Process exited code 0")
-			return
+			select {
+			case <-restart:
+				quit <- 0
+				wg.Wait()
+				continue
+			default:
+				log.Fatal(err)
+			}
 		}
 	}
 }
@@ -184,7 +181,7 @@ func exitWhenSecretsOutdated(c *exec.Cmd, secretStore types.SecretStore, scopes 
 					log.Printf("Found secrets updated on '%v' scope. from: v%v, to: v%v. restarting process...\n", scope, current, latest)
 					restart <- 0
 					if err := c.Process.Signal(syscall.SIGINT); err != nil {
-						log.Fatal("Failed to send interrupt signal to process", err)
+						log.Fatalf("Failed to send interrupt signal to process: %s", err)
 					}
 					return
 				}
