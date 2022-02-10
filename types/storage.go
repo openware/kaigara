@@ -2,15 +2,22 @@ package types
 
 // Storage is used to store data
 type Storage interface {
-	LoadSecrets(appName, scope string) error
-	SaveSecrets(appName, scope string) error
-	SetSecret(appName, name string, value interface{}, scope string) error
-	SetSecrets(appName string, data map[string]interface{}, scope string) error
-	GetSecret(appName, name, scope string) (interface{}, error)
-	GetSecrets(appName, scope string) (map[string]interface{}, error)
-	ListSecrets(appName, scope string) ([]string, error)
-	DeleteSecret(appName, name, scope string) error
+	// Low level functions to retrieve or store all configuration entries
+	Read(appName, scope string) error
+	Write(appName, scope string) error
+
+	// In memory actions		
+	SetEntry(appName, name string, value interface{}, scope string) error
+	SetEntries(appName string, data map[string]interface{}, scope string) error
+	GetEntry(appName, name, scope string) (interface{}, error)
+	GetEntries(appName, scope string) (map[string]interface{}, error)
+	ListEntries(appName, scope string) ([]string, error)
+	DeleteEntry(appName, name, scope string) error
 	ListAppNames() ([]string, error)
+
+	// Get current version in memory
 	GetCurrentVersion(appName, scope string) (int64, error)
+
+	// Get latest version from the storage
 	GetLatestVersion(appName, scope string) (int64, error)
 }
