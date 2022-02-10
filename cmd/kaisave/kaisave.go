@@ -6,10 +6,15 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/openware/kaigara/pkg/aes"
 	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/logstream"
+	"github.com/openware/kaigara/pkg/plaintext"
+	"github.com/openware/kaigara/pkg/transit"
 	"github.com/openware/kaigara/pkg/vault"
+	"github.com/openware/kaigara/types"
 	"github.com/openware/pkg/ika"
+	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 )
 
@@ -63,6 +68,24 @@ func main() {
 
 	// Initialize and write to Vault stores for every component
 	initConfig()
+
+	var safe types.Encryptor
+
+	if cnf.EncryptMethod == "transit" {
+		log.Warn("Starting vault transit secret engine encryption!")
+		safe = transit.NewVaultEncryptor(cnf.VaultAddr, cnf.VaultToken, cnf.AppNames)
+	} else if cnf.EncryptMethod == "aes" {
+		log.Warn("Starting in-memory encryption!")
+		// change key insertion
+		safe, err = aes.NewAESEncryptor([]byte(cnf.AesKey))
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		log.Warn("Starting plaintext encryption. KAIGARA_ENCRYPTION_METHOD is missing")
+		safe = plaintext.NewPlaintextEncryptor([]byte(""))
+	}
+
 	secretStore := getVaultService("global")
 
 	for app, scopes := range secrets.Secrets {

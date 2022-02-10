@@ -9,6 +9,7 @@ require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.6.8 // indirect
+	github.com/hashicorp/vault/api v1.0.5-0.20201001211907-38d91b749c77 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/openware/kaigara/pkg/vault v0.0.0-20210426162849-04557d766383
 	github.com/openware/pkg/ika v0.0.0-20210204083929-709d949cb0ff
