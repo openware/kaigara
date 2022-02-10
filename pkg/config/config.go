@@ -7,20 +7,25 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/openware/kaigara/pkg/aes"
+	"github.com/openware/kaigara/pkg/plaintext"
 	"github.com/openware/kaigara/pkg/storage/sql"
-	"github.com/openware/kaigara/pkg/storage/vault"
+	"github.com/openware/kaigara/pkg/transit"
+	"github.com/openware/kaigara/pkg/vault"
 	"github.com/openware/kaigara/types"
 	"github.com/openware/pkg/database"
 )
 
 // KaigaraConfig contains cli options
 type KaigaraConfig struct {
-	SecretStore  string `yaml:"secret-store" env:"KAIGARA_SECRET_STORE" env-default:"vault"`
-	VaultToken   string `yaml:"vault-token" env:"KAIGARA_VAULT_TOKEN"`
-	VaultAddr    string `yaml:"vault-addr" env:"KAIGARA_VAULT_ADDR" env-default:"http://127.0.0.1:8200"`
-	AppNames     string `yaml:"vault-app-name" env:"KAIGARA_APP_NAME"`
-	DeploymentID string `yaml:"deployment-id" env:"KAIGARA_DEPLOYMENT_ID"`
-	Scopes       string `yaml:"scopes" env:"KAIGARA_SCOPES" env-default:"public,private,secret"`
+	SecretStore   string `yaml:"secret-store" env:"KAIGARA_SECRET_STORE" env-default:"vault"`
+	VaultToken    string `yaml:"vault-token" env:"KAIGARA_VAULT_TOKEN"`
+	VaultAddr     string `yaml:"vault-addr" env:"KAIGARA_VAULT_ADDR" env-default:"http://127.0.0.1:8200"`
+	AppNames      string `yaml:"vault-app-name" env:"KAIGARA_APP_NAME"`
+	DeploymentID  string `yaml:"deployment-id" env:"KAIGARA_DEPLOYMENT_ID"`
+	Scopes        string `yaml:"scopes" env:"KAIGARA_SCOPES" env-default:"public,private,secret"`
+	EncryptMethod string `yaml:"encryption-method" env:"KAIGARA_ENCRYPTION_METHOD" env-default:"transit"`
+	AesKey        string `yaml:"aes-key" env:"KAIGARA_AES_KEY"`
 }
 
 // Config is the interface definition of generic config storage
@@ -43,11 +48,47 @@ type File struct {
 var kfile = regexp.MustCompile("(?i)^KFILE_(.*)_(PATH|CONTENT)$")
 
 func GetStorageService(cnf *KaigaraConfig, db *database.Config) types.Storage {
+	var encryptor types.Encryptor
+	var transits map[string]types.Encryptor
+	var err error
+
+	apps := strings.Split(cnf.AppNames, ",")
+	apps = append(apps, []string{"global", "tokens"}...)
+
+	if cnf.EncryptMethod == "transit" {
+		log.Println("WARN: Starting vault transit secret engine encryption!")
+
+		transits = make(map[string]types.Encryptor)
+		for _, app := range apps {
+			transits[app] = transit.NewVaultEncryptor(cnf.VaultAddr, cnf.VaultToken, app)
+		}
+	} else if cnf.EncryptMethod == "aes" {
+		log.Println("WARN: Starting in-memory encryption!")
+		// change key insertion
+		encryptor, err = aes.NewAESEncryptor([]byte(cnf.AesKey))
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		log.Println("WARN: Starting plaintext encryption. KAIGARA_ENCRYPTION_METHOD is missing")
+		encryptor = plaintext.NewPlaintextEncryptor([]byte(""))
+	}
+
 	ss := cnf.SecretStore
 	if ss == "vault" {
 		return vault.NewService(cnf.VaultAddr, cnf.VaultToken, cnf.DeploymentID)
 	} else if ss == "sql" {
-		svc, err := sql.NewStorageService(cnf.DeploymentID, db)
+		var encryptors map[string]types.Encryptor
+
+		if transits == nil {
+			encryptors = make(map[string]types.Encryptor)
+			for _, app := range apps {
+				encryptors[app] = encryptor
+			}
+		} else {
+			encryptors = transits
+		}
+		svc, err := sql.NewStorageService(cnf.DeploymentID, db, encryptors)
 		if err != nil {
 			panic(err)
 		}

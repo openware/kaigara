@@ -19,6 +19,14 @@ services:
     environment:
       MYSQL_DATABASE: "kaigara_dev"
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+  - name: postgres
+    image: postgres:13.3-alpine
+    ports:
+      - 5432
+    environment:
+      POSTGRES_DB: kaigara_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: changeme
 
 steps:
   - name: Enable Vault Transit
@@ -30,12 +38,18 @@ steps:
       - vault secrets enable transit
 
   - name: Go test
-    image: golang:1.14
+    image: golang:1.16
     environment:
       GO111MODULE: "on"
       KAIGARA_VAULT_ADDR: "http://vault:8200"
       KAIGARA_VAULT_TOKEN: "root-token"
+      KAIGARA_APP_NAME: finex,frontdex,gotrue,postgrest,realtime,storage
+      KAIGARA_DEPLOYMENT_ID: opendax_uat
+      KAIGARA_SCOPES: public,private,secret
+      KAIGARA_ENCRYPTION_METHOD: transit
+      KAIGARA_AES_KEY: changeme
       DATABASE_HOST: "mysql"
+      DATABASE_PORT: 3306
       DATABASE_POOL: 1
     commands:
       - go mod download
@@ -68,7 +82,7 @@ trigger:
 
 steps:
   - name: Build and publish
-    image: golang:1.14
+    image: golang:1.16
     environment:
       GO111MODULE: on
       GITHUB_API_KEY:

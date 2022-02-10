@@ -185,11 +185,11 @@ func getStorage(driver string, cfg *config.KaigaraConfig, db *database.Config) t
 
 func TestMain(m *testing.M) {
 	deploymentID = "opendax_uat"
-	appNames = []string{"finex", "gotrue", "postgrest", "realtime", "storage"}
+	appNames = []string{"finex", "frontdex", "gotrue", "postgrest", "realtime", "storage"}
 	sqlConfig = &database.Config{
 		Driver: "mysql",
-		Host:   "0.0.0.0",
-		Port:   "3306",
+		Host:   os.Getenv("DATABASE_HOST"),
+		Port:   os.Getenv("DATABASE_PORT"),
 		Name:   "kaigara_dev",
 		User:   "root",
 		Pass:   "",
@@ -210,7 +210,7 @@ func TestKaidumpListAppNames(t *testing.T) {
 		VaultToken:   os.Getenv("KAIGARA_VAULT_TOKEN"),
 		DeploymentID: deploymentID,
 		Scopes:       "private,secret",
-		AppNames:     "finex,gotrue,postgrest,realtime,storage",
+		AppNames:     "finex,frontdex,gotrue,postgrest,realtime,storage",
 	}
 
 	cnf = cfg

@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/openware/kaigara/pkg/storage/vault"
+	"github.com/openware/kaigara/pkg/vault"
 	"github.com/openware/kaigara/types"
 	"github.com/stretchr/testify/assert"
 )
