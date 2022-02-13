@@ -6,13 +6,13 @@ type Storage interface {
 	Read(appName, scope string) error
 	Write(appName, scope string) error
 
-	// In memory actions		
-	SetEntry(appName, name string, value interface{}, scope string) error
-	SetEntries(appName string, data map[string]interface{}, scope string) error
-	GetEntry(appName, name, scope string) (interface{}, error)
+	// In memory actions
+	SetEntry(appName, scope, name string, value interface{}) error
+	SetEntries(appName, scope string, data map[string]interface{}) error
+	GetEntry(appName, scope, name string) (interface{}, error)
 	GetEntries(appName, scope string) (map[string]interface{}, error)
 	ListEntries(appName, scope string) ([]string, error)
-	DeleteEntry(appName, name, scope string) error
+	DeleteEntry(appName, scope, name string) error
 	ListAppNames() ([]string, error)
 
 	// Get current version in memory
