@@ -14,3 +14,11 @@ services:
       VAULT_TOKEN: changeme
       VAULT_DEV_ROOT_TOKEN_ID: changeme
       VAULT_ADDR: http://vault:8200
+
+  mysql:
+    image: mysql:8
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: "kaigara_dev"
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
