@@ -19,5 +19,7 @@ require (
 	golang.org/x/text v0.3.5 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+	gorm.io/driver/mysql v1.2.3
+	gorm.io/gorm v1.22.5
 	gotest.tools v2.2.0+incompatible
 )
