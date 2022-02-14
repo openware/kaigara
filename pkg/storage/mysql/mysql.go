@@ -24,7 +24,7 @@ type Data struct {
 	AppName string
 	Scope   string
 	Value   datatypes.JSON
-	Version uint
+	Version int64
 }
 
 func NewStorageService(dsn, deploymentID string) (*StorageService, error) {
@@ -61,6 +61,7 @@ func (ss *StorageService) Read(appName, scope string) error {
 	}
 
 	val := make(map[string]interface{})
+	val["version"] = 0
 
 	isNotFound := errors.Is(res.Error, gorm.ErrRecordNotFound)
 	if res.Error != nil && !isNotFound {
@@ -71,6 +72,8 @@ func (ss *StorageService) Read(appName, scope string) error {
 		if err != nil {
 			return fmt.Errorf("JSON unmarshalling failed: %s", err)
 		}
+
+		val["version"] = data.Version
 	}
 
 	ss.ds[appName][scope] = val
@@ -86,10 +89,16 @@ func (ss *StorageService) Write(appName, scope string) error {
 		return err
 	}
 
+	ver, ok := ss.ds[appName][scope]["version"].(int64)
+	if !ok {
+		return fmt.Errorf("failed to get %s.%s.version: type assertion to int64 failed, actual value: %v", appName, scope, ver)
+	}
+
 	fresh := &Data{
 		AppName: appName,
 		Scope:   scope,
 		Value:   v,
+		Version: ver,
 	}
 
 	var old Data
@@ -130,9 +139,7 @@ func (ss *StorageService) ListEntries(appName, scope string) ([]string, error) {
 }
 
 func (ss *StorageService) SetEntry(appName, scope, name string, value interface{}) error {
-	fmt.Printf("SetEntry: before: scope %+v\n", ss.ds[appName][scope])
 	ss.ds[appName][scope][name] = value
-	fmt.Printf("SetEntry: before: scope %+v\n", ss.ds[appName][scope])
 	return nil
 }
 
@@ -144,7 +151,6 @@ func (ss *StorageService) SetEntries(appName string, scope string, values map[st
 }
 
 func (ss *StorageService) GetEntry(appName, scope, name string) (interface{}, error) {
-	fmt.Printf("GetEntry: before: scope %+v\n", ss.ds[appName][scope])
 	if ss.ds[appName][scope] == nil {
 		return nil, fmt.Errorf("failed to get %s.%s.%s: scope is not loaded", appName, scope, name)
 	}
@@ -165,8 +171,39 @@ func (ss *StorageService) GetEntries(appName string, scope string) (map[string]i
 }
 
 func (ss *StorageService) DeleteEntry(appName, scope, name string) error {
-	fmt.Printf("Deleting %s.%s.%s\n", appName, scope, name)
 	delete(ss.ds[appName][scope], name)
 
 	return nil
+}
+
+func (ss *StorageService) GetCurrentVersion(appName, scope string) (int64, error) {
+	if ss.ds[appName][scope] == nil {
+		return 0, fmt.Errorf("failed to get %s.%s.version: scope is not loaded", appName, scope)
+	}
+
+	res, ok := ss.ds[appName][scope]["version"].(int64)
+	if !ok {
+		return 0, fmt.Errorf("failed to get %s.%s.version: type assertion to int64 failed, actual value: %v", appName, scope, res)
+	}
+
+	return res, nil
+}
+
+func (ss *StorageService) GetLatestVersion(appName, scope string) (int64, error) {
+	var data Data
+	req := ss.db.Where("app_name = ? AND scope = ?", appName, scope).First(&data)
+
+	isNotFound := errors.Is(req.Error, gorm.ErrRecordNotFound)
+
+	if req.Error != nil && !isNotFound {
+		return 0, fmt.Errorf("failed to check for an existing value in the DB: %s", req.Error)
+	} else if isNotFound {
+		if ver, err := ss.GetCurrentVersion(appName, scope); err == nil {
+			return ver, nil
+		} else {
+			return 0, nil
+		}
+	} else {
+		return data.Version, nil
+	}
 }
