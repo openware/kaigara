@@ -26,7 +26,7 @@ func NewAESEncryptor(key []byte) (*AESEncryptor, error) {
 }
 
 // Encrypt the plaintext argument and return a ciphertext string or an error
-func (ae *AESEncryptor) Encrypt(plaintext string) (string, error) {
+func (ae *AESEncryptor) Encrypt(plaintext, appName string) (string, error) {
 	cipherBlock, err := aes.NewCipher(ae.key)
 	if err != nil {
 		return "", err
@@ -46,7 +46,7 @@ func (ae *AESEncryptor) Encrypt(plaintext string) (string, error) {
 }
 
 // Decrypt the given ciphertext and return the plaintext or an error
-func (ae *AESEncryptor) Decrypt(ciphertext string) (string, error) {
+func (ae *AESEncryptor) Decrypt(ciphertext, appName string) (string, error) {
 	encryptData, err := base64.URLEncoding.DecodeString(ciphertext)
 	if err != nil {
 		return "", err

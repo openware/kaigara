@@ -4,11 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"os"
 
 	"github.com/openware/kaigara/pkg/config"
-	"github.com/openware/kaigara/pkg/logstream"
-	"github.com/openware/kaigara/pkg/vault"
+	"github.com/openware/pkg/database"
 	"github.com/openware/pkg/ika"
 	"gopkg.in/yaml.v3"
 )
@@ -20,15 +18,15 @@ func initConfig() {
 	if err != nil {
 		panic(err)
 	}
-}
 
-func getVaultService(appName string) *vault.Service {
-	return vault.NewService(cnf.VaultAddr, cnf.VaultToken, cnf.DeploymentID)
-}
-
-func initLogStream() logstream.LogStream {
-	url := os.Getenv("KAIGARA_REDIS_URL")
-	return logstream.NewRedisClient(url)
+	if cnf.DBConfig == nil {
+		db := &database.Config{}
+		err = ika.ReadConfig("", db)
+		if err != nil {
+			panic(err)
+		}
+		cnf.DBConfig = db
+	}
 }
 
 // App contains a map of scopes(public, private, secret) with secrets to be loaded
@@ -63,11 +61,14 @@ func main() {
 
 	// Initialize and write to Vault stores for every component
 	initConfig()
-	secretStore := getVaultService("global")
+	secretStore, err := config.GetStorageService(cnf)
+	if err != nil {
+		panic(err)
+	}
 
 	for app, scopes := range secrets.Secrets {
 		for scope, data := range scopes.Scopes {
-			err := secretStore.LoadSecrets(app, scope)
+			err := secretStore.Read(app, scope)
 			if err != nil {
 				panic(err)
 			}
@@ -75,13 +76,13 @@ func main() {
 			for k, v := range data {
 				fmt.Println("Setting", k)
 
-				err := secretStore.SetSecret(app, k, v, scope)
+				err := secretStore.SetEntry(app, scope, k, v)
 				if err != nil {
 					panic(err)
 				}
 			}
 
-			err = secretStore.SaveSecrets(app, scope)
+			err = secretStore.Write(app, scope)
 			if err != nil {
 				panic(err)
 			}
