@@ -1,0 +1,21 @@
+mysql:
+  name: mysql
+  database:
+    driver: mysql
+    host: "0.0.0.0"
+    port: 3306
+    name: kaigara_dev
+    user: root
+    pass: ""
+    pool: 1
+
+postgres:
+  name: postgres
+  database:
+    driver: postgres
+    host: "0.0.0.0"
+    port: 5432
+    name: kaigara_dev
+    user: postgres
+    pass: changeme
+    pool: 1

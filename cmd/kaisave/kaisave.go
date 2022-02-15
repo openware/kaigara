@@ -8,22 +8,24 @@ import (
 
 	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/logstream"
-	"github.com/openware/kaigara/pkg/vault"
+	"github.com/openware/pkg/database"
 	"github.com/openware/pkg/ika"
 	"gopkg.in/yaml.v3"
 )
 
 var cnf = &config.KaigaraConfig{}
+var sqlCnf = &database.Config{}
 
 func initConfig() {
 	err := ika.ReadConfig("", cnf)
 	if err != nil {
 		panic(err)
 	}
-}
 
-func getVaultService(appName string) *vault.Service {
-	return vault.NewService(cnf.VaultAddr, cnf.VaultToken, cnf.DeploymentID)
+	err = ika.ReadConfig("", sqlCnf)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func initLogStream() logstream.LogStream {
@@ -63,11 +65,11 @@ func main() {
 
 	// Initialize and write to Vault stores for every component
 	initConfig()
-	secretStore := getVaultService("global")
+	secretStore := config.GetStorageService(cnf, sqlCnf)
 
 	for app, scopes := range secrets.Secrets {
 		for scope, data := range scopes.Scopes {
-			err := secretStore.LoadSecrets(app, scope)
+			err := secretStore.Read(app, scope)
 			if err != nil {
 				panic(err)
 			}
@@ -75,13 +77,13 @@ func main() {
 			for k, v := range data {
 				fmt.Println("Setting", k)
 
-				err := secretStore.SetSecret(app, k, v, scope)
+				err := secretStore.SetEntry(app, scope, k, v)
 				if err != nil {
 					panic(err)
 				}
 			}
 
-			err = secretStore.SaveSecrets(app, scope)
+			err = secretStore.Write(app, scope)
 			if err != nil {
 				panic(err)
 			}

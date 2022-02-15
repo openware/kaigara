@@ -12,13 +12,20 @@ services:
       - 8200
     environment:
       VAULT_DEV_ROOT_TOKEN_ID: "root-token"
+  - name: mysql
+    image: mysql:8
+    ports:
+      - 3306
+    environment:
+      MYSQL_DATABASE: "kaigara_dev"
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
 
 steps:
   - name: Enable Vault Transit
     image: vault:1.5.3
     environment:
-      VAULT_ADDR: 'http://vault:8200'
-      VAULT_TOKEN: 'root-token'
+      VAULT_ADDR: "http://vault:8200"
+      VAULT_TOKEN: "root-token"
     commands:
       - vault secrets enable transit
 
@@ -26,8 +33,10 @@ steps:
     image: golang:1.14
     environment:
       GO111MODULE: "on"
-      KAIGARA_VAULT_ADDR: 'http://vault:8200'
-      KAIGARA_VAULT_TOKEN: 'root-token'
+      KAIGARA_VAULT_ADDR: "http://vault:8200"
+      KAIGARA_VAULT_TOKEN: "root-token"
+      DATABASE_HOST: "mysql"
+      DATABASE_POOL: 1
     commands:
       - go mod download
       - go test ./...

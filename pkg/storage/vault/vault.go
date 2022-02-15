@@ -179,7 +179,7 @@ func (vs *Service) Decrypt(appName, ciphertext string) (string, error) {
 }
 
 // LoadSecrets loads existing secrets from vault
-func (vs *Service) LoadSecrets(appName, scope string) error {
+func (vs *Service) Read(appName, scope string) error {
 	vs.initTransitKey(appName)
 	secret, err := vs.vault.Logical().Read(vs.keyPath(appName, scope))
 	if err != nil {
@@ -214,8 +214,8 @@ func (vs *Service) LoadSecrets(appName, scope string) error {
 	return nil
 }
 
-// SetSecret stores all secrets into the memory
-func (vs *Service) SetSecret(appName, name string, value interface{}, scope string) error {
+// SetEntry stores all secrets into the memory
+func (vs *Service) SetEntry(appName, scope, name string, value interface{}) error {
 	if scope == "secret" {
 		str, ok := value.(string)
 		if !ok {
@@ -235,16 +235,16 @@ func (vs *Service) SetSecret(appName, name string, value interface{}, scope stri
 	return nil
 }
 
-// SetSecrets inserts given data into the secret store, overwriting keys if they exist
-func (vs *Service) SetSecrets(appName string, data map[string]interface{}, scope string) error {
+// SetEntries inserts given data into the secret store, overwriting keys if they exist
+func (vs *Service) SetEntries(appName, scope string, data map[string]interface{}) error {
 	for k, v := range data {
-		vs.SetSecret(appName, k, v, scope)
+		vs.SetEntry(appName, scope, k, v)
 	}
 	return nil
 }
 
-// SaveSecrets saves all secrets to a Vault kv secret
-func (vs *Service) SaveSecrets(appName, scope string) error {
+// Write saves all secrets to a Vault kv secret
+func (vs *Service) Write(appName, scope string) error {
 	if vs.deploymentID == "" {
 		return fmt.Errorf("Deployment ID is not set, please set deploymentID")
 	}
@@ -258,11 +258,11 @@ func (vs *Service) SaveSecrets(appName, scope string) error {
 	return err
 }
 
-// GetSecrets returns all the secrets currently stored in Vault
-func (vs *Service) GetSecrets(appName, scope string) (map[string]interface{}, error) {
+// GetEntries returns all the secrets currently stored in Vault
+func (vs *Service) GetEntries(appName, scope string) (map[string]interface{}, error) {
 	res := make(map[string]interface{})
 	for k := range vs.data[appName][scope].(map[string]interface{}) {
-		val, err := vs.GetSecret(appName, k, scope)
+		val, err := vs.GetEntry(appName, k, scope)
 		if err != nil {
 			return nil, err
 		}
@@ -272,8 +272,8 @@ func (vs *Service) GetSecrets(appName, scope string) (map[string]interface{}, er
 	return res, nil
 }
 
-// GetSecret returns a secret value by name
-func (vs *Service) GetSecret(appName, name, scope string) (interface{}, error) {
+// GetEntry returns a secret value by name
+func (vs *Service) GetEntry(appName, name, scope string) (interface{}, error) {
 	// Since secret scope only supports strings, return a decrypted string
 	if scope == "secret" {
 		scopeSecrets, ok := vs.data[appName][scope].(map[string]interface{})
@@ -302,8 +302,8 @@ func (vs *Service) GetSecret(appName, name, scope string) (interface{}, error) {
 	return vs.data[appName][scope].(map[string]interface{})[name], nil
 }
 
-// ListSecrets returns a slice containing all secret keys of a scope
-func (vs *Service) ListSecrets(appName, scope string) ([]string, error) {
+// ListEntries returns a slice containing all secret keys of a scope
+func (vs *Service) ListEntries(appName, scope string) ([]string, error) {
 	secrets := vs.data[appName][scope].(map[string]interface{})
 	keys := make([]string, len(secrets))
 
@@ -338,7 +338,7 @@ func (vs *Service) ListAppNames() ([]string, error) {
 }
 
 func (vs *Service) PushPolicies(policies map[string]string) error {
-	err := vs.LoadSecrets("tokens", "secret")
+	err := vs.Read("tokens", "secret")
 	if err != nil {
 		return err
 	}
@@ -361,7 +361,7 @@ func (vs *Service) PushPolicies(policies map[string]string) error {
 		}
 
 		keyName := strcase.ToLowerCamel(component + "_vault_token")
-		err = vs.SetSecret("tokens", keyName, token.Auth.ClientToken, "secret")
+		err = vs.SetEntry("tokens", keyName, token.Auth.ClientToken, "secret")
 		if err != nil {
 			return err
 		}
@@ -403,7 +403,7 @@ func (vs *Service) GetLatestVersion(appName, scope string) (int64, error) {
 }
 
 // Delete key from Data, Metadata and Vault
-func (vs *Service) DeleteSecret(appName, name, scope string) error {
+func (vs *Service) DeleteEntry(appName, scope, name string) error {
 	metadata, err := vs.vault.Logical().Delete(vs.keyPath(appName, scope))
 	if err != nil {
 		return err
@@ -412,6 +412,6 @@ func (vs *Service) DeleteSecret(appName, name, scope string) error {
 		vs.metadata[appName][scope] = metadata.Data
 	}
 	delete(vs.data[appName][scope].(map[string]interface{}), name)
-	err = vs.SaveSecrets(appName, scope)
+	err = vs.Write(appName, scope)
 	return err
 }

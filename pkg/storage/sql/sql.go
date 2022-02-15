@@ -1,12 +1,12 @@
-package mysql
+package sql
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
 
+	"github.com/openware/pkg/database"
 	"gorm.io/datatypes"
-	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -27,13 +27,12 @@ type Data struct {
 	Version int64
 }
 
-func NewStorageService(dsn, deploymentID string) (*StorageService, error) {
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-	})
+func NewStorageService(deploymentID string, cnf *database.Config) (*StorageService, error) {
+	db, err := database.Connect(cnf)
 	if err != nil {
 		return nil, err
 	}
+	db.Logger = logger.Default.LogMode(logger.Silent)
 
 	err = db.AutoMigrate(&Data{})
 	if err != nil {
@@ -48,7 +47,7 @@ func NewStorageService(dsn, deploymentID string) (*StorageService, error) {
 
 func (ss *StorageService) Read(appName, scope string) error {
 	var data Data
-	res := ss.db.Where("app_name = ? AND scope = ?", appName, scope).First(&data)
+	res := ss.db.First(&data, "app_name = ? AND scope = ?", appName, scope)
 
 	if ss.ds == nil {
 		ss.ds = make(map[string]map[string]map[string]interface{})
@@ -61,13 +60,13 @@ func (ss *StorageService) Read(appName, scope string) error {
 	}
 
 	val := make(map[string]interface{})
-	val["version"] = 0
+	val["version"] = int64(0)
 
 	isNotFound := errors.Is(res.Error, gorm.ErrRecordNotFound)
 	if res.Error != nil && !isNotFound {
 		return fmt.Errorf("failed reading from the DB: %s", res.Error)
 	} else if !isNotFound {
-		fmt.Printf("INFO: reading %s.%s from DB\n", appName, scope)
+		// fmt.Printf("INFO: reading %s.%s from DB\n", appName, scope)
 		err := json.Unmarshal([]byte(data.Value), &val)
 		if err != nil {
 			return fmt.Errorf("JSON unmarshalling failed: %s", err)
@@ -174,6 +173,27 @@ func (ss *StorageService) DeleteEntry(appName, scope, name string) error {
 	delete(ss.ds[appName][scope], name)
 
 	return nil
+}
+
+func (ss *StorageService) ListAppNames() ([]string, error) {
+	var data Data
+	rows, err := ss.db.Model(&data).Distinct("app_name").Rows()
+	if err != nil {
+		return nil, err
+	}
+
+	var appNames []string
+	for rows.Next() {
+		var app string
+		if err = rows.Scan(&app); err != nil {
+			return appNames, err
+		}
+		appNames = append(appNames, app)
+	}
+	if err = rows.Err(); err != nil {
+		return appNames, err
+	}
+	return appNames, nil
 }
 
 func (ss *StorageService) GetCurrentVersion(appName, scope string) (int64, error) {

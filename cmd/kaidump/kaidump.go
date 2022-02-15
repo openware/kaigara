@@ -7,25 +7,28 @@ import (
 	"io/ioutil"
 
 	"github.com/openware/kaigara/pkg/config"
-	"github.com/openware/kaigara/pkg/vault"
+	"github.com/openware/kaigara/types"
 
 	"strings"
 
+	"github.com/openware/pkg/database"
 	"github.com/openware/pkg/ika"
 	"gopkg.in/yaml.v3"
 )
 
 var cnf = &config.KaigaraConfig{}
+var sqlCnf = &database.Config{}
 
 func initConfig() {
 	err := ika.ReadConfig("", cnf)
 	if err != nil {
 		panic(err)
 	}
-}
 
-func getVaultService(appName string) *vault.Service {
-	return vault.NewService(cnf.VaultAddr, cnf.VaultToken, cnf.DeploymentID)
+	err = ika.ReadConfig("", sqlCnf)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func main() {
@@ -35,10 +38,22 @@ func main() {
 
 	// Initialize and write to Vault stores for every component
 	initConfig()
-	secretStore := getVaultService("global")
+	secretStore := config.GetStorageService(cnf, sqlCnf)
+	b := kaidumpRun(secretStore)
+	fmt.Print(b.String())
 
+	// Write secrets into filepath
+	err := ioutil.WriteFile(*filepath, b.Bytes(), 0644)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("# Saved the dump into %s\n", *filepath)
+}
+
+func kaidumpRun(store types.Storage) bytes.Buffer {
 	// Get the list of App names from vault
-	apps, err := secretStore.ListAppNames()
+	apps, err := store.ListAppNames()
 	if err != nil {
 		panic(err)
 	}
@@ -60,11 +75,11 @@ func main() {
 		scopeMap := make(map[string]interface{})
 		scopeInit := make(map[string]interface{})
 		for _, scope := range scopesList {
-			err := secretStore.LoadSecrets(app, scope)
+			err := store.Read(app, scope)
 			if err != nil {
 				panic(err)
 			}
-			secrets, err := secretStore.GetSecrets(app, scope)
+			secrets, err := store.GetEntries(app, scope)
 			if err != nil {
 				panic(err)
 			}
@@ -82,14 +97,5 @@ func main() {
 	yamlEncoder := yaml.NewEncoder(&b)
 	yamlEncoder.SetIndent(2)
 	yamlEncoder.Encode(&secretsMap)
-
-	fmt.Print(b.String())
-
-	// Write secrets into filepath
-	err = ioutil.WriteFile(*filepath, b.Bytes(), 0644)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("# Saved the dump into %s\n", *filepath)
+	return b
 }

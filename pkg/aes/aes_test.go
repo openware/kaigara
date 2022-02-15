@@ -11,7 +11,6 @@ func TestAESEncryptorWrongKey(t *testing.T) {
 	_, err := NewAESEncryptor([]byte("too_short"))
 	require.Error(t, err)
 }
-	
 
 func TestAESEncryptor(t *testing.T) {
 	s, err := NewAESEncryptor([]byte("1234567890123456"))

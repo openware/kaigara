@@ -18,28 +18,28 @@ func TestVaultServiceSetGetSecrets(t *testing.T) {
 	secretStore := NewService(vaultAddr, vaultToken, deploymentID)
 
 	for _, scope := range scopes {
-		err := secretStore.LoadSecrets(appName, scope)
+		err := secretStore.Read(appName, scope)
 		assert.NoError(t, err)
 
 		// Set Secret in each scope
-		err = secretStore.SetSecret(appName, "key_"+scope, "value_"+scope, scope)
+		err = secretStore.SetEntry(appName, scope, "key_"+scope, "value_"+scope)
 		assert.NoError(t, err)
 
 		// Save Secrets from memory to Vault
-		err = secretStore.SaveSecrets(appName, scope)
+		err = secretStore.Write(appName, scope)
 		assert.NoError(t, err)
 
 		// Get and assert Secrets in each scope after save
-		secret, err := secretStore.GetSecret(appName, "key_"+scope, scope)
+		secret, err := secretStore.GetEntry(appName, "key_"+scope, scope)
 		assert.NoError(t, err)
 		assert.Equal(t, "value_"+scope, secret.(string))
 
 		// Delete Secret in each scope
-		err = secretStore.DeleteSecret(appName, "key_"+scope, scope)
+		err = secretStore.DeleteEntry(appName, scope, "key_"+scope)
 		assert.NoError(t, err)
 
 		// Get and assert Secrets in each scope after the deletion
-		secret, err = secretStore.GetSecret(appName, "key_"+scope, scope)
+		secret, err = secretStore.GetEntry(appName, "key_"+scope, scope)
 		assert.NoError(t, err)
 		assert.Equal(t, nil, secret)
 	}

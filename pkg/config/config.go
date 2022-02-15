@@ -7,7 +7,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/openware/kaigara/pkg/storage/sql"
+	"github.com/openware/kaigara/pkg/storage/vault"
 	"github.com/openware/kaigara/types"
+	"github.com/openware/pkg/database"
 )
 
 // KaigaraConfig contains cli options
@@ -39,8 +42,23 @@ type File struct {
 
 var kfile = regexp.MustCompile("(?i)^KFILE_(.*)_(PATH|CONTENT)$")
 
+func GetStorageService(cnf *KaigaraConfig, db *database.Config) types.Storage {
+	ss := cnf.SecretStore
+	if ss == "vault" {
+		return vault.NewService(cnf.VaultAddr, cnf.VaultToken, cnf.DeploymentID)
+	} else if ss == "sql" {
+		svc, err := sql.NewStorageService(cnf.DeploymentID, db)
+		if err != nil {
+			panic(err)
+		}
+		return svc
+	} else {
+		panic("SecretStore does not support: " + ss)
+	}
+}
+
 // BuildCmdEnv reads secrets from all secretStores and scopes passed to it and loads them into an Env and returns a *Env
-func BuildCmdEnv(appNames []string, secretStore types.SecretStore, currentEnv, scopes []string) *Env {
+func BuildCmdEnv(appNames []string, store types.Storage, currentEnv, scopes []string) *Env {
 	env := &Env{
 		Vars:  []string{},
 		Files: map[string]*File{},
@@ -54,12 +72,12 @@ func BuildCmdEnv(appNames []string, secretStore types.SecretStore, currentEnv, s
 
 	for _, appName := range append([]string{"global"}, appNames...) {
 		for _, scope := range scopes {
-			err := secretStore.LoadSecrets(appName, scope)
+			err := store.Read(appName, scope)
 			if err != nil {
 				panic(err)
 			}
 
-			secrets, err := secretStore.GetSecrets(appName, scope)
+			secrets, err := store.GetEntries(appName, scope)
 			if err != nil {
 				panic(err)
 			}

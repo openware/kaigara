@@ -22,3 +22,17 @@ services:
     environment:
       MYSQL_DATABASE: "kaigara_dev"
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+
+  postgres:
+    image: supabase/postgres:13.3.0
+    ports:
+      - "5432:5432"
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+    environment:
+      POSTGRES_DB: kaigara_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_PORT: "5432"
