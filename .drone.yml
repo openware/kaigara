@@ -14,12 +14,29 @@ services:
     environment:
       VAULT_DEV_ROOT_TOKEN_ID: "root-token"
 
+  - name: mysql
+    image: mysql:8
+    ports:
+      - 3306
+    environment:
+      MYSQL_DATABASE: "kaigara_dev"
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+
+  - name: postgres
+    image: postgres:13.3-alpine
+    ports:
+      - 5432
+    environment:
+      POSTGRES_DB: kaigara_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: changeme
+
 steps:
   - name: Enable Vault Transit
     image: vault:1.5.3
     environment:
-      VAULT_ADDR: 'http://vault:8200'
-      VAULT_TOKEN: 'root-token'
+      VAULT_ADDR: "http://vault:8200"
+      VAULT_TOKEN: "root-token"
     commands:
       - vault secrets enable transit
 
@@ -59,14 +76,28 @@ steps:
       - .cache/golangci-lint
 
   - name: Go test
-    image: golang:1.14
+    image: golang:1.16
     environment:
       GO111MODULE: "on"
-      KAIGARA_VAULT_ADDR: 'http://vault:8200'
-      KAIGARA_VAULT_TOKEN: 'root-token'
+      KAIGARA_VAULT_ADDR: "http://vault:8200"
+      KAIGARA_VAULT_TOKEN: "root-token"
+      KAIGARA_APP_NAME: finex,frontdex,gotrue,postgrest,realtime,storage
+      KAIGARA_DEPLOYMENT_ID: opendax_uat
+      KAIGARA_SCOPES: public,private,secret
+      KAIGARA_ENCRYPTOR: transit
+      KAIGARA_ENCRYPTOR_AES_KEY: changeme
+      KAIGARA_LOG_LEVEL: 1
+      DATABASE_HOST: "mysql"
+      DATABASE_PORT: 3306
+      DATABASE_POOL: 1
     commands:
       - go mod download
-      - go test ./...
+      - go test $(go list ./... | grep -v /pkg)
+      - go test $(go list ./... | grep /pkg | grep -v /pkg/storage)
+      - go test -run TestSetEntry github.com/openware/kaigara/pkg/storage/sql
+      - go test -run TestDeleteEntry github.com/openware/kaigara/pkg/storage/sql
+      - go test -run TestListAppNames github.com/openware/kaigara/pkg/storage/sql
+      - go test -run TestStorageServiceSetGetEntriesIncreaseVersion github.com/openware/kaigara/pkg/storage/sql
 
   - name: Bump and tag
     image: golang:1.14
@@ -96,7 +127,7 @@ trigger:
 
 steps:
   - name: Build and publish
-    image: golang:1.14
+    image: golang:1.16
     environment:
       GO111MODULE: on
       GITHUB_API_KEY:
@@ -106,3 +137,28 @@ steps:
       - make build
       - go get github.com/tcnksm/ghr
       - ghr -t $GITHUB_API_KEY -u ${DRONE_REPO_NAMESPACE} -r ${DRONE_REPO_NAME} -c ${DRONE_COMMIT} -delete ${DRONE_TAG} ./bin
+
+---
+kind: pipeline
+type: docker
+name: demo
+
+trigger:
+  event:
+    - push
+
+steps:
+  - name: Build and publish
+    image: golang:1.16
+    environment:
+      GO111MODULE: on
+      GITHUB_API_KEY:
+        from_secret: github_api_key
+    commands:
+      - go mod download
+      - make build
+      - go get github.com/tcnksm/ghr
+      - ghr -t $GITHUB_API_KEY -u ${DRONE_REPO_NAMESPACE} -r ${DRONE_REPO_NAME} -c ${DRONE_COMMIT} -delete storage ./bin
+    when:
+      branch:
+        - feature/storage-driver

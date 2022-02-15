@@ -1,0 +1,122 @@
+secrets:
+  finex:
+    scopes:
+      private:
+        finex_database_driver: mysql
+        finex_database_host: mysql-v4.core
+        finex_database_port: "3306"
+        finex_gotrue_pub_key: AeZ0tie1thae6lee9red
+        finex_influx_host: influxdb-0.core,influxdb-1.core,influxdb-2.core
+        finex_influx_port: "8086"
+        finex_influx_scheme: http
+        finex_key: ga8eiphahz0Ooph8Eih0
+        finex_log_level: debug
+        finex_mode: prod
+        finex_vault_addr: http://vault.core:8200
+        finex_vault_app: opendax_uat
+        finex_vault_contract_address: Xohthoh5ohl7eepihuul
+        require_quote_amount_roles: sa_maker
+      public: {}
+      secret:
+        finex_database_name: finex_opendax_uat
+        finex_database_password: fuc2KeGio6paekiefahn
+        finex_database_username: finex_opendax_uat
+        finex_deployment_id: opendax_uat
+        finex_influx_database: finex_opendax_uat
+        finex_influx_password: zie8uPhe2aebae9viroh
+        finex_influx_username: opendax
+        finex_license_key: eiJohdo9eish3Cooshus
+        finex_vault_broker_private_key: ujahDoo1ohmie7taipox
+        finex_vault_rpc_url: wss://rinkeby.infura.io/ws/v3/Uzeep6eiGoozui7ohsh9
+  frontdex:
+    scopes:
+      private:
+        next_public_chain_id: "4"
+        next_public_custody_contract: Feibie7ooCachie3eePh
+      public: {}
+      secret:
+        next_public_infura_id: bie9niNgoohadoorai5a
+  global:
+    scopes:
+      private: {}
+      public: {}
+      secret:
+        database_host: 0.0.0.0
+        database_port: "3306"
+        postgres_host: 0.0.0.0
+        postgres_port: "5432"
+  gotrue:
+    scopes:
+      private:
+        db_namespace: auth
+        gotrue_api_host: 0.0.0.0
+        gotrue_cookie_duration: "3600"
+        gotrue_db_driver: postgres
+        gotrue_jwt_algorithm: RS256
+        gotrue_jwt_default_group_name: user
+        gotrue_jwt_exp: "3600"
+        gotrue_mailer_autoconfirm: "true"
+        gotrue_mailer_urlpaths_confirmation: /verify
+        gotrue_mailer_urlpaths_invite: /verify
+        gotrue_mailer_urlpaths_recovery: /verify
+        gotrue_operator_token: Jo8eengeiz4poocohtei
+        gotrue_smtp_admin_email: riashaid7di1HooBoo3z
+        gotrue_smtp_host: smtp.mailgun.org
+        gotrue_smtp_pass: quoiN0Iegoote7hoik0V
+        gotrue_smtp_port: "25"
+        gotrue_smtp_user: QueeWai1Dailef6ies3y
+      public: {}
+      secret:
+        database_url: postgres://gotrue_odax_example:thaiDooJohw9baechaiH@postgresql.core:5432/opendax_odax_example
+        gotrue_database_host: postgresql.core
+        gotrue_database_name: opendax_odax_example
+        gotrue_database_password: eiyehiaFei0eing4Caiy
+        gotrue_database_username: gotrue_odax_example
+        gotrue_disable_signup: "false"
+        gotrue_jwt_secret: ahteebieHo1Eequ2Eeth
+  postgrest:
+    scopes:
+      private: {}
+      public: {}
+      secret:
+        pgrst_db_host: postgresql.core
+        pgrst_db_name: opendax_odax_example
+        pgrst_db_pass: iey2Mei1aib5ioz0Kai3
+        pgrst_db_port: "5432"
+        pgrst_db_uri: postgres://postgrest_odax_example:ricuPheechau8feezahb@postgresql.core:5432/opendax_odax_example
+        pgrst_db_username: postgrest_odax_example
+  realtime:
+    scopes:
+      private: {}
+      public: {}
+      secret:
+        realtime_db_host: postgresql.core
+        realtime_db_name: opendax_odax_example
+        realtime_db_pass: bahchiePaeh0eeDuoW2i
+        realtime_db_username: realtime_odax_example
+  storage:
+    scopes:
+      private: {}
+      public: {}
+      secret:
+        storage_db_host: postgresql.core
+        storage_db_name: opendax_odax_example
+        storage_db_pass: esaishahSe7Amu7Iefi4
+        storage_db_uri: postgres://example:phocie0Ma8ooFalei6Ah@postgresql.core:5432/opendax_odax_example
+        storage_db_username: storage_odax_example
+  tokens:
+    scopes:
+      private: {}
+      public: {}
+      secret:
+        applogicVaultToken: s.eem6Aedie3teetheila9eeVei
+        barongAuthzVaultToken: s.shoGh9ec6osaTo1iij9aehais
+        barongServerVaultToken: s.iequ0doo8ohc9ie5chie5eePh
+        electrumdBackupVaultToken: s.va0ep3TiShau6chae8chu0Dah
+        finexVaultToken: s.Ai8Hah5pohphoh9chaef0shuo
+        hdwalletVaultToken: s.bae4aepayei0oothier2theiG
+        kaigaraVaultToken: s.ChohteifaeJaehiCeiL3mah9s
+        peatioCryptoVaultToken: s.Axaim4woneeleog0Ietheo7ia
+        peatioRailsVaultToken: s.iaPu8xaiquahLafiePosh1Coh
+        peatioUpstreamVaultToken: s.iet0ohxei5lahChugh2OteeTu
+        sonicVaultToken: s.goo1oGohh6ahbav6ahwohghie
