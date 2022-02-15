@@ -2,22 +2,35 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"regexp"
 	"strconv"
 	"strings"
 
+	"github.com/openware/kaigara/pkg/encryptor/aes"
+	"github.com/openware/kaigara/pkg/encryptor/plaintext"
+	"github.com/openware/kaigara/pkg/encryptor/transit"
+	encryptor "github.com/openware/kaigara/pkg/encryptor/types"
+	"github.com/openware/kaigara/pkg/storage/sql"
+	"github.com/openware/kaigara/pkg/storage/vault"
 	"github.com/openware/kaigara/types"
+	"github.com/openware/pkg/database"
+	"gorm.io/gorm/logger"
 )
 
 // KaigaraConfig contains cli options
 type KaigaraConfig struct {
-	SecretStore  string `yaml:"secret-store" env:"KAIGARA_SECRET_STORE" env-default:"vault"`
-	VaultToken   string `yaml:"vault-token" env:"KAIGARA_VAULT_TOKEN"`
-	VaultAddr    string `yaml:"vault-addr" env:"KAIGARA_VAULT_ADDR" env-default:"http://127.0.0.1:8200"`
-	AppNames     string `yaml:"vault-app-name" env:"KAIGARA_APP_NAME"`
-	DeploymentID string `yaml:"deployment-id" env:"KAIGARA_DEPLOYMENT_ID"`
-	Scopes       string `yaml:"scopes" env:"KAIGARA_SCOPES" env-default:"public,private,secret"`
+	Storage       string `yaml:"secret-store" env:"KAIGARA_STORAGE_DRIVER" env-default:"vault"`
+	VaultToken    string `yaml:"vault-token" env:"KAIGARA_VAULT_TOKEN"`
+	VaultAddr     string `yaml:"vault-addr" env:"KAIGARA_VAULT_ADDR" env-default:"http://127.0.0.1:8200"`
+	AppNames      string `yaml:"vault-app-name" env:"KAIGARA_APP_NAME"`
+	DeploymentID  string `yaml:"deployment-id" env:"KAIGARA_DEPLOYMENT_ID"`
+	Scopes        string `yaml:"scopes" env:"KAIGARA_SCOPES" env-default:"public,private,secret"`
+	EncryptMethod string `yaml:"encryption-method" env:"KAIGARA_ENCRYPTOR" env-default:"transit"`
+	AesKey        string `yaml:"aes-key" env:"KAIGARA_ENCRYPTOR_AES_KEY"`
+	LogLevel      int    `yaml:"log-level" env:"KAIGARA_LOG_LEVEL" env-default:"1"`
+	DBConfig      *database.Config
 }
 
 // Config is the interface definition of generic config storage
@@ -39,8 +52,45 @@ type File struct {
 
 var kfile = regexp.MustCompile("(?i)^KFILE_(.*)_(PATH|CONTENT)$")
 
+func GetStorageService(cnf *KaigaraConfig) (types.Storage, error) {
+	var encryptor encryptor.Encryptor
+	var err error
+
+	if cnf.EncryptMethod == "transit" {
+		log.Println("INFO: Starting vault transit secret engine encryption!")
+
+		encryptor = transit.NewVaultEncryptor(cnf.VaultAddr, cnf.VaultToken)
+	} else if cnf.EncryptMethod == "aes" {
+		log.Println("INFO: Starting in-memory encryption!")
+		// change key insertion
+		encryptor, err = aes.NewAESEncryptor([]byte(cnf.AesKey))
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		log.Println("INFO: Starting plaintext encryption. KAIGARA_ENCRYPTOR is missing")
+		encryptor = plaintext.NewPlaintextEncryptor()
+	}
+
+	ss := cnf.Storage
+	if cnf.DBConfig == nil {
+		cnf.DBConfig = &database.Config{}
+	}
+	if ss == "vault" {
+		return vault.NewService(cnf.VaultAddr, cnf.VaultToken, cnf.DeploymentID), nil
+	} else if ss == "sql" {
+		svc, err := sql.NewStorageService(cnf.DeploymentID, cnf.DBConfig, encryptor, logger.LogLevel(cnf.LogLevel))
+		if err != nil {
+			return nil, err
+		}
+		return svc, nil
+	} else {
+		return nil, fmt.Errorf("SecretStore does not support: %s", ss)
+	}
+}
+
 // BuildCmdEnv reads secrets from all secretStores and scopes passed to it and loads them into an Env and returns a *Env
-func BuildCmdEnv(appNames []string, secretStore types.SecretStore, currentEnv, scopes []string) *Env {
+func BuildCmdEnv(appNames []string, store types.Storage, currentEnv, scopes []string) *Env {
 	env := &Env{
 		Vars:  []string{},
 		Files: map[string]*File{},
@@ -54,12 +104,12 @@ func BuildCmdEnv(appNames []string, secretStore types.SecretStore, currentEnv, s
 
 	for _, appName := range append([]string{"global"}, appNames...) {
 		for _, scope := range scopes {
-			err := secretStore.LoadSecrets(appName, scope)
+			err := store.Read(appName, scope)
 			if err != nil {
 				panic(err)
 			}
 
-			secrets, err := secretStore.GetSecrets(appName, scope)
+			secrets, err := store.GetEntries(appName, scope)
 			if err != nil {
 				panic(err)
 			}
