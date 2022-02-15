@@ -1,12 +1,13 @@
-package mysql
+package sql
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
 
+	"github.com/openware/kaigara/pkg/encryptor/types"
+	"github.com/openware/pkg/database"
 	"gorm.io/datatypes"
-	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -16,6 +17,7 @@ type StorageService struct {
 	db           *gorm.DB
 	deploymentID string
 	ds           map[string]map[string]map[string]interface{}
+	encryptor    types.Encryptor
 }
 
 // Data represents per-scope data(configs/secrets) which consists of a JSON field
@@ -27,13 +29,12 @@ type Data struct {
 	Version int64
 }
 
-func NewStorageService(dsn, deploymentID string) (*StorageService, error) {
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-	})
+func NewStorageService(deploymentID string, cnf *database.Config, encryptor types.Encryptor, logLevel logger.LogLevel) (*StorageService, error) {
+	db, err := database.Connect(cnf)
 	if err != nil {
 		return nil, err
 	}
+	db.Logger = logger.Default.LogMode(logLevel)
 
 	err = db.AutoMigrate(&Data{})
 	if err != nil {
@@ -43,12 +44,13 @@ func NewStorageService(dsn, deploymentID string) (*StorageService, error) {
 	return &StorageService{
 		db:           db,
 		deploymentID: deploymentID,
+		encryptor:    encryptor,
 	}, nil
 }
 
 func (ss *StorageService) Read(appName, scope string) error {
 	var data Data
-	res := ss.db.Where("app_name = ? AND scope = ?", appName, scope).First(&data)
+	res := ss.db.First(&data, "app_name = ? AND scope = ?", appName, scope)
 
 	if ss.ds == nil {
 		ss.ds = make(map[string]map[string]map[string]interface{})
@@ -61,13 +63,12 @@ func (ss *StorageService) Read(appName, scope string) error {
 	}
 
 	val := make(map[string]interface{})
-	val["version"] = 0
+	val["version"] = int64(0)
 
 	isNotFound := errors.Is(res.Error, gorm.ErrRecordNotFound)
 	if res.Error != nil && !isNotFound {
 		return fmt.Errorf("failed reading from the DB: %s", res.Error)
 	} else if !isNotFound {
-		fmt.Printf("INFO: reading %s.%s from DB\n", appName, scope)
 		err := json.Unmarshal([]byte(data.Value), &val)
 		if err != nil {
 			return fmt.Errorf("JSON unmarshalling failed: %s", err)
@@ -82,40 +83,45 @@ func (ss *StorageService) Read(appName, scope string) error {
 }
 
 func (ss *StorageService) Write(appName, scope string) error {
-	val := ss.ds[appName][scope]
-
-	v, err := json.Marshal(val)
-	if err != nil {
-		return err
-	}
-
 	ver, ok := ss.ds[appName][scope]["version"].(int64)
 	if !ok {
 		return fmt.Errorf("failed to get %s.%s.version: type assertion to int64 failed, actual value: %v", appName, scope, ver)
 	}
 
-	fresh := &Data{
+	val := ss.ds[appName][scope]
+	data := &Data{
 		AppName: appName,
 		Scope:   scope,
-		Value:   v,
 		Version: ver,
 	}
 
 	var old Data
 	res := ss.db.Where("app_name = ? AND scope = ?", appName, scope).First(&old)
-
 	isNotFound := errors.Is(res.Error, gorm.ErrRecordNotFound)
+	isCreate := false
 
 	if res.Error != nil && !isNotFound {
 		return fmt.Errorf("failed to check for an existing value in the DB: %s", res.Error)
 	} else if isNotFound {
-		res = ss.db.Create(fresh)
+		isCreate = true
+	} else {
+		data.Version = old.Version + 1
+		val["version"] = data.Version
+	}
+
+	v, err := json.Marshal(val)
+	if err != nil {
+		return err
+	}
+	data.Value = v
+
+	if isCreate {
+		res = ss.db.Create(data)
 		if res.Error != nil {
 			return fmt.Errorf("initial DB record creation failed: %s", res.Error)
 		}
 	} else {
-		fresh.Version = old.Version + 1
-		err := res.Updates(fresh).Error
+		err := res.Updates(data).Error
 		if err != nil {
 			return fmt.Errorf("existing DB record update failed: %s", err)
 		}
@@ -139,21 +145,59 @@ func (ss *StorageService) ListEntries(appName, scope string) ([]string, error) {
 }
 
 func (ss *StorageService) SetEntry(appName, scope, name string, value interface{}) error {
-	ss.ds[appName][scope][name] = value
+	if scope == "secret" && name != "version" {
+		str, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("sqlStore.SetSecret: %s is not a string", name)
+		}
+		encrypted, err := ss.encryptor.Encrypt(str, appName)
+		if err != nil {
+			return err
+		}
+
+		ss.ds[appName][scope][name] = encrypted
+	} else {
+		ss.ds[appName][scope][name] = value
+	}
+
 	return nil
 }
 
 func (ss *StorageService) SetEntries(appName string, scope string, values map[string]interface{}) error {
 	for k, v := range values {
-		ss.SetEntry(appName, scope, k, v)
+		err := ss.SetEntry(appName, scope, k, v)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func (ss *StorageService) GetEntry(appName, scope, name string) (interface{}, error) {
-	if ss.ds[appName][scope] == nil {
-		return nil, fmt.Errorf("failed to get %s.%s.%s: scope is not loaded", appName, scope, name)
+	// Since secret scope only supports strings, return a decrypted string
+	scopeSecrets, ok := ss.ds[appName][scope]
+	if !ok {
+		return nil, fmt.Errorf("sqlStore.GetEntry: %s scope is not loaded", scope)
 	}
+	if scope == "secret" && name != "version" {
+		rawValue, ok := scopeSecrets[name]
+		if !ok {
+			return nil, nil
+		}
+
+		str, ok := rawValue.(string)
+		if !ok {
+			return nil, fmt.Errorf("sqlStore.GetEntry: %s is not a string", name)
+		}
+
+		decrypted, err := ss.encryptor.Decrypt(str, appName)
+		if err != nil {
+			return nil, err
+		}
+
+		return decrypted, nil
+	}
+
 	return ss.ds[appName][scope][name], nil
 }
 
@@ -174,6 +218,16 @@ func (ss *StorageService) DeleteEntry(appName, scope, name string) error {
 	delete(ss.ds[appName][scope], name)
 
 	return nil
+}
+
+func (ss *StorageService) ListAppNames() ([]string, error) {
+	var appNames []string
+	tx := ss.db.Model(&Data{}).Distinct().Pluck("app_name", &appNames)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+
+	return appNames, nil
 }
 
 func (ss *StorageService) GetCurrentVersion(appName, scope string) (int64, error) {

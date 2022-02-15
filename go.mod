@@ -2,26 +2,25 @@ module github.com/openware/kaigara
 
 go 1.14
 
+replace github.com/openware/kaigara/pkg/encryptor => ./pkg/encryptor
+
+replace github.com/openware/kaigara/pkg/storage/sql => ./pkg/storage/sql
+
+replace github.com/openware/kaigara/pkg/storage/vault => ./pkg/storage/vault
+
 require (
-	github.com/frankban/quicktest v1.11.3 // indirect
 	github.com/go-redis/redis/v7 v7.2.0
-	github.com/golang/snappy v0.0.2 // indirect
-	github.com/hashicorp/errwrap v1.1.0 // indirect
-	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.6.8 // indirect
 	github.com/mattn/go-sqlite3 v1.14.11 // indirect
-	github.com/mitchellh/mapstructure v1.4.1 // indirect
-	github.com/openware/kaigara/pkg/vault v0.0.0-20210426162849-04557d766383
-	github.com/openware/pkg/ika v0.0.0-20210204083929-709d949cb0ff
+	github.com/openware/kaigara/pkg/encryptor v0.0.0-20220225091359-d368f0dfe8db
+	github.com/openware/kaigara/pkg/storage/sql v0.0.0-20220301034206-c8eea45f3512
+	github.com/openware/kaigara/pkg/storage/vault v0.0.0-20220301034206-c8eea45f3512
+	github.com/openware/pkg v0.0.0-20220225074124-ddad5f429a07
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
+	golang.org/x/crypto v0.0.0-20211215165025-cf75a172585e // indirect
+	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d // indirect
+	golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
-	gorm.io/datatypes v1.0.5
-	gorm.io/driver/mysql v1.2.3
-	gorm.io/driver/postgres v1.2.3 // indirect
-	gorm.io/driver/sqlite v1.2.6 // indirect
-	gorm.io/driver/sqlserver v1.2.1 // indirect
 	gorm.io/gorm v1.22.5
-	gotest.tools v2.2.0+incompatible
 )
