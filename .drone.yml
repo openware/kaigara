@@ -1,4 +1,5 @@
 kind: pipeline
+type: docker
 name: default
 
 trigger:
@@ -37,6 +38,16 @@ steps:
     commands:
       - vault secrets enable transit
 
+  - name: Go lint
+    image: golangci/golangci-lint:v1.44-alpine
+    commands:
+      - golangci-lint run
+    when:
+      branch:
+        exclude:
+          - "master"
+          - "*stable"
+
   - name: Go test
     image: golang:1.16
     environment:
@@ -74,6 +85,7 @@ steps:
 
 ---
 kind: pipeline
+type: docker
 name: publish
 
 trigger:
