@@ -1,4 +1,5 @@
 kind: pipeline
+type: docker
 name: default
 
 trigger:
@@ -21,6 +22,41 @@ steps:
       VAULT_TOKEN: 'root-token'
     commands:
       - vault secrets enable transit
+
+  - name: Restore lint cache
+    pull: if-not-exists
+    image: drillster/drone-volume-cache
+    volumes:
+    - name: golint-cache
+      path: /golint-cache
+    settings:
+      restore: true
+      mount:
+      - .cache/golangci-lint
+
+  - name: Go lint
+    image: golangci/golangci-lint:v1.44-alpine
+    environment:
+      GOLANGCI_LINT_CACHE: "/drone/src/.cache/golangci-lint"
+    commands:
+      - golangci-lint cache status
+      - golangci-lint run --timeout 2m0s
+    when:
+      branch:
+        exclude:
+          - "master"
+          - "*stable"
+
+  - name: Rebuild lint cache
+    pull: if-not-exists
+    image: drillster/drone-volume-cache
+    volumes:
+    - name: golint-cache
+      path: /golint-cache
+    settings:
+      rebuild: true
+      mount:
+      - .cache/golangci-lint
 
   - name: Go test
     image: golang:1.14
@@ -51,6 +87,7 @@ steps:
 
 ---
 kind: pipeline
+type: docker
 name: publish
 
 trigger:
