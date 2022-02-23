@@ -9,10 +9,10 @@ import (
 	"strings"
 
 	"github.com/openware/kaigara/pkg/aes"
-	"github.com/openware/kaigara/pkg/plaintext"
+	"github.com/openware/kaigara/pkg/encryptor/plaintext"
+	"github.com/openware/kaigara/pkg/encryptor/transit"
 	"github.com/openware/kaigara/pkg/storage/sql"
-	"github.com/openware/kaigara/pkg/transit"
-	"github.com/openware/kaigara/pkg/vault"
+	"github.com/openware/kaigara/pkg/storage/vault"
 	"github.com/openware/kaigara/types"
 	"github.com/openware/pkg/database"
 )
@@ -25,8 +25,8 @@ type KaigaraConfig struct {
 	AppNames      string `yaml:"vault-app-name" env:"KAIGARA_APP_NAME"`
 	DeploymentID  string `yaml:"deployment-id" env:"KAIGARA_DEPLOYMENT_ID"`
 	Scopes        string `yaml:"scopes" env:"KAIGARA_SCOPES" env-default:"public,private,secret"`
-	EncryptMethod string `yaml:"encryption-method" env:"KAIGARA_ENCRYPTION_METHOD" env-default:"transit"`
-	AesKey        string `yaml:"aes-key" env:"KAIGARA_AES_KEY"`
+	EncryptMethod string `yaml:"encryption-method" env:"KAIGARA_ENCRYPTOR" env-default:"transit"`
+	AesKey        string `yaml:"aes-key" env:"KAIGARA_ENCRYPTOR_AES_KEY"`
 }
 
 // Config is the interface definition of generic config storage
@@ -70,7 +70,7 @@ func GetStorageService(cnf *KaigaraConfig, db *database.Config) (types.Storage, 
 			return nil, err
 		}
 	} else {
-		log.Println("INFO: Starting plaintext encryption. KAIGARA_ENCRYPTION_METHOD is missing")
+		log.Println("INFO: Starting plaintext encryption. KAIGARA_ENCRYPTOR is missing")
 		encryptor = plaintext.NewPlaintextEncryptor([]byte(""))
 	}
 

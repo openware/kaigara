@@ -21,7 +21,7 @@ export KAIGARA_VAULT_TOKEN=changeme
 export KAIGARA_DEPLOYMENT_ID=opendax_uat
 export KAIGARA_SCOPES=public,private,secret
 export KAIGARA_APP_NAME=finex,frontdex,gotrue,postgrest,realtime,storage
-export KAIGARA_AES_KEY=athishahciFaidib3ieCi1al
+export KAIGARA_ENCRYPTOR_AES_KEY=athishahciFaidib3ieCi1al
 
 export DATABASE_HOST="0.0.0.0"
 export DATABASE_NAME=kaigara_dev

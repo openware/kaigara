@@ -92,7 +92,7 @@ func (s *VaultEncryptor) Encrypt(plaintext string) (string, error) {
 
 	ciphertext, ok := secret.Data["ciphertext"]
 	if !ok {
-		return "", fmt.Errorf("ciphertext not found in vault response")
+		return "", fmt.Errorf("ciphertext not found in Vault response")
 	}
 	return ciphertext.(string), nil
 }
@@ -108,7 +108,7 @@ func (s *VaultEncryptor) Decrypt(ciphertext string) (string, error) {
 
 	data, ok := secret.Data["plaintext"]
 	if !ok {
-		return "", fmt.Errorf("plaintext not found in vault response")
+		return "", fmt.Errorf("plaintext not found in Vault response")
 	}
 
 	plaintext, err := base64.URLEncoding.DecodeString(data.(string))
@@ -144,7 +144,7 @@ func (s *VaultEncryptor) startRenewToken(token string) error {
 		return err
 	}
 
-	log.Println("INFO: launching token renewal")
+	log.Println("INFO: launching Vault token renewal")
 	go watcher.Start()
 	go func() {
 		for {

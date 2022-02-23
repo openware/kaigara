@@ -7,8 +7,8 @@ import (
 
 	"github.com/openware/ika"
 	"github.com/openware/kaigara/pkg/aes"
-	"github.com/openware/kaigara/pkg/plaintext"
-	"github.com/openware/kaigara/pkg/transit"
+	"github.com/openware/kaigara/pkg/encryptor/plaintext"
+	"github.com/openware/kaigara/pkg/encryptor/transit"
 	"github.com/openware/kaigara/types"
 	"github.com/openware/pkg/database"
 	"github.com/stretchr/testify/assert"

@@ -59,8 +59,8 @@ steps:
       KAIGARA_APP_NAME: finex,frontdex,gotrue,postgrest,realtime,storage
       KAIGARA_DEPLOYMENT_ID: opendax_uat
       KAIGARA_SCOPES: public,private,secret
-      KAIGARA_ENCRYPTION_METHOD: transit
-      KAIGARA_AES_KEY: changeme
+      KAIGARA_ENCRYPTOR: transit
+      KAIGARA_ENCRYPTOR_AES_KEY: changeme
       DATABASE_HOST: "mysql"
       DATABASE_PORT: 3306
       DATABASE_POOL: 1
