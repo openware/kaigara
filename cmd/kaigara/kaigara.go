@@ -177,7 +177,10 @@ func main() {
 	}
 	ls := initLogStream()
 	initConfig()
-	store := config.GetStorageService(cnf, sqlCnf)
+	store, err := config.GetStorageService(cnf, sqlCnf)
+	if err != nil {
+		panic(err)
+	}
 
 	kaigaraRun(ls, store, os.Args[1], os.Args[2:])
 }

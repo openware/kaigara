@@ -24,6 +24,11 @@ type Suite struct {
 	encryptors   map[string]map[string]types.Encryptor
 }
 
+type Config struct {
+	Name     string          `yaml:"name"`
+	DbConfig database.Config `yaml:"database"`
+}
+
 func (s *Suite) SetupSuite() {
 	vaultAddr := os.Getenv("KAIGARA_VAULT_ADDR")
 	vaultToken := os.Getenv("KAIGARA_VAULT_TOKEN")
@@ -35,11 +40,6 @@ func (s *Suite) SetupSuite() {
 	path, err := os.Getwd()
 	if err != nil {
 		panic(err)
-	}
-
-	type Config struct {
-		Name     string          `yaml:"name"`
-		DbConfig database.Config `yaml:"database"`
 	}
 	cfgs := make(map[string]Config)
 	ika.ReadConfig(path+"/config.yml", &cfgs)
@@ -105,7 +105,6 @@ func getEntry(ss *StorageService, appName, scope, name string) interface{} {
 }
 
 func setEntry(ss *StorageService, appName, scope, name, value string) {
-	// Set Entry in each scope
 	err := ss.SetEntry(appName, scope, name, value)
 	if err != nil {
 		panic(err)

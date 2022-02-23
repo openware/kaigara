@@ -65,7 +65,10 @@ func main() {
 
 	// Initialize and write to Vault stores for every component
 	initConfig()
-	secretStore := config.GetStorageService(cnf, sqlCnf)
+	secretStore, err := config.GetStorageService(cnf, sqlCnf)
+	if err != nil {
+		panic(err)
+	}
 
 	for app, scopes := range secrets.Secrets {
 		for scope, data := range scopes.Scopes {

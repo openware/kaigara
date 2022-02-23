@@ -49,7 +49,10 @@ func main() {
 
 	// Initialize and write to Vault stores for every component
 	initConfig()
-	store := config.GetStorageService(cnf, sqlCnf)
+	store, err := config.GetStorageService(cnf, sqlCnf)
+	if err != nil {
+		panic(err)
+	}
 
 	// Get the list of scopes by Splitting KAIGARA_SCOPES env
 	scopesList := strings.Split(*scopes, ",")

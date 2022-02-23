@@ -69,7 +69,6 @@ func (ss *StorageService) Read(appName, scope string) error {
 	if res.Error != nil && !isNotFound {
 		return fmt.Errorf("failed reading from the DB: %s", res.Error)
 	} else if !isNotFound {
-		// fmt.Printf("INFO: reading %s.%s from DB\n", appName, scope)
 		err := json.Unmarshal([]byte(data.Value), &val)
 		if err != nil {
 			return fmt.Errorf("JSON unmarshalling failed: %s", err)
@@ -174,7 +173,7 @@ func (ss *StorageService) GetEntry(appName, scope, name string) (interface{}, er
 	// Since secret scope only supports strings, return a decrypted string
 	scopeSecrets, ok := ss.ds[appName][scope]
 	if !ok {
-		return nil, fmt.Errorf("sqlStore.GetSecret: %s scope is not loaded", scope)
+		return nil, fmt.Errorf("sqlStore.GetEntry: %s scope is not loaded", scope)
 	}
 	if scope == "secret" && name != "version" {
 		rawValue, ok := scopeSecrets[name]
@@ -184,7 +183,7 @@ func (ss *StorageService) GetEntry(appName, scope, name string) (interface{}, er
 
 		str, ok := rawValue.(string)
 		if !ok {
-			return nil, fmt.Errorf("sqlStore.GetSecret: %s is not a string", name)
+			return nil, fmt.Errorf("sqlStore.GetEntry: %s is not a string", name)
 		}
 
 		decrypted, err := ss.encryptors[appName].Decrypt(str)
@@ -218,8 +217,7 @@ func (ss *StorageService) DeleteEntry(appName, scope, name string) error {
 }
 
 func (ss *StorageService) ListAppNames() ([]string, error) {
-	var data Data
-	rows, err := ss.db.Model(&data).Distinct("app_name").Rows()
+	rows, err := ss.db.Model(&Data{}).Distinct("app_name").Rows()
 	if err != nil {
 		return nil, err
 	}

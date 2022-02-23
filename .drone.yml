@@ -13,6 +13,7 @@ services:
       - 8200
     environment:
       VAULT_DEV_ROOT_TOKEN_ID: "root-token"
+
   - name: mysql
     image: mysql:8
     ports:
@@ -20,6 +21,7 @@ services:
     environment:
       MYSQL_DATABASE: "kaigara_dev"
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+
   - name: postgres
     image: postgres:13.3-alpine
     ports:

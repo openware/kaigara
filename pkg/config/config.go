@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"regexp"
 	"strconv"
@@ -47,36 +48,35 @@ type File struct {
 
 var kfile = regexp.MustCompile("(?i)^KFILE_(.*)_(PATH|CONTENT)$")
 
-func GetStorageService(cnf *KaigaraConfig, db *database.Config) types.Storage {
+func GetStorageService(cnf *KaigaraConfig, db *database.Config) (types.Storage, error) {
 	var encryptor types.Encryptor
 	var transits map[string]types.Encryptor
 	var err error
 
-	apps := strings.Split(cnf.AppNames, ",")
-	apps = append(apps, []string{"global", "tokens"}...)
+	apps := append(strings.Split(cnf.AppNames, ","), []string{"global", "tokens"}...)
 
 	if cnf.EncryptMethod == "transit" {
-		log.Println("WARN: Starting vault transit secret engine encryption!")
+		log.Println("INFO: Starting vault transit secret engine encryption!")
 
 		transits = make(map[string]types.Encryptor)
 		for _, app := range apps {
 			transits[app] = transit.NewVaultEncryptor(cnf.VaultAddr, cnf.VaultToken, app)
 		}
 	} else if cnf.EncryptMethod == "aes" {
-		log.Println("WARN: Starting in-memory encryption!")
+		log.Println("INFO: Starting in-memory encryption!")
 		// change key insertion
 		encryptor, err = aes.NewAESEncryptor([]byte(cnf.AesKey))
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 	} else {
-		log.Println("WARN: Starting plaintext encryption. KAIGARA_ENCRYPTION_METHOD is missing")
+		log.Println("INFO: Starting plaintext encryption. KAIGARA_ENCRYPTION_METHOD is missing")
 		encryptor = plaintext.NewPlaintextEncryptor([]byte(""))
 	}
 
 	ss := cnf.SecretStore
 	if ss == "vault" {
-		return vault.NewService(cnf.VaultAddr, cnf.VaultToken, cnf.DeploymentID)
+		return vault.NewService(cnf.VaultAddr, cnf.VaultToken, cnf.DeploymentID), nil
 	} else if ss == "sql" {
 		var encryptors map[string]types.Encryptor
 
@@ -90,11 +90,11 @@ func GetStorageService(cnf *KaigaraConfig, db *database.Config) types.Storage {
 		}
 		svc, err := sql.NewStorageService(cnf.DeploymentID, db, encryptors)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
-		return svc
+		return svc, nil
 	} else {
-		panic("SecretStore does not support: " + ss)
+		return nil, fmt.Errorf("SecretStore does not support: %s", ss)
 	}
 }
 

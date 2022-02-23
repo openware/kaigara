@@ -38,12 +38,16 @@ func main() {
 
 	// Initialize and write to Vault stores for every component
 	initConfig()
-	secretStore := config.GetStorageService(cnf, sqlCnf)
+	secretStore, err := config.GetStorageService(cnf, sqlCnf)
+	if err != nil {
+		panic(err)
+	}
+
 	b := kaidumpRun(secretStore)
 	fmt.Print(b.String())
 
 	// Write secrets into filepath
-	err := ioutil.WriteFile(*filepath, b.Bytes(), 0644)
+	err = ioutil.WriteFile(*filepath, b.Bytes(), 0644)
 	if err != nil {
 		panic(err)
 	}
