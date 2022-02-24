@@ -21,7 +21,7 @@ export KAIGARA_VAULT_TOKEN=changeme
 export KAIGARA_DEPLOYMENT_ID=opendax_uat
 export KAIGARA_SCOPES=public,private,secret
 export KAIGARA_APP_NAME=finex,frontdex,gotrue,postgrest,realtime,storage
-export KAIGARA_ENCRYPTOR_AES_KEY=athishahciFaidib3ieCi1al
+export KAIGARA_ENCRYPTOR_AES_KEY=changemechangemechangeme
 
 export DATABASE_HOST="0.0.0.0"
 export DATABASE_NAME=kaigara_dev
@@ -63,7 +63,7 @@ for store in "${SECRET_STORES[@]}"; do
   ss="${store%%:*}"
   driver="${store##*:}"
 
-  export KAIGARA_SECRET_STORE="${ss}"
+  export KAIGARA_STORAGE_DRIVER="${ss}"
 
   export DATABASE_DRIVER="${driver}"
   if [ "${driver}" == "mysql" ]; then
@@ -81,7 +81,7 @@ for store in "${SECRET_STORES[@]}"; do
   env | grep KAIGARA
   env | grep DATABASE
 
-  ./bin/kaisave -filepath ./cmd/odax_values.yml
+  ./bin/kaisave -filepath ./scripts/odax_values.yml
 
   for assert in "${ASSERTS[@]}"; do
     KEY="${assert%%:*}"

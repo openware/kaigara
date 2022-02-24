@@ -4,17 +4,14 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"os"
 
 	"github.com/openware/kaigara/pkg/config"
-	"github.com/openware/kaigara/pkg/logstream"
 	"github.com/openware/pkg/database"
 	"github.com/openware/pkg/ika"
 	"gopkg.in/yaml.v3"
 )
 
 var cnf = &config.KaigaraConfig{}
-var sqlCnf = &database.Config{}
 
 func initConfig() {
 	err := ika.ReadConfig("", cnf)
@@ -22,15 +19,14 @@ func initConfig() {
 		panic(err)
 	}
 
-	err = ika.ReadConfig("", sqlCnf)
-	if err != nil {
-		panic(err)
+	if cnf.DBConfig == nil {
+		db := &database.Config{}
+		err = ika.ReadConfig("", db)
+		if err != nil {
+			panic(err)
+		}
+		cnf.DBConfig = db
 	}
-}
-
-func initLogStream() logstream.LogStream {
-	url := os.Getenv("KAIGARA_REDIS_URL")
-	return logstream.NewRedisClient(url)
 }
 
 // App contains a map of scopes(public, private, secret) with secrets to be loaded
@@ -65,7 +61,7 @@ func main() {
 
 	// Initialize and write to Vault stores for every component
 	initConfig()
-	secretStore, err := config.GetStorageService(cnf, sqlCnf)
+	secretStore, err := config.GetStorageService(cnf)
 	if err != nil {
 		panic(err)
 	}

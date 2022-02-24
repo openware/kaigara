@@ -180,7 +180,11 @@ func (vs *Service) Decrypt(appName, ciphertext string) (string, error) {
 
 // LoadSecrets loads existing secrets from vault
 func (vs *Service) Read(appName, scope string) error {
-	vs.initTransitKey(appName)
+	err := vs.initTransitKey(appName)
+	if err != nil {
+		return err
+	}
+
 	secret, err := vs.vault.Logical().Read(vs.keyPath(appName, scope))
 	if err != nil {
 		return err
@@ -238,7 +242,10 @@ func (vs *Service) SetEntry(appName, scope, name string, value interface{}) erro
 // SetEntries inserts given data into the secret store, overwriting keys if they exist
 func (vs *Service) SetEntries(appName, scope string, data map[string]interface{}) error {
 	for k, v := range data {
-		vs.SetEntry(appName, scope, k, v)
+		err := vs.SetEntry(appName, scope, k, v)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -346,7 +353,10 @@ func (vs *Service) PushPolicies(policies map[string]string) error {
 	for component, rules := range policies {
 		name := fmt.Sprintf("%s_%s", vs.deploymentID, component)
 		fmt.Println("Loading policy", name)
-		vs.vault.Sys().PutPolicy(name, rules)
+		err := vs.vault.Sys().PutPolicy(name, rules)
+		if err != nil {
+			return err
+		}
 
 		fmt.Println("Creating token", name)
 		t := true

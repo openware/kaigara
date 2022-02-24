@@ -6,9 +6,8 @@ require (
 	github.com/go-redis/redis/v7 v7.2.0
 	github.com/hashicorp/go-retryablehttp v0.6.8 // indirect
 	github.com/hashicorp/vault/api v1.3.1
+	github.com/iancoleman/strcase v0.2.0
 	github.com/mattn/go-sqlite3 v1.14.11 // indirect
-	github.com/openware/ika v0.0.0-20201226164719-402219dd8fa2
-	github.com/openware/kaigara/pkg/vault v0.0.0-20210428072529-c9aa6080bfe8
 	github.com/openware/pkg v0.0.0-20220213194902-d0a3399b2d60
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
 	github.com/stretchr/testify v1.7.0
@@ -23,5 +22,3 @@ require (
 	gorm.io/gorm v1.22.5
 	gotest.tools v2.2.0+incompatible
 )
-
-replace github.com/openware/kaigara/pkg/vault => ./pkg/vault

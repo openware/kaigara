@@ -17,7 +17,7 @@ type StorageService struct {
 	db           *gorm.DB
 	deploymentID string
 	ds           map[string]map[string]map[string]interface{}
-	encryptors   map[string]types.Encryptor
+	encryptor    types.Encryptor
 }
 
 // Data represents per-scope data(configs/secrets) which consists of a JSON field
@@ -29,12 +29,12 @@ type Data struct {
 	Version int64
 }
 
-func NewStorageService(deploymentID string, cnf *database.Config, encryptors map[string]types.Encryptor) (*StorageService, error) {
+func NewStorageService(deploymentID string, cnf *database.Config, encryptor types.Encryptor, logLevel logger.LogLevel) (*StorageService, error) {
 	db, err := database.Connect(cnf)
 	if err != nil {
 		return nil, err
 	}
-	db.Logger = logger.Default.LogMode(logger.Silent)
+	db.Logger = logger.Default.LogMode(logLevel)
 
 	err = db.AutoMigrate(&Data{})
 	if err != nil {
@@ -44,7 +44,7 @@ func NewStorageService(deploymentID string, cnf *database.Config, encryptors map
 	return &StorageService{
 		db:           db,
 		deploymentID: deploymentID,
-		encryptors:   encryptors,
+		encryptor:    encryptor,
 	}, nil
 }
 
@@ -89,7 +89,7 @@ func (ss *StorageService) Write(appName, scope string) error {
 	}
 
 	val := ss.ds[appName][scope]
-	fresh := &Data{
+	data := &Data{
 		AppName: appName,
 		Scope:   scope,
 		Version: ver,
@@ -97,30 +97,31 @@ func (ss *StorageService) Write(appName, scope string) error {
 
 	var old Data
 	res := ss.db.Where("app_name = ? AND scope = ?", appName, scope).First(&old)
-
 	isNotFound := errors.Is(res.Error, gorm.ErrRecordNotFound)
+	isCreate := false
 
 	if res.Error != nil && !isNotFound {
 		return fmt.Errorf("failed to check for an existing value in the DB: %s", res.Error)
 	} else if isNotFound {
-		v, err := json.Marshal(val)
-		if err != nil {
-			return err
-		}
-		fresh.Value = v
-		res = ss.db.Create(fresh)
+		isCreate = true
+	} else {
+		data.Version = old.Version + 1
+		val["version"] = data.Version
+	}
+
+	v, err := json.Marshal(val)
+	if err != nil {
+		return err
+	}
+	data.Value = v
+
+	if isCreate {
+		res = ss.db.Create(data)
 		if res.Error != nil {
 			return fmt.Errorf("initial DB record creation failed: %s", res.Error)
 		}
 	} else {
-		fresh.Version = old.Version + 1
-		val["version"] = fresh.Version
-		v, err := json.Marshal(val)
-		if err != nil {
-			return err
-		}
-		fresh.Value = v
-		err = res.Updates(fresh).Error
+		err := res.Updates(data).Error
 		if err != nil {
 			return fmt.Errorf("existing DB record update failed: %s", err)
 		}
@@ -149,7 +150,7 @@ func (ss *StorageService) SetEntry(appName, scope, name string, value interface{
 		if !ok {
 			return fmt.Errorf("sqlStore.SetSecret: %s is not a string", name)
 		}
-		encrypted, err := ss.encryptors[appName].Encrypt(str)
+		encrypted, err := ss.encryptor.Encrypt(str, appName)
 		if err != nil {
 			return err
 		}
@@ -164,7 +165,10 @@ func (ss *StorageService) SetEntry(appName, scope, name string, value interface{
 
 func (ss *StorageService) SetEntries(appName string, scope string, values map[string]interface{}) error {
 	for k, v := range values {
-		ss.SetEntry(appName, scope, k, v)
+		err := ss.SetEntry(appName, scope, k, v)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -186,7 +190,7 @@ func (ss *StorageService) GetEntry(appName, scope, name string) (interface{}, er
 			return nil, fmt.Errorf("sqlStore.GetEntry: %s is not a string", name)
 		}
 
-		decrypted, err := ss.encryptors[appName].Decrypt(str)
+		decrypted, err := ss.encryptor.Decrypt(str, appName)
 		if err != nil {
 			return nil, err
 		}
@@ -217,22 +221,12 @@ func (ss *StorageService) DeleteEntry(appName, scope, name string) error {
 }
 
 func (ss *StorageService) ListAppNames() ([]string, error) {
-	rows, err := ss.db.Model(&Data{}).Distinct("app_name").Rows()
-	if err != nil {
-		return nil, err
+	var appNames []string
+	tx := ss.db.Model(&Data{}).Distinct().Pluck("app_name", &appNames)
+	if tx.Error != nil {
+		return nil, tx.Error
 	}
 
-	var appNames []string
-	for rows.Next() {
-		var app string
-		if err = rows.Scan(&app); err != nil {
-			return appNames, err
-		}
-		appNames = append(appNames, app)
-	}
-	if err = rows.Err(); err != nil {
-		return appNames, err
-	}
 	return appNames, nil
 }
 

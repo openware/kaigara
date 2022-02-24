@@ -6,7 +6,6 @@ import (
 
 	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/types"
-	"github.com/openware/pkg/database"
 	"gopkg.in/yaml.v3"
 )
 
@@ -15,27 +14,38 @@ var envs = map[string]map[string]map[string]string{}
 func setupStore(store types.Storage) {
 	for name, app := range envs {
 		for scope, elem := range app {
-			store.Read(name, scope)
+			err := store.Read(name, scope)
+			if err != nil {
+				panic(err)
+			}
+
 			secrets, err := store.GetEntries(name, scope)
 			if err != nil {
 				panic(err)
 			}
+
 			isSave := false
 			for key, val := range elem {
 				if _, ok := secrets[key]; !ok {
 					isSave = true
-					store.SetEntry(name, scope, key, val)
+					err = store.SetEntry(name, scope, key, val)
+					if err != nil {
+						panic(err)
+					}
 				}
 			}
 			if isSave {
-				store.Write(name, scope)
+				err = store.Write(name, scope)
+				if err != nil {
+					panic(err)
+				}
 			}
 		}
 	}
 }
 
-func GetStorage(cfg *config.KaigaraConfig, db *database.Config) types.Storage {
-	store, err := config.GetStorageService(cfg, db)
+func GetStorage(cfg *config.KaigaraConfig) types.Storage {
+	store, err := config.GetStorageService(cfg)
 	if err != nil {
 		panic(err)
 	}

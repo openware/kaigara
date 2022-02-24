@@ -21,7 +21,6 @@ import (
 )
 
 var cnf = &config.KaigaraConfig{}
-var sqlCnf = &database.Config{}
 
 func initConfig() {
 	err := ika.ReadConfig("", cnf)
@@ -29,9 +28,13 @@ func initConfig() {
 		panic(err)
 	}
 
-	err = ika.ReadConfig("", sqlCnf)
-	if err != nil {
-		panic(err)
+	if cnf.DBConfig == nil {
+		db := &database.Config{}
+		err = ika.ReadConfig("", db)
+		if err != nil {
+			panic(err)
+		}
+		cnf.DBConfig = db
 	}
 }
 
@@ -56,8 +59,12 @@ func kaigaraRun(ls logstream.LogStream, store types.Storage, cmd string, cmdArgs
 	c.Env = env.Vars
 
 	for _, file := range env.Files {
-		os.MkdirAll(path.Dir(file.Path), 0750)
-		err := ioutil.WriteFile(file.Path, []byte(file.Content), 0640)
+		err := os.MkdirAll(path.Dir(file.Path), 0750)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to make dir %s: %s", file.Path, err.Error()))
+		}
+
+		err = ioutil.WriteFile(file.Path, []byte(file.Content), 0640)
 		if err != nil {
 			panic(fmt.Sprintf("Failed to write file %s: %s", file.Path, err.Error()))
 		}
@@ -80,9 +87,16 @@ func kaigaraRun(ls logstream.LogStream, store types.Storage, cmd string, cmdArgs
 			} else if err != nil {
 				panic(err)
 			}
-			stdin.Write(line)
+			_, err = stdin.Write(line)
+			if err != nil {
+				panic(err)
+			}
+
 			if !isPrefix {
-				stdin.Write([]byte("\n"))
+				_, err = stdin.Write([]byte("\n"))
+				if err != nil {
+					panic(err)
+				}
 			}
 		}
 	}()
@@ -177,7 +191,7 @@ func main() {
 	}
 	ls := initLogStream()
 	initConfig()
-	store, err := config.GetStorageService(cnf, sqlCnf)
+	store, err := config.GetStorageService(cnf)
 	if err != nil {
 		panic(err)
 	}

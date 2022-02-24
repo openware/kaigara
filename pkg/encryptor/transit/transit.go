@@ -11,20 +11,16 @@ import (
 
 // VaultEncryptor implements Encryptor interface by using Vault transit
 type VaultEncryptor struct {
-	vault   *api.Client
-	appName string
+	vault *api.Client
 }
 
 // NewVaultEncryptor instantiate a vault encryption service
-func NewVaultEncryptor(addr, token, appName string) *VaultEncryptor {
+func NewVaultEncryptor(addr, token string) *VaultEncryptor {
 	if addr == "" {
 		addr = "http://localhost:8200"
 	}
 	if token == "" {
 		panic("VAULT_TOKEN is missing")
-	}
-	if appName == "" {
-		panic("VAULT_APP_NAME is missing")
 	}
 
 	config := &api.Config{
@@ -39,20 +35,7 @@ func NewVaultEncryptor(addr, token, appName string) *VaultEncryptor {
 	client.SetToken(token)
 
 	s := &VaultEncryptor{
-		appName: appName,
-		vault:   client,
-	}
-
-	ok, err := s.transitKeyExists()
-	if err != nil {
-		panic(err)
-	}
-	if !ok {
-		err = s.transitKeyCreate()
-		if err != nil {
-			panic(err)
-		}
-		log.Println("INFO: Transit key created")
+		vault: client,
 	}
 
 	err = s.startRenewToken(token)
@@ -63,16 +46,16 @@ func NewVaultEncryptor(addr, token, appName string) *VaultEncryptor {
 	return s
 }
 
-func (s *VaultEncryptor) transitKeyExists() (bool, error) {
-	secret, err := s.vault.Logical().Read("transit/keys/" + s.appName)
+func (s *VaultEncryptor) transitKeyExists(appName string) (bool, error) {
+	secret, err := s.vault.Logical().Read("transit/keys/" + appName)
 	if err != nil {
 		return false, err
 	}
 	return secret != nil, nil
 }
 
-func (s *VaultEncryptor) transitKeyCreate() error {
-	_, err := s.vault.Logical().Write("transit/keys/"+s.appName, map[string]interface{}{
+func (s *VaultEncryptor) transitKeyCreate(appName string) error {
+	_, err := s.vault.Logical().Write("transit/keys/"+appName, map[string]interface{}{
 		"force": true,
 	})
 	if err != nil {
@@ -81,9 +64,29 @@ func (s *VaultEncryptor) transitKeyCreate() error {
 	return nil
 }
 
+func (s *VaultEncryptor) createTransitKeyIfNotExist(appName string) error {
+	ok, err := s.transitKeyExists(appName)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		err = s.transitKeyCreate(appName)
+		if err != nil {
+			return err
+		}
+		log.Println("INFO: Transit key created")
+	}
+	return nil
+}
+
 // Encrypt the plaintext argument and return a ciphertext string or an error
-func (s *VaultEncryptor) Encrypt(plaintext string) (string, error) {
-	secret, err := s.vault.Logical().Write("transit/encrypt/"+s.appName, map[string]interface{}{
+func (s *VaultEncryptor) Encrypt(plaintext, appName string) (string, error) {
+	err := s.createTransitKeyIfNotExist(appName)
+	if err != nil {
+		return "", err
+	}
+
+	secret, err := s.vault.Logical().Write("transit/encrypt/"+appName, map[string]interface{}{
 		"plaintext": base64.URLEncoding.EncodeToString([]byte(plaintext)),
 	})
 	if err != nil {
@@ -98,8 +101,13 @@ func (s *VaultEncryptor) Encrypt(plaintext string) (string, error) {
 }
 
 // Decrypt the given ciphertext and return the plaintext or an error
-func (s *VaultEncryptor) Decrypt(ciphertext string) (string, error) {
-	secret, err := s.vault.Logical().Write("transit/decrypt/"+s.appName, map[string]interface{}{
+func (s *VaultEncryptor) Decrypt(ciphertext, appName string) (string, error) {
+	err := s.createTransitKeyIfNotExist(appName)
+	if err != nil {
+		return "", err
+	}
+
+	secret, err := s.vault.Logical().Write("transit/decrypt/"+appName, map[string]interface{}{
 		"ciphertext": ciphertext,
 	})
 	if err != nil {

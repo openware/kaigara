@@ -17,7 +17,6 @@ import (
 )
 
 var cnf = &config.KaigaraConfig{}
-var sqlCnf = &database.Config{}
 
 func initConfig() {
 	err := ika.ReadConfig("", cnf)
@@ -25,9 +24,13 @@ func initConfig() {
 		panic(err)
 	}
 
-	err = ika.ReadConfig("", sqlCnf)
-	if err != nil {
-		panic(err)
+	if cnf.DBConfig == nil {
+		db := &database.Config{}
+		err = ika.ReadConfig("", db)
+		if err != nil {
+			panic(err)
+		}
+		cnf.DBConfig = db
 	}
 }
 
@@ -38,7 +41,7 @@ func main() {
 
 	// Initialize and write to Vault stores for every component
 	initConfig()
-	secretStore, err := config.GetStorageService(cnf, sqlCnf)
+	secretStore, err := config.GetStorageService(cnf)
 	if err != nil {
 		panic(err)
 	}
@@ -100,6 +103,10 @@ func kaidumpRun(store types.Storage) bytes.Buffer {
 	var b bytes.Buffer
 	yamlEncoder := yaml.NewEncoder(&b)
 	yamlEncoder.SetIndent(2)
-	yamlEncoder.Encode(&secretsMap)
+	err = yamlEncoder.Encode(&secretsMap)
+	if err != nil {
+		panic(err)
+	}
+
 	return b
 }

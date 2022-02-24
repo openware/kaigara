@@ -8,14 +8,14 @@ import (
 )
 
 func TestPlaintextEncryptor(t *testing.T) {
-	s := NewPlaintextEncryptor([]byte("1234567890123456"))
+	s := NewPlaintextEncryptor()
 	require.NotEqual(t, s, nil)
 
-	cipher, err := s.Encrypt("bonjour")
+	cipher, err := s.Encrypt("bonjour", "")
 	require.NoError(t, err)
 	assert.Equal(t, "bonjour", cipher)
 
-	plain, err := s.Decrypt(cipher)
+	plain, err := s.Decrypt(cipher, "")
 	require.NoError(t, err)
 	assert.Equal(t, "bonjour", plain)
 }

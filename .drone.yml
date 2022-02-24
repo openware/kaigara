@@ -61,12 +61,18 @@ steps:
       KAIGARA_SCOPES: public,private,secret
       KAIGARA_ENCRYPTOR: transit
       KAIGARA_ENCRYPTOR_AES_KEY: changeme
+      KAIGARA_LOG_LEVEL: 1
       DATABASE_HOST: "mysql"
       DATABASE_PORT: 3306
       DATABASE_POOL: 1
     commands:
       - go mod download
-      - go test ./...
+      - go test $(go list ./... | grep -v /pkg)
+      - go test $(go list ./... | grep /pkg | grep -v /pkg/storage)
+      - go test -run TestSetEntry github.com/openware/kaigara/pkg/storage/sql
+      - go test -run TestDeleteEntry github.com/openware/kaigara/pkg/storage/sql
+      - go test -run TestListAppNames github.com/openware/kaigara/pkg/storage/sql
+      - go test -run TestStorageServiceSetGetEntriesIncreaseVersion github.com/openware/kaigara/pkg/storage/sql
 
   - name: Bump and tag
     image: golang:1.14

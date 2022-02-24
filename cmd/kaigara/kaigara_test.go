@@ -9,10 +9,19 @@ import (
 	"github.com/openware/kaigara/pkg/storage/sql"
 	"github.com/openware/pkg/database"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 )
 
-var deploymentID string
-var appNames []string
+var deploymentID = "opendax_uat"
+var sqlCnf = &database.Config{
+	Driver: "mysql",
+	Host:   os.Getenv("DATABASE_HOST"),
+	Port:   os.Getenv("DATABASE_PORT"),
+	Name:   "kaigara_dev",
+	User:   "root",
+	Pass:   "",
+	Pool:   1,
+}
 
 var vars = []string{
 	"FINEX_DATABASE_USERNAME",
@@ -37,8 +46,6 @@ var vars = []string{
 }
 
 func TestMain(m *testing.M) {
-	deploymentID = "opendax_uat"
-	appNames = []string{"finex", "frontdex", "gotrue", "postgrest", "realtime", "storage"}
 	cnf = &config.KaigaraConfig{
 		VaultAddr:     os.Getenv("KAIGARA_VAULT_ADDR"),
 		VaultToken:    os.Getenv("KAIGARA_VAULT_TOKEN"),
@@ -46,15 +53,7 @@ func TestMain(m *testing.M) {
 		Scopes:        "public,private,secret",
 		AppNames:      "finex,frontdex,gotrue,postgrest,realtime,storage",
 		EncryptMethod: "transit",
-	}
-	sqlCnf = &database.Config{
-		Driver: "mysql",
-		Host:   os.Getenv("DATABASE_HOST"),
-		Port:   os.Getenv("DATABASE_PORT"),
-		Name:   "kaigara_dev",
-		User:   "root",
-		Pass:   "",
-		Pool:   1,
+		DBConfig:      sqlCnf,
 	}
 
 	// exec test and this returns an exit code to pass to os
@@ -74,9 +73,9 @@ func TestAppNamesToLoggingName(t *testing.T) {
 }
 
 func TestKaigaraPrintenvVault(t *testing.T) {
-	cnf.SecretStore = "vault"
+	cnf.Storage = "vault"
 	cnf.AppNames = "finex,frontdex,gotrue,postgrest,realtime,storage"
-	store := env.GetStorage(cnf, &database.Config{})
+	store := env.GetStorage(cnf)
 	ls := initLogStream()
 
 	for _, v := range vars {
@@ -85,9 +84,9 @@ func TestKaigaraPrintenvVault(t *testing.T) {
 }
 
 func TestKaigaraPrintenvSql(t *testing.T) {
-	cnf.SecretStore = "sql"
+	cnf.Storage = "sql"
 	cnf.AppNames = "finex,frontdex,gotrue,postgrest,realtime,storage"
-	store := env.GetStorage(cnf, sqlCnf)
+	store := env.GetStorage(cnf)
 	ls := initLogStream()
 
 	for _, v := range vars {
@@ -99,7 +98,7 @@ func TestKaigaraPrintenvSql(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	tx := sqlDB.Debug().Unscoped().Where("1 = 1").Delete(&sql.Data{})
+	tx := sqlDB.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(&sql.Data{})
 	if tx.Error != nil {
 		panic(tx.Error)
 	}

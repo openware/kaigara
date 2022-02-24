@@ -15,11 +15,12 @@ import (
 	"github.com/openware/kaigara/pkg/storage/vault"
 	"github.com/openware/kaigara/types"
 	"github.com/openware/pkg/database"
+	"gorm.io/gorm/logger"
 )
 
 // KaigaraConfig contains cli options
 type KaigaraConfig struct {
-	SecretStore   string `yaml:"secret-store" env:"KAIGARA_SECRET_STORE" env-default:"vault"`
+	Storage       string `yaml:"secret-store" env:"KAIGARA_STORAGE_DRIVER" env-default:"vault"`
 	VaultToken    string `yaml:"vault-token" env:"KAIGARA_VAULT_TOKEN"`
 	VaultAddr     string `yaml:"vault-addr" env:"KAIGARA_VAULT_ADDR" env-default:"http://127.0.0.1:8200"`
 	AppNames      string `yaml:"vault-app-name" env:"KAIGARA_APP_NAME"`
@@ -27,6 +28,8 @@ type KaigaraConfig struct {
 	Scopes        string `yaml:"scopes" env:"KAIGARA_SCOPES" env-default:"public,private,secret"`
 	EncryptMethod string `yaml:"encryption-method" env:"KAIGARA_ENCRYPTOR" env-default:"transit"`
 	AesKey        string `yaml:"aes-key" env:"KAIGARA_ENCRYPTOR_AES_KEY"`
+	LogLevel      int    `yaml:"log-level" env:"KAIGARA_LOG_LEVEL" env-default:"1"`
+	DBConfig      *database.Config
 }
 
 // Config is the interface definition of generic config storage
@@ -48,20 +51,14 @@ type File struct {
 
 var kfile = regexp.MustCompile("(?i)^KFILE_(.*)_(PATH|CONTENT)$")
 
-func GetStorageService(cnf *KaigaraConfig, db *database.Config) (types.Storage, error) {
+func GetStorageService(cnf *KaigaraConfig) (types.Storage, error) {
 	var encryptor types.Encryptor
-	var transits map[string]types.Encryptor
 	var err error
-
-	apps := append(strings.Split(cnf.AppNames, ","), []string{"global", "tokens"}...)
 
 	if cnf.EncryptMethod == "transit" {
 		log.Println("INFO: Starting vault transit secret engine encryption!")
 
-		transits = make(map[string]types.Encryptor)
-		for _, app := range apps {
-			transits[app] = transit.NewVaultEncryptor(cnf.VaultAddr, cnf.VaultToken, app)
-		}
+		encryptor = transit.NewVaultEncryptor(cnf.VaultAddr, cnf.VaultToken)
 	} else if cnf.EncryptMethod == "aes" {
 		log.Println("INFO: Starting in-memory encryption!")
 		// change key insertion
@@ -71,24 +68,17 @@ func GetStorageService(cnf *KaigaraConfig, db *database.Config) (types.Storage, 
 		}
 	} else {
 		log.Println("INFO: Starting plaintext encryption. KAIGARA_ENCRYPTOR is missing")
-		encryptor = plaintext.NewPlaintextEncryptor([]byte(""))
+		encryptor = plaintext.NewPlaintextEncryptor()
 	}
 
-	ss := cnf.SecretStore
+	ss := cnf.Storage
+	if cnf.DBConfig == nil {
+		cnf.DBConfig = &database.Config{}
+	}
 	if ss == "vault" {
 		return vault.NewService(cnf.VaultAddr, cnf.VaultToken, cnf.DeploymentID), nil
 	} else if ss == "sql" {
-		var encryptors map[string]types.Encryptor
-
-		if transits == nil {
-			encryptors = make(map[string]types.Encryptor)
-			for _, app := range apps {
-				encryptors[app] = encryptor
-			}
-		} else {
-			encryptors = transits
-		}
-		svc, err := sql.NewStorageService(cnf.DeploymentID, db, encryptors)
+		svc, err := sql.NewStorageService(cnf.DeploymentID, cnf.DBConfig, encryptor, logger.LogLevel(cnf.LogLevel))
 		if err != nil {
 			return nil, err
 		}
