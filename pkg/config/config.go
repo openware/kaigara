@@ -8,9 +8,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/openware/kaigara/pkg/aes"
+	"github.com/openware/kaigara/pkg/encryptor/aes"
 	"github.com/openware/kaigara/pkg/encryptor/plaintext"
 	"github.com/openware/kaigara/pkg/encryptor/transit"
+	encryptor "github.com/openware/kaigara/pkg/encryptor/types"
 	"github.com/openware/kaigara/pkg/storage/sql"
 	"github.com/openware/kaigara/pkg/storage/vault"
 	"github.com/openware/kaigara/types"
@@ -52,7 +53,7 @@ type File struct {
 var kfile = regexp.MustCompile("(?i)^KFILE_(.*)_(PATH|CONTENT)$")
 
 func GetStorageService(cnf *KaigaraConfig) (types.Storage, error) {
-	var encryptor types.Encryptor
+	var encryptor encryptor.Encryptor
 	var err error
 
 	if cnf.EncryptMethod == "transit" {
