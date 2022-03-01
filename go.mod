@@ -12,9 +12,9 @@ require (
 	github.com/go-redis/redis/v7 v7.2.0
 	github.com/hashicorp/go-retryablehttp v0.6.8 // indirect
 	github.com/mattn/go-sqlite3 v1.14.11 // indirect
-	github.com/openware/kaigara/pkg/encryptor v0.0.0
-	github.com/openware/kaigara/pkg/storage/sql v0.0.0
-	github.com/openware/kaigara/pkg/storage/vault v0.0.0
+	github.com/openware/kaigara/pkg/encryptor v0.0.0-20220225091359-d368f0dfe8db
+	github.com/openware/kaigara/pkg/storage/sql v0.0.0-20220301034206-c8eea45f3512
+	github.com/openware/kaigara/pkg/storage/vault v0.0.0-20220301034206-c8eea45f3512
 	github.com/openware/pkg v0.0.0-20220225074124-ddad5f429a07
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
 	github.com/stretchr/testify v1.7.0

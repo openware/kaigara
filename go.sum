@@ -314,6 +314,8 @@ github.com/onsi/gomega v1.7.1/go.mod h1:XdKZgCCFLUoM/7CFJVPcG8C1xQ1AJ0vpAezJrB7J
 github.com/onsi/gomega v1.10.1/go.mod h1:iN09h71vgCQne3DLsj+A5owkum+a2tYe+TOCB1ybHNo=
 github.com/onsi/gomega v1.11.0 h1:+CqWgvj0OZycCaqclBD1pxKHAU+tOkHmQIWvDHq2aug=
 github.com/onsi/gomega v1.11.0/go.mod h1:azGKhqFUon9Vuj0YmTfLSmx0FUwqXYSTl5re8lQLTUg=
+github.com/openware/kaigara/pkg/encryptor v0.0.0-20220225091359-d368f0dfe8db h1:dzWGyuSpmXtpsDjMwpUPzeE4GbAN6wcjZTwQ6vU02pI=
+github.com/openware/kaigara/pkg/encryptor v0.0.0-20220225091359-d368f0dfe8db/go.mod h1:MkxvJMuvEB0bmTeJnSZgEzm6ugCaZdgoVT+U+xGRHtE=
 github.com/openware/pkg v0.0.0-20220225074124-ddad5f429a07 h1:sO164r10zeBPO9Dd/fq4qHvrMY45VpOw8CGPmU81e7c=
 github.com/openware/pkg v0.0.0-20220225074124-ddad5f429a07/go.mod h1:7LHfmqEPTO7PNuo9kAe2NYRXjynZrNEEqwILq5tZoII=
 github.com/openware/pkg/mngapi v0.0.0-20210909215422-545bdd9fd380/go.mod h1:xrL/Wa/WxoeZut/fJ2opcvL4YaIQBgyex+LMioVxLZA=
