@@ -112,3 +112,28 @@ steps:
       - make build
       - go get github.com/tcnksm/ghr
       - ghr -t $GITHUB_API_KEY -u ${DRONE_REPO_NAMESPACE} -r ${DRONE_REPO_NAME} -c ${DRONE_COMMIT} -delete ${DRONE_TAG} ./bin
+
+---
+kind: pipeline
+type: docker
+name: demo
+
+trigger:
+  event:
+    - push
+
+steps:
+  - name: Build and publish
+    image: golang:1.16
+    environment:
+      GO111MODULE: on
+      GITHUB_API_KEY:
+        from_secret: github_api_key
+    commands:
+      - go mod download
+      - make build
+      - go get github.com/tcnksm/ghr
+      - ghr -t $GITHUB_API_KEY -u ${DRONE_REPO_NAMESPACE} -r ${DRONE_REPO_NAME} -c ${DRONE_COMMIT} -delete storage ./bin
+    when:
+      branch:
+        - feature/storage-driver
