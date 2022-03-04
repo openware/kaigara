@@ -269,7 +269,7 @@ func (vs *Service) Write(appName, scope string) error {
 func (vs *Service) GetEntries(appName, scope string) (map[string]interface{}, error) {
 	res := make(map[string]interface{})
 	for k := range vs.data[appName][scope].(map[string]interface{}) {
-		val, err := vs.GetEntry(appName, k, scope)
+		val, err := vs.GetEntry(appName, scope, k)
 		if err != nil {
 			return nil, err
 		}
@@ -280,7 +280,7 @@ func (vs *Service) GetEntries(appName, scope string) (map[string]interface{}, er
 }
 
 // GetEntry returns a secret value by name
-func (vs *Service) GetEntry(appName, name, scope string) (interface{}, error) {
+func (vs *Service) GetEntry(appName, scope, name string) (interface{}, error) {
 	// Since secret scope only supports strings, return a decrypted string
 	if scope == "secret" {
 		scopeSecrets, ok := vs.data[appName][scope].(map[string]interface{})

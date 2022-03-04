@@ -30,7 +30,7 @@ func TestVaultServiceSetGetSecrets(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Get and assert Secrets in each scope after save
-		secret, err := secretStore.GetEntry(appName, "key_"+scope, scope)
+		secret, err := secretStore.GetEntry(appName, scope, "key_"+scope)
 		assert.NoError(t, err)
 		assert.Equal(t, "value_"+scope, secret.(string))
 
@@ -39,7 +39,7 @@ func TestVaultServiceSetGetSecrets(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Get and assert Secrets in each scope after the deletion
-		secret, err = secretStore.GetEntry(appName, "key_"+scope, scope)
+		secret, err = secretStore.GetEntry(appName, scope, "key_"+scope)
 		assert.NoError(t, err)
 		assert.Equal(t, nil, secret)
 	}
