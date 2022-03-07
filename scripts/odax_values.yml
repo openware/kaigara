@@ -67,11 +67,11 @@ secrets:
         gotrue_smtp_user: QueeWai1Dailef6ies3y
       public: {}
       secret:
-        database_url: postgres://gotrue_odax_yellow_com:thaiDooJohw9baechaiH@postgresql.core:5432/opendax_odax_yellow_com
+        database_url: postgres://gotrue_odax_example:thaiDooJohw9baechaiH@postgresql.core:5432/opendax_odax_example
         gotrue_database_host: postgresql.core
-        gotrue_database_name: opendax_odax_yellow_com
+        gotrue_database_name: opendax_odax_example
         gotrue_database_password: eiyehiaFei0eing4Caiy
-        gotrue_database_username: gotrue_odax_yellow_com
+        gotrue_database_username: gotrue_odax_example
         gotrue_disable_signup: "false"
         gotrue_jwt_secret: ahteebieHo1Eequ2Eeth
   postgrest:
@@ -80,30 +80,30 @@ secrets:
       public: {}
       secret:
         pgrst_db_host: postgresql.core
-        pgrst_db_name: opendax_odax_yellow_com
+        pgrst_db_name: opendax_odax_example
         pgrst_db_pass: iey2Mei1aib5ioz0Kai3
         pgrst_db_port: "5432"
-        pgrst_db_uri: postgres://postgrest_odax_yellow_com:ricuPheechau8feezahb@postgresql.core:5432/opendax_odax_yellow_com
-        pgrst_db_username: postgrest_odax_yellow_com
+        pgrst_db_uri: postgres://postgrest_odax_example:ricuPheechau8feezahb@postgresql.core:5432/opendax_odax_example
+        pgrst_db_username: postgrest_odax_example
   realtime:
     scopes:
       private: {}
       public: {}
       secret:
         realtime_db_host: postgresql.core
-        realtime_db_name: opendax_odax_yellow_com
+        realtime_db_name: opendax_odax_example
         realtime_db_pass: bahchiePaeh0eeDuoW2i
-        realtime_db_username: realtime_odax_yellow_com
+        realtime_db_username: realtime_odax_example
   storage:
     scopes:
       private: {}
       public: {}
       secret:
         storage_db_host: postgresql.core
-        storage_db_name: opendax_odax_yellow_com
+        storage_db_name: opendax_odax_example
         storage_db_pass: esaishahSe7Amu7Iefi4
-        storage_db_uri: postgres://storage_odax_yellow_com:phocie0Ma8ooFalei6Ah@postgresql.core:5432/opendax_odax_yellow_com
-        storage_db_username: storage_odax_yellow_com
+        storage_db_uri: postgres://example:phocie0Ma8ooFalei6Ah@postgresql.core:5432/opendax_odax_example
+        storage_db_username: storage_odax_example
   tokens:
     scopes:
       private: {}

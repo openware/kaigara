@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
-	dat, err := ioutil.ReadFile(path + "/config.yml")
+	dat, err := ioutil.ReadFile(path + "/testdata/config.yml")
 	if err != nil {
 		panic(err)
 	}
