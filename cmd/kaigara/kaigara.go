@@ -16,27 +16,10 @@ import (
 	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/logstream"
 	"github.com/openware/kaigara/types"
-	"github.com/openware/pkg/database"
 	"github.com/openware/pkg/ika"
 )
 
 var cnf = &config.KaigaraConfig{}
-
-func initConfig() {
-	err := ika.ReadConfig("", cnf)
-	if err != nil {
-		panic(err)
-	}
-
-	if cnf.DBConfig == nil {
-		db := &database.Config{}
-		err = ika.ReadConfig("", db)
-		if err != nil {
-			panic(err)
-		}
-		cnf.DBConfig = db
-	}
-}
 
 func parseScopes() []string {
 	return strings.Split(cnf.Scopes, ",")
@@ -190,7 +173,11 @@ func main() {
 		panic("Usage: kaigara CMD [ARGS...]")
 	}
 	ls := initLogStream()
-	initConfig()
+
+	if err := ika.ReadConfig("", cnf); err != nil {
+		panic(err)
+	}
+
 	store, err := config.GetStorageService(cnf)
 	if err != nil {
 		panic(err)

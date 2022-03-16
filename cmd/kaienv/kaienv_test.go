@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 	"testing"
@@ -14,7 +15,9 @@ type mockSecretStorage struct {
 	types.Storage
 }
 
-func (mockSS *mockSecretStorage) Read(_, _ string) error { return nil }
+func (mockSS *mockSecretStorage) Read(_, _ string) error {
+	return nil
+}
 
 func (mockSS *mockSecretStorage) GetEntries(appName, scope string) (map[string]interface{}, error) {
 	app, ok := testStore[appName]
@@ -67,7 +70,7 @@ var testStore = map[string]map[string]map[string]interface{}{
 	},
 }
 
-func Test_printExactEnv(t *testing.T) {
+func TestKaienvRun(t *testing.T) {
 	mockSS := &mockSecretStorage{}
 	testConf := &config.KaigaraConfig{
 		Scopes:   "public,private,secret",
@@ -82,7 +85,9 @@ func Test_printExactEnv(t *testing.T) {
 					envValueExpected := value
 
 					t.Run(fmt.Sprintf("Test print %s %d", envVariable, i), func(t *testing.T) {
-						envValueActual, err := getExactEnv(testConf, mockSS, envVariable)
+						var buff bytes.Buffer
+						err := kaienvRun(testConf, mockSS, []string{"kaienv", envVariable}, &buff)
+						envValueActual := buff.String()
 						assert.Equal(t, envValueExpected, envValueActual)
 						assert.NoError(t, err)
 					})

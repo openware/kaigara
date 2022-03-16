@@ -3,32 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-
-	"github.com/openware/kaigara/pkg/config"
-
 	"strings"
 
-	"github.com/openware/pkg/database"
+	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/pkg/ika"
 )
 
 var cnf = &config.KaigaraConfig{}
-
-func initConfig() {
-	err := ika.ReadConfig("", cnf)
-	if err != nil {
-		panic(err)
-	}
-
-	if cnf.DBConfig == nil {
-		db := &database.Config{}
-		err = ika.ReadConfig("", db)
-		if err != nil {
-			panic(err)
-		}
-		cnf.DBConfig = db
-	}
-}
 
 func main() {
 	// Parse flags
@@ -51,7 +32,10 @@ func main() {
 	}
 
 	// Initialize and write to Vault stores for every component
-	initConfig()
+	if err := ika.ReadConfig("", cnf); err != nil {
+		panic(err)
+	}
+
 	store, err := config.GetStorageService(cnf)
 	if err != nil {
 		panic(err)
