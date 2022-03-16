@@ -6,6 +6,9 @@ bin/*
 *.so
 *.dylib
 
+# Output of kaidump command
+kaigara-data.yaml
+
 # Test binary, built with `go test -c`
 *.test
 

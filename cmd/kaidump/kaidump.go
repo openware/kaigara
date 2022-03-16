@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"flag"
 	"fmt"
 	"io/ioutil"
 
@@ -35,9 +34,8 @@ func initConfig() {
 }
 
 func main() {
-	// Parse flags
-	filepath := flag.String("a", "outputs.yaml", "Outputs file path to save secrets from vault")
-	flag.Parse()
+	// output filepath is predefined so we can prevent accidental commit of this file using .gitignore
+	filepath := "./kaigara-data.yaml"
 
 	// Initialize and write to Vault stores for every component
 	initConfig()
@@ -50,12 +48,12 @@ func main() {
 	fmt.Print(b.String())
 
 	// Write secrets into filepath
-	err = ioutil.WriteFile(*filepath, b.Bytes(), 0644)
+	err = ioutil.WriteFile(filepath, b.Bytes(), 0644)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("# Saved the dump into %s\n", *filepath)
+	fmt.Printf("# Saved the dump into %s\n", filepath)
 }
 
 func kaidumpRun(store types.Storage) bytes.Buffer {

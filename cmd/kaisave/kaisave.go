@@ -41,7 +41,7 @@ type SecretsFile struct {
 
 func main() {
 	// Parse flags
-	filepath := flag.String("filepath", "secrets.yaml", "Path to the file containing secrets")
+	filepath := flag.String("filepath", "kaigara-data.yaml", "Path to the file containing secrets")
 	flag.Parse()
 
 	// Read the file
