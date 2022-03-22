@@ -1,8 +1,16 @@
-build:
+APPS := kaienv kaitail kaidump kaidel
+
+build: all
+
+all:	$(APPS) kaigara kaisave
+
+$(APPS):
+	CGO_ENABLED=0 go build -a -ldflags '-w' -o bin/$@ ./cmd/$@/*.go
+
+kaigara:
 	CGO_ENABLED=0 go build -a -tags netgo -ldflags '-w' -o bin/kaigara ./cmd/kaigara
-	CGO_ENABLED=0 go build -a -ldflags '-w' -o bin/kaitail ./cmd/kaitail
-	CGO_ENABLED=0 go build -a -ldflags '-w' -o bin/kaidump ./cmd/kaidump
-	CGO_ENABLED=0 go build -a -ldflags '-w' -o bin/kaidel ./cmd/kaidel
+
+kaisave:
 	chmod +x ./build-kaisave.sh
 	./build-kaisave.sh
 

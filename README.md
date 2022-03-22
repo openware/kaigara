@@ -116,3 +116,8 @@ Make sure you've set `KAIGARA_SCOPES` env before using `kaidump`
 ### Delete secret from the SecretStore
 
 To delete secret from vault, use `kaidel -k <key name>`
+
+### Print internal environment variables
+
+To print all environment variables, use `kaienv`.
+To print exact environment variable, use `kaienv *ENV_NAME*`.

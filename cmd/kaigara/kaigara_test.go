@@ -13,7 +13,7 @@ import (
 )
 
 var deploymentID = "opendax_uat"
-var sqlCnf = &database.Config{
+var sqlCnf = database.Config{
 	Driver: "mysql",
 	Host:   os.Getenv("DATABASE_HOST"),
 	Port:   os.Getenv("DATABASE_PORT"),
@@ -94,7 +94,7 @@ func TestKaigaraPrintenvSql(t *testing.T) {
 	}
 
 	// Cleanup data
-	sqlDB, err := database.Connect(sqlCnf)
+	sqlDB, err := database.Connect(&sqlCnf)
 	if err != nil {
 		panic(err)
 	}

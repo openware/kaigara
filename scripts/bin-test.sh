@@ -50,9 +50,9 @@ ASSERTS=("FINEX_DATABASE_USERNAME:finex_opendax_uat"
 DELETES=("FINEX_DATABASE_HOST"
   "FINEX_DATABASE_PASSWORD")
 
-SECRET_STORES=("sql:postgres"
+SECRET_STORES=("vault:vault"
   "sql:mysql"
-  "vault:vault")
+  "sql:postgres")
 
 while !(db_ready); do
   sleep 3
@@ -87,7 +87,7 @@ for store in "${SECRET_STORES[@]}"; do
     KEY="${assert%%:*}"
     VALUE="${assert##*:}"
 
-    out=$(./bin/kaigara printenv $KEY)
+    out=$(./bin/kaienv $KEY)
     if [ "$out" == "$VALUE" ]; then
       echo "ENV: { Key: ${KEY}, Out: ${out} }"
     else
@@ -109,6 +109,8 @@ for store in "${SECRET_STORES[@]}"; do
   for assert in "${DELETES[@]}"; do
     KEY="${assert}"
 
-    ./bin/kaigara printenv $KEY
+    if ./bin/kaienv $KEY; then
+      exit 1
+    fi
   done
 done

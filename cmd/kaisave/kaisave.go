@@ -6,28 +6,11 @@ import (
 	"io/ioutil"
 
 	"github.com/openware/kaigara/pkg/config"
-	"github.com/openware/pkg/database"
 	"github.com/openware/pkg/ika"
 	"gopkg.in/yaml.v3"
 )
 
 var cnf = &config.KaigaraConfig{}
-
-func initConfig() {
-	err := ika.ReadConfig("", cnf)
-	if err != nil {
-		panic(err)
-	}
-
-	if cnf.DBConfig == nil {
-		db := &database.Config{}
-		err = ika.ReadConfig("", db)
-		if err != nil {
-			panic(err)
-		}
-		cnf.DBConfig = db
-	}
-}
 
 // App contains a map of scopes(public, private, secret) with secrets to be loaded
 type App struct {
@@ -60,7 +43,10 @@ func main() {
 	}
 
 	// Initialize and write to Vault stores for every component
-	initConfig()
+	if err := ika.ReadConfig("", cnf); err != nil {
+		panic(err)
+	}
+
 	secretStore, err := config.GetStorageService(cnf)
 	if err != nil {
 		panic(err)

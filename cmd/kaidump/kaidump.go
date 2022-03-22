@@ -11,28 +11,11 @@ import (
 
 	"strings"
 
-	"github.com/openware/pkg/database"
 	"github.com/openware/pkg/ika"
 	"gopkg.in/yaml.v3"
 )
 
 var cnf = &config.KaigaraConfig{}
-
-func initConfig() {
-	err := ika.ReadConfig("", cnf)
-	if err != nil {
-		panic(err)
-	}
-
-	if cnf.DBConfig == nil {
-		db := &database.Config{}
-		err = ika.ReadConfig("", db)
-		if err != nil {
-			panic(err)
-		}
-		cnf.DBConfig = db
-	}
-}
 
 func main() {
 	// Parse flags
@@ -40,7 +23,10 @@ func main() {
 	flag.Parse()
 
 	// Initialize and write to Vault stores for every component
-	initConfig()
+	if err := ika.ReadConfig("", cnf); err != nil {
+		panic(err)
+	}
+
 	secretStore, err := config.GetStorageService(cnf)
 	if err != nil {
 		panic(err)

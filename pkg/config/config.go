@@ -30,7 +30,7 @@ type KaigaraConfig struct {
 	EncryptMethod string `yaml:"encryption-method" env:"KAIGARA_ENCRYPTOR" env-default:"transit"`
 	AesKey        string `yaml:"aes-key" env:"KAIGARA_ENCRYPTOR_AES_KEY"`
 	LogLevel      int    `yaml:"log-level" env:"KAIGARA_LOG_LEVEL" env-default:"1"`
-	DBConfig      *database.Config
+	DBConfig      database.Config
 }
 
 // Config is the interface definition of generic config storage
@@ -73,13 +73,10 @@ func GetStorageService(cnf *KaigaraConfig) (types.Storage, error) {
 	}
 
 	ss := cnf.Storage
-	if cnf.DBConfig == nil {
-		cnf.DBConfig = &database.Config{}
-	}
 	if ss == "vault" {
 		return vault.NewService(cnf.VaultAddr, cnf.VaultToken, cnf.DeploymentID), nil
 	} else if ss == "sql" {
-		svc, err := sql.NewStorageService(cnf.DeploymentID, cnf.DBConfig, encryptor, logger.LogLevel(cnf.LogLevel))
+		svc, err := sql.NewStorageService(cnf.DeploymentID, &cnf.DBConfig, encryptor, logger.LogLevel(cnf.LogLevel))
 		if err != nil {
 			return nil, err
 		}

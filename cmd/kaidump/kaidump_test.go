@@ -14,11 +14,11 @@ import (
 )
 
 var deploymentID string
-var sqlConfig *database.Config
+var sqlConfig database.Config
 
 func TestMain(m *testing.M) {
 	deploymentID = "opendax_uat"
-	sqlConfig = &database.Config{
+	sqlConfig = database.Config{
 		Driver: "mysql",
 		Host:   os.Getenv("DATABASE_HOST"),
 		Port:   os.Getenv("DATABASE_PORT"),
@@ -32,7 +32,7 @@ func TestMain(m *testing.M) {
 	code := m.Run()
 
 	// Cleanup data
-	sqlDB, err := database.Connect(sqlConfig)
+	sqlDB, err := database.Connect(&sqlConfig)
 	if err != nil {
 		panic(err)
 	}
