@@ -30,6 +30,7 @@ type Data struct {
 }
 
 func NewStorageService(deploymentID string, cnf *database.Config, encryptor types.Encryptor, logLevel logger.LogLevel) (*StorageService, error) {
+	cnf.Name = "kaigara_" + deploymentID
 	db, err := database.Connect(cnf)
 	if err != nil {
 		return nil, err

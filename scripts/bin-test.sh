@@ -24,7 +24,6 @@ export KAIGARA_APP_NAME=finex,frontdex,gotrue,postgrest,realtime,storage
 export KAIGARA_ENCRYPTOR_AES_KEY=changemechangemechangeme
 
 export DATABASE_HOST="0.0.0.0"
-export DATABASE_NAME=kaigara_dev
 export DATABASE_POOL=1
 
 ASSERTS=("FINEX_DATABASE_USERNAME:finex_opendax_uat"

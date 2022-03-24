@@ -22,8 +22,8 @@ func TestMain(m *testing.M) {
 		Driver: "mysql",
 		Host:   os.Getenv("DATABASE_HOST"),
 		Port:   os.Getenv("DATABASE_PORT"),
-		Name:   "kaigara_dev",
 		User:   "root",
+		Name:   "kaigara_" + deploymentID,
 		Pass:   "",
 		Pool:   1,
 	}
