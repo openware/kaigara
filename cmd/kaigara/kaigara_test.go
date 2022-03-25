@@ -17,7 +17,7 @@ var sqlCnf = database.Config{
 	Driver: "mysql",
 	Host:   os.Getenv("DATABASE_HOST"),
 	Port:   os.Getenv("DATABASE_PORT"),
-	Name:   "kaigara_dev",
+	Name:   "kaigara_" + deploymentID,
 	User:   "root",
 	Pass:   "",
 	Pool:   1,

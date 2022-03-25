@@ -20,7 +20,7 @@ services:
     ports:
       - "3306:3306"
     environment:
-      MYSQL_DATABASE: "kaigara_dev"
+      MYSQL_DATABASE: "kaigara_opendax_uat"
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
 
   postgres:
@@ -32,7 +32,7 @@ services:
       - -c
       - wal_level=logical
     environment:
-      POSTGRES_DB: kaigara_dev
+      POSTGRES_DB: kaigara_opendax_uat
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: changeme
       POSTGRES_PORT: "5432"
