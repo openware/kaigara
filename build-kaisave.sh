@@ -1,6 +1,6 @@
 #!/bin/bash
 
-platforms=("darwin/amd64" "linux/amd64" "windows/amd64")
+platforms=("darwin/arm64" "darwin/amd64" "linux/amd64" "windows/amd64")
 
 for platform in "${platforms[@]}"
 do

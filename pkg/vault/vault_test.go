@@ -4,8 +4,14 @@ import (
 	"os"
 	"testing"
 
+	"github.com/hashicorp/vault/api"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestVaultNewApiClient(t *testing.T) {
+	_, err := api.NewClient(&api.Config{Address: "http://vault-prod.core:8200"})
+	assert.NoError(t, err)
+}
 
 func TestVaultServiceSetGetSecrets(t *testing.T) {
 	vaultAddr := os.Getenv("KAIGARA_VAULT_ADDR")
