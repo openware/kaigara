@@ -3,6 +3,8 @@ module github.com/openware/kaigara/pkg/storage/sql
 go 1.14
 
 require (
+	github.com/go-sql-driver/mysql v1.6.0 // indirect
+	github.com/lib/pq v1.10.2 // indirect
 	github.com/openware/kaigara/pkg/encryptor v0.0.0-20220225091359-d368f0dfe8db
 	github.com/openware/pkg v0.0.0-20220225074124-ddad5f429a07
 	github.com/stretchr/testify v1.7.0
