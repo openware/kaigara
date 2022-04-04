@@ -1,10 +1,13 @@
 package sql
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
 	"github.com/openware/kaigara/pkg/encryptor/types"
 	"github.com/openware/pkg/database"
 	"gorm.io/datatypes"
@@ -31,6 +34,10 @@ type Data struct {
 
 func NewStorageService(deploymentID string, cnf *database.Config, encryptor types.Encryptor, logLevel logger.LogLevel) (*StorageService, error) {
 	cnf.Name = "kaigara_" + deploymentID
+	if err := ensureDatabaseExists(cnf); err != nil {
+		return nil, err
+	}
+
 	db, err := database.Connect(cnf)
 	if err != nil {
 		return nil, err
@@ -47,6 +54,48 @@ func NewStorageService(deploymentID string, cnf *database.Config, encryptor type
 		deploymentID: deploymentID,
 		encryptor:    encryptor,
 	}, nil
+}
+
+func ensureDatabaseExists(cnf *database.Config) error {
+	switch cnf.Driver {
+	case "mysql":
+		dsn := fmt.Sprintf(
+			"%s:%s@tcp(%s:%s)/?charset=utf8&parseTime=True&loc=Local",
+			cnf.User, cnf.Pass, cnf.Host, cnf.Port,
+		)
+		conn, err := sql.Open(cnf.Driver, dsn)
+		if err != nil {
+			return err
+		}
+		defer conn.Close()
+		if _, err = conn.Exec("CREATE DATABASE IF NOT EXISTS " + cnf.Name); err != nil {
+			return err
+		}
+	case "postgres":
+		dsn := fmt.Sprintf(
+			"user=%s password=%s host=%s port=%s sslmode=disable",
+			cnf.User, cnf.Pass, cnf.Host, cnf.Port,
+		)
+		conn, err := sql.Open(cnf.Driver, dsn)
+		if err != nil {
+			return err
+		}
+		defer conn.Close()
+		if res, err := conn.Exec(fmt.Sprintf("SELECT 1 FROM pg_database WHERE datname='%s'", cnf.Name)); err != nil {
+			return err
+		} else if rows, err := res.RowsAffected(); err != nil {
+			return err
+		} else if rows > 0 {
+			return nil
+		}
+		if _, err = conn.Exec("CREATE DATABASE " + cnf.Name); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("unsupported database driver: %s", cnf.Driver)
+	}
+
+	return nil
 }
 
 func (ss *StorageService) Read(appName, scope string) error {
