@@ -133,9 +133,11 @@ func (ss *SqlService) Read(appName, scope string) error {
 }
 
 func (ss *SqlService) Write(appName, scope string) error {
-	ver, ok := ss.ds[appName][scope]["version"].(int)
-	if !ok {
-		return fmt.Errorf("failed to get %s.%s.version: type assertion to int64 failed, actual value: %+v", appName, scope, ss.ds[appName][scope]["version"])
+	var ver int64
+	if _, ok := ss.ds[appName][scope]["version"]; !ok {
+		ss.ds[appName][scope]["version"] = 0
+	} else if ver, ok = ss.ds[appName][scope]["version"].(int64); !ok {
+		return fmt.Errorf("failed to get %s.%s.version: invalid value: %+v", appName, scope, ss.ds[appName][scope]["version"])
 	}
 
 	val := ss.ds[appName][scope]
