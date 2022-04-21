@@ -98,12 +98,7 @@ steps:
       DATABASE_POOL: 1
     commands:
       - go mod download
-      - go test $(go list ./... | grep -v /pkg)
-      - go test $(go list ./... | grep /pkg | grep -v /pkg/storage)
-      - go test -run TestSetEntry github.com/openware/kaigara/pkg/storage/sql
-      - go test -run TestDeleteEntry github.com/openware/kaigara/pkg/storage/sql
-      - go test -run TestListAppNames github.com/openware/kaigara/pkg/storage/sql
-      - go test -run TestStorageServiceSetGetEntriesIncreaseVersion github.com/openware/kaigara/pkg/storage/sql
+      - go test -race -count=10 -cover -coverprofile=cover.out ./...
 
   - name: Bump and tag
     image: golang:1.14

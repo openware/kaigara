@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/openware/kaigara/cmd/env"
+	"github.com/openware/kaigara/cmd/testenv"
 	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/logstream"
 	"github.com/openware/kaigara/pkg/storage"
@@ -53,7 +53,7 @@ func TestMain(m *testing.M) {
 		DeploymentID:  deploymentID,
 		Scopes:        "public,private,secret",
 		AppNames:      "finex,frontdex,gotrue,postgrest,realtime,storage",
-		EncryptMethod: "transit",
+		EncryptMethod: "",
 		DBConfig:      sqlconf,
 	}
 
@@ -76,28 +76,34 @@ func TestAppNamesToLoggingName(t *testing.T) {
 func TestKaigaraPrintenvVault(t *testing.T) {
 	conf.Storage = "vault"
 	conf.AppNames = "finex,frontdex,gotrue,postgrest,realtime,storage"
-	store := env.GetStorage(conf)
-	ls, err := logstream.NewRedisClient(conf.RedisURL)
+	ss := testenv.GetStorage(conf)
+
+	var err error
+	ls, err = logstream.NewRedisClient(conf.RedisURL)
 	if err != nil {
-		t.Fatal(err)
+		t.Logf("WRN: %s", err.Error())
+		ls = nil
 	}
 
 	for _, v := range vars {
-		kaigaraRun(ls, store, "printenv", []string{v})
+		kaigaraRun(ss, "printenv", []string{v})
 	}
 }
 
 func TestKaigaraPrintenvSql(t *testing.T) {
 	conf.Storage = "sql"
 	conf.AppNames = "finex,frontdex,gotrue,postgrest,realtime,storage"
-	store := env.GetStorage(conf)
-	ls, err := logstream.NewRedisClient(conf.RedisURL)
+	ss := testenv.GetStorage(conf)
+
+	var err error
+	ls, err = logstream.NewRedisClient(conf.RedisURL)
 	if err != nil {
-		t.Fatal(err)
+		t.Logf("WRN: %s", err.Error())
+		ls = nil
 	}
 
 	for _, v := range vars {
-		kaigaraRun(ls, store, "printenv", []string{v})
+		kaigaraRun(ss, "printenv", []string{v})
 	}
 
 	// Cleanup data

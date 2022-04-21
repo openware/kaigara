@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/openware/kaigara/pkg/config"
+	"github.com/openware/kaigara/pkg/env"
 	"github.com/openware/kaigara/pkg/logstream"
 	"github.com/openware/kaigara/pkg/storage"
 	"github.com/openware/kaigara/types"
@@ -21,6 +22,7 @@ import (
 )
 
 var conf = &config.KaigaraConfig{}
+var ls logstream.LogStream
 
 func parseScopes() []string {
 	return strings.Split(conf.Scopes, ",")
@@ -34,18 +36,18 @@ func appNamesToLoggingName() string {
 	return strings.Join(parseAppNames(), "&")
 }
 
-func kaigaraRun(ls logstream.LogStream, store types.Storage, cmd string, cmdArgs []string) {
+func kaigaraRun(ss types.Storage, cmd string, cmdArgs []string) {
 	log.Printf("INF: starting command: %s %v\n", cmd, cmdArgs)
 	scopes := parseScopes()
 	c := exec.Command(cmd, cmdArgs...)
-	env, err := config.BuildCmdEnv(parseAppNames(), store, os.Environ(), scopes)
+	envs, err := env.BuildCmdEnv(parseAppNames(), ss, os.Environ(), scopes)
 	if err != nil {
 		panic(err)
 	}
 
-	c.Env = env.Vars
+	c.Env = envs.Vars
 
-	for _, file := range env.Files {
+	for _, file := range envs.Files {
 		err := os.MkdirAll(path.Dir(file.Path), 0750)
 		if err != nil {
 			panic(fmt.Sprintf("Failed to make dir %s: %s", file.Path, err.Error()))
@@ -103,43 +105,51 @@ func kaigaraRun(ls logstream.LogStream, store types.Storage, cmd string, cmdArgs
 	log.Printf("INF: publishing on %s and %s\n", channelOut, channelErr)
 
 	var wg sync.WaitGroup
-	wg.Add(3)
-	go func() {
-		if err := ls.Publish(channelOut, stdout); err != nil {
-			log.Fatal(err)
-		}
-		wg.Done()
-	}()
+	if ls != nil {
+		wg.Add(2)
 
-	go func() {
-		if err := ls.Publish(channelErr, stderr); err != nil {
-			log.Fatal(err)
-		}
-		wg.Done()
-	}()
+		go func() {
+			if err := ls.Publish(channelOut, stdout); err != nil {
+				log.Printf("ERR: %s", err.Error())
+			}
+			wg.Done()
+		}()
+
+		go func() {
+			if err := ls.Publish(channelErr, stderr); err != nil {
+				log.Printf("ERR: %s", err.Error())
+			}
+			wg.Done()
+		}()
+	}
 
 	if err := c.Start(); err != nil {
 		log.Fatal(err)
 	}
 
-	go exitWhenSecretsOutdated(c, store, scopes)
+	go exitWhenSecretsOutdated(c, ss, scopes)
 
 	quit := make(chan int)
-	go func() {
-		ls.HeartBeat(appNamesToLoggingName(), quit)
-		wg.Done()
-	}()
+	if ls != nil {
+		wg.Add(1)
+		go func() {
+			ls.HeartBeat(appNamesToLoggingName(), quit)
+			wg.Done()
+		}()
+	}
 
 	if err := c.Wait(); err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("exit status 0\n")
-	quit <- 0
+
+	if ls != nil {
+		quit <- 0
+	}
 
 	wg.Wait()
 }
 
-func exitWhenSecretsOutdated(c *exec.Cmd, store types.Storage, scopes []string) {
+func exitWhenSecretsOutdated(c *exec.Cmd, ss types.Storage, scopes []string) {
 	appNames := append(parseAppNames(), "global")
 
 	if ignore, ok := os.LookupEnv("KAIGARA_IGNORE_GLOBAL"); ok && ignore == "true" {
@@ -149,12 +159,12 @@ func exitWhenSecretsOutdated(c *exec.Cmd, store types.Storage, scopes []string) 
 	for range time.Tick(time.Second * 20) {
 		for _, appName := range appNames {
 			for _, scope := range scopes {
-				current, err := store.GetCurrentVersion(appName, scope)
+				current, err := ss.GetCurrentVersion(appName, scope)
 				if err != nil {
 					log.Println(err.Error())
 					break
 				}
-				latest, err := store.GetLatestVersion(appName, scope)
+				latest, err := ss.GetLatestVersion(appName, scope)
 				if err != nil {
 					log.Println(err.Error())
 					break
@@ -180,15 +190,17 @@ func main() {
 		panic(err)
 	}
 
-	ls, err := logstream.NewRedisClient(conf.RedisURL)
+	var err error
+	ls, err = logstream.NewRedisClient(conf.RedisURL)
+	if err != nil {
+		log.Printf("WRN: %s", err.Error())
+		ls = nil
+	}
+
+	ss, err := storage.GetStorageService(conf)
 	if err != nil {
 		panic(err)
 	}
 
-	store, err := storage.GetStorageService(conf)
-	if err != nil {
-		panic(err)
-	}
-
-	kaigaraRun(ls, store, os.Args[1], os.Args[2:])
+	kaigaraRun(ss, os.Args[1], os.Args[2:])
 }

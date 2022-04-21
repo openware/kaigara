@@ -8,11 +8,12 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
-	"github.com/openware/kaigara/pkg/encryptor/types"
 	"github.com/openware/pkg/database"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	"github.com/openware/kaigara/types"
 )
 
 // SqlService contains a gorm DB client and a container for data loaded from DB into memory
@@ -200,7 +201,7 @@ func (ss *SqlService) SetEntry(appName, scope, name string, value interface{}) e
 	if scope == "secret" && name != "version" {
 		str, ok := value.(string)
 		if !ok {
-			return fmt.Errorf("sqlStore.SetSecret: %s is not a string", name)
+			return fmt.Errorf("invalid value for %s, must be a string: %v", name, value)
 		}
 		encrypted, err := ss.encryptor.Encrypt(str, appName)
 		if err != nil {
@@ -229,8 +230,9 @@ func (ss *SqlService) GetEntry(appName, scope, name string) (interface{}, error)
 	// Since secret scope only supports strings, return a decrypted string
 	scopeSecrets, ok := ss.ds[appName][scope]
 	if !ok {
-		return nil, fmt.Errorf("sqlStore.GetEntry: %s scope is not loaded", scope)
+		return nil, fmt.Errorf("scope '%s' is not loaded", scope)
 	}
+
 	if scope == "secret" && name != "version" {
 		rawValue, ok := scopeSecrets[name]
 		if !ok {
@@ -239,7 +241,7 @@ func (ss *SqlService) GetEntry(appName, scope, name string) (interface{}, error)
 
 		str, ok := rawValue.(string)
 		if !ok {
-			return nil, fmt.Errorf("sqlStore.GetEntry: %s is not a string", name)
+			return nil, fmt.Errorf("invalid value for %s, must be a string: %v", name, rawValue)
 		}
 
 		decrypted, err := ss.encryptor.Decrypt(str, appName)

@@ -6,15 +6,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-
-	"github.com/openware/kaigara/pkg/config"
-	"github.com/openware/kaigara/pkg/storage"
-	"github.com/openware/kaigara/types"
-
 	"strings"
 
 	"github.com/openware/pkg/ika"
 	"gopkg.in/yaml.v3"
+
+	"github.com/openware/kaigara/pkg/config"
+	"github.com/openware/kaigara/pkg/storage"
+	"github.com/openware/kaigara/types"
 )
 
 var conf = &config.KaigaraConfig{}
@@ -29,12 +28,12 @@ func main() {
 		panic(err)
 	}
 
-	secretStore, err := storage.GetStorageService(conf)
+	ss, err := storage.GetStorageService(conf)
 	if err != nil {
 		panic(err)
 	}
 
-	b := kaidumpRun(secretStore)
+	b := kaidumpRun(ss)
 	fmt.Println(b.String())
 
 	// Write secrets into filepath

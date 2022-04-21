@@ -1,4 +1,4 @@
-package env
+package testenv
 
 import (
 	"io/ioutil"
@@ -12,15 +12,15 @@ import (
 
 var envs = map[string]map[string]map[string]string{}
 
-func setupStore(store types.Storage) {
+func setupStore(ss types.Storage) {
 	for name, app := range envs {
 		for scope, elem := range app {
-			err := store.Read(name, scope)
+			err := ss.Read(name, scope)
 			if err != nil {
 				panic(err)
 			}
 
-			secrets, err := store.GetEntries(name, scope)
+			secrets, err := ss.GetEntries(name, scope)
 			if err != nil {
 				panic(err)
 			}
@@ -29,14 +29,14 @@ func setupStore(store types.Storage) {
 			for key, val := range elem {
 				if _, ok := secrets[key]; !ok {
 					isSave = true
-					err = store.SetEntry(name, scope, key, val)
+					err = ss.SetEntry(name, scope, key, val)
 					if err != nil {
 						panic(err)
 					}
 				}
 			}
 			if isSave {
-				err = store.Write(name, scope)
+				err = ss.Write(name, scope)
 				if err != nil {
 					panic(err)
 				}
@@ -56,15 +56,17 @@ func GetStorage(conf *config.KaigaraConfig) types.Storage {
 		panic(err)
 	}
 
-	envFile, err := ioutil.ReadFile(path + "/../env/env.yml")
+	envFile, err := ioutil.ReadFile(path + "/../testenv/testenv.yml")
 	if err != nil {
 		panic(err)
 	}
+
 	envs = make(map[string]map[string]map[string]string)
 	err = yaml.Unmarshal(envFile, &envs)
 	if err != nil {
 		panic(err)
 	}
+
 	setupStore(ss)
 
 	return ss

@@ -5,12 +5,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/openware/kaigara/cmd/env"
-	"github.com/openware/kaigara/pkg/config"
-	"github.com/openware/kaigara/pkg/storage/sql"
 	"github.com/openware/pkg/database"
 	"github.com/stretchr/testify/assert"
-	"gorm.io/gorm"
+
+	"github.com/openware/kaigara/cmd/testenv"
+	"github.com/openware/kaigara/pkg/config"
 )
 
 var deploymentID string
@@ -31,16 +30,6 @@ func TestMain(m *testing.M) {
 	// exec test and this returns an exit code to pass to os
 	code := m.Run()
 
-	// Cleanup data
-	sqlDB, err := database.Connect(&sqlConfig)
-	if err != nil {
-		panic(err)
-	}
-	tx := sqlDB.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(&sql.Data{})
-	if tx.Error != nil {
-		panic(tx.Error)
-	}
-
 	os.Exit(code)
 }
 
@@ -56,8 +45,8 @@ func TestKaidumpListAppNames(t *testing.T) {
 		AesKey:        "changemechangemechangeme",
 		DBConfig:      sqlConfig,
 	}
-	store := env.GetStorage(conf)
-	b := kaidumpRun(store)
+	ss := testenv.GetStorage(conf)
+	b := kaidumpRun(ss)
 	assert.NotNil(t, b)
 	fmt.Print(b.String())
 }

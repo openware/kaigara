@@ -225,7 +225,7 @@ func (vs *Service) SetEntry(appName, scope, name string, value interface{}) erro
 	if scope == "secret" {
 		str, ok := value.(string)
 		if !ok {
-			return fmt.Errorf("secretStore.SetSecret: %s is not a string", name)
+			return fmt.Errorf("invalid value for %s, must be a string: %v", name, value)
 		}
 
 		encrypted, err := vs.Encrypt(appName, str)
@@ -287,7 +287,7 @@ func (vs *Service) GetEntry(appName, scope, name string) (interface{}, error) {
 	if scope == "secret" {
 		scopeSecrets, ok := vs.data[appName][scope].(map[string]interface{})
 		if !ok {
-			return nil, fmt.Errorf("secretStore.GetSecret: %s scope is not a map", scope)
+			return nil, fmt.Errorf("scope '%s' is not a map", scope)
 		}
 
 		rawValue, ok := scopeSecrets[name]
@@ -297,7 +297,7 @@ func (vs *Service) GetEntry(appName, scope, name string) (interface{}, error) {
 
 		str, ok := rawValue.(string)
 		if !ok {
-			return nil, fmt.Errorf("secretStore.GetSecret: %s is not a string", name)
+			return nil, fmt.Errorf("invalid value for %s, must be a string: %v", name, rawValue)
 		}
 
 		decrypted, err := vs.Decrypt(appName, str)

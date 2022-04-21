@@ -58,9 +58,9 @@ while !(db_ready); do
   echo "waiting for db ..."
 done
 
-for store in "${SECRET_STORES[@]}"; do
-  ss="${store%%:*}"
-  driver="${store##*:}"
+for ss in "${SECRET_STORES[@]}"; do
+  ss="${ss%%:*}"
+  driver="${ss##*:}"
 
   export KAIGARA_STORAGE_DRIVER="${ss}"
 

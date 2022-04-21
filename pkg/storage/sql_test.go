@@ -7,12 +7,13 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/openware/kaigara/pkg/encryptor"
-	"github.com/openware/kaigara/types"
-	"github.com/openware/pkg/database"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
 	"gorm.io/gorm"
+
+	"github.com/openware/kaigara/pkg/encryptor"
+	"github.com/openware/kaigara/types"
+	"github.com/openware/pkg/database"
 )
 
 var deploymentID = "opendax_uat"
@@ -81,7 +82,6 @@ func getEntriesReload(ss *SqlService, appName, scope string) (map[string]interfa
 		return nil, err
 	}
 
-	fmt.Printf("Loading ss for %s\n", scope)
 	data, err := ss.GetEntries(appName, scope)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func getEntryReload(ss *SqlService, appName, scope, name string) (interface{}, e
 	}
 
 	entry, err := ss.GetEntry(appName, scope, name)
-	fmt.Printf("entry: %s\n", entry)
+	fmt.Printf("entry: %v\n", entry)
 	if err != nil {
 		return nil, err
 	}
@@ -159,8 +159,8 @@ func TestSetEntry(t *testing.T) {
 						t.Fatal(err)
 					}
 
-					assert.NoError(t, err)
-					assert.Equal(t, map[string]interface{}{"key_" + scope: "value_" + scope, "version": int64(0)}, result)
+					delete(result, "version")
+					assert.Equal(t, map[string]interface{}{"key_" + scope: "value_" + scope}, result)
 
 					entry, err := getEntryReload(ssTmp, appName, scope, name)
 					if err != nil {
