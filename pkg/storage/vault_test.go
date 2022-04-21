@@ -1,4 +1,4 @@
-package vault
+package storage
 
 import (
 	"os"
@@ -15,7 +15,10 @@ func TestVaultServiceSetGetSecrets(t *testing.T) {
 	appName := "peatio"
 
 	// Initialize Vault SecretStore
-	secretStore := NewService(vaultAddr, vaultToken, deploymentID)
+	secretStore, err := NewVaultService(vaultAddr, vaultToken, deploymentID)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	for _, scope := range scopes {
 		err := secretStore.Read(appName, scope)

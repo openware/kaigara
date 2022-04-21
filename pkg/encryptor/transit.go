@@ -1,4 +1,4 @@
-package transit
+package encryptor
 
 import (
 	"encoding/base64"
@@ -15,12 +15,13 @@ type VaultEncryptor struct {
 }
 
 // NewVaultEncryptor instantiate a vault encryption service
-func NewVaultEncryptor(addr, token string) *VaultEncryptor {
+func NewVaultEncryptor(addr, token string) (*VaultEncryptor, error) {
 	if addr == "" {
 		addr = "http://localhost:8200"
 	}
+
 	if token == "" {
-		panic("VAULT_TOKEN is missing")
+		return nil, fmt.Errorf("vault token is empty")
 	}
 
 	config := &api.Config{
@@ -30,7 +31,7 @@ func NewVaultEncryptor(addr, token string) *VaultEncryptor {
 
 	client, err := api.NewClient(config)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	client.SetToken(token)
 
@@ -40,10 +41,10 @@ func NewVaultEncryptor(addr, token string) *VaultEncryptor {
 
 	err = s.startRenewToken(token)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	return s
+	return s, nil
 }
 
 func (s *VaultEncryptor) transitKeyExists(appName string) (bool, error) {
@@ -102,8 +103,7 @@ func (s *VaultEncryptor) Encrypt(plaintext, appName string) (string, error) {
 
 // Decrypt the given ciphertext and return the plaintext or an error
 func (s *VaultEncryptor) Decrypt(ciphertext, appName string) (string, error) {
-	err := s.createTransitKeyIfNotExist(appName)
-	if err != nil {
+	if err := s.createTransitKeyIfNotExist(appName); err != nil {
 		return "", err
 	}
 
@@ -135,7 +135,7 @@ func (s *VaultEncryptor) startRenewToken(token string) error {
 	}
 
 	if !renewable {
-		log.Println("WARN: token is not renewable")
+		log.Println("WRN: token is not renewable")
 		return nil
 	}
 
@@ -152,16 +152,16 @@ func (s *VaultEncryptor) startRenewToken(token string) error {
 		return err
 	}
 
-	log.Println("INFO: launching Vault token renewal")
+	log.Println("INF: launching Vault token renewal")
 	go watcher.Start()
 	go func() {
 		for {
 			select {
 			case err := <-watcher.DoneCh():
-				log.Printf("ERROR: Token renew failed: %s\n", err.Error())
+				log.Printf("ERR: token renew failed: %s\n", err.Error())
 				return
 			case <-watcher.RenewCh():
-				log.Println("INFO: Successfully renewed token")
+				log.Println("INF: successfully renewed token")
 			}
 		}
 	}()

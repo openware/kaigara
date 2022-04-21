@@ -6,10 +6,11 @@ import (
 	"strings"
 
 	"github.com/openware/kaigara/pkg/config"
+	"github.com/openware/kaigara/pkg/storage"
 	"github.com/openware/pkg/ika"
 )
 
-var cnf = &config.KaigaraConfig{}
+var conf = &config.KaigaraConfig{}
 
 func main() {
 	// Parse flags
@@ -32,11 +33,11 @@ func main() {
 	}
 
 	// Initialize and write to Vault stores for every component
-	if err := ika.ReadConfig("", cnf); err != nil {
+	if err := ika.ReadConfig("", conf); err != nil {
 		panic(err)
 	}
 
-	store, err := config.GetStorageService(cnf)
+	ss, err := storage.GetStorageService(conf)
 	if err != nil {
 		panic(err)
 	}
@@ -48,18 +49,18 @@ func main() {
 	}
 
 	for _, scope := range scopesList {
-		err := store.Read(*appName, scope)
+		err := ss.Read(*appName, scope)
 		if err != nil {
 			panic(err)
 		}
 
 		fmt.Printf("Deleting %s.%s.%s\n", *appName, scope, *keyName)
-		err = store.DeleteEntry(*appName, scope, *keyName)
+		err = ss.DeleteEntry(*appName, scope, *keyName)
 		if err != nil {
 			panic(err)
 		}
 
-		err = store.Write(*appName, scope)
+		err = ss.Write(*appName, scope)
 		if err != nil {
 			panic(err)
 		}

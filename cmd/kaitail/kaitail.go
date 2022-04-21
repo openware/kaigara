@@ -6,19 +6,27 @@ import (
 	"log"
 	"regexp"
 
+	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/logstream"
-	"github.com/openware/kaigara/pkg/utils"
+	"github.com/openware/pkg/ika"
 )
 
-var (
-	channel  = flag.String("c", "log.*", "Redis channel pattern to subscribe")
-	showName = flag.Bool("n", false, "Show channel name")
-)
+var conf = &config.KaigaraConfig{}
 
 func main() {
+	channel := flag.String("c", "log.*", "Redis channel pattern to subscribe")
+	showName := flag.Bool("n", false, "Show channel name")
 	flag.Parse()
 
-	ls := logstream.NewRedisClient(utils.GetEnv("KAIGARA_REDIS_URL", "redis://localhost:6379/0"))
+	if err := ika.ReadConfig("", conf); err != nil {
+		panic(err)
+	}
+
+	ls, err := logstream.NewRedisClient(conf.RedisURL)
+	if err != nil {
+		panic(err)
+	}
+
 	ch := ls.Subscribe(*channel)
 
 	re := regexp.MustCompile(`^Message<(log\.[A-z.]+?): (.+?)>$`)
@@ -27,7 +35,7 @@ func main() {
 		rs := re.FindStringSubmatch(msg.String())
 
 		if len(rs) < 2 {
-			log.Printf("Could not parse message: %s\n", msg)
+			log.Printf("WRN: could not parse message: %s\n", msg)
 			continue
 		}
 

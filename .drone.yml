@@ -8,10 +8,11 @@ trigger:
 
 services:
   - name: vault
-    image: vault:1.5.3
+    image: vault:1.10.0
     ports:
       - 8200
     environment:
+      VAULT_ADDR: http://0.0.0.0:8200
       VAULT_DEV_ROOT_TOKEN_ID: "root-token"
 
   - name: mysql
@@ -33,7 +34,7 @@ services:
 
 steps:
   - name: Enable Vault Transit
-    image: vault:1.5.3
+    image: vault:1.10.0
     environment:
       VAULT_ADDR: "http://vault:8200"
       VAULT_TOKEN: "root-token"

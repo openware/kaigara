@@ -5,8 +5,10 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"log"
 
 	"github.com/openware/kaigara/pkg/config"
+	"github.com/openware/kaigara/pkg/storage"
 	"github.com/openware/kaigara/types"
 
 	"strings"
@@ -15,25 +17,25 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var cnf = &config.KaigaraConfig{}
+var conf = &config.KaigaraConfig{}
 
 func main() {
 	// Parse flags
-	filepath := flag.String("a", "outputs.yaml", "Outputs file path to save secrets from vault")
+	filepath := flag.String("f", "outputs.yaml", "Outputs file path to save secrets from vault")
 	flag.Parse()
 
 	// Initialize and write to Vault stores for every component
-	if err := ika.ReadConfig("", cnf); err != nil {
+	if err := ika.ReadConfig("", conf); err != nil {
 		panic(err)
 	}
 
-	secretStore, err := config.GetStorageService(cnf)
+	secretStore, err := storage.GetStorageService(conf)
 	if err != nil {
 		panic(err)
 	}
 
 	b := kaidumpRun(secretStore)
-	fmt.Print(b.String())
+	fmt.Println(b.String())
 
 	// Write secrets into filepath
 	err = ioutil.WriteFile(*filepath, b.Bytes(), 0644)
@@ -41,18 +43,18 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("# Saved the dump into %s\n", *filepath)
+	log.Printf("INF: dump saved into %s\n", *filepath)
 }
 
-func kaidumpRun(store types.Storage) bytes.Buffer {
+func kaidumpRun(ss types.Storage) bytes.Buffer {
 	// Get the list of App names from vault
-	apps, err := store.ListAppNames()
+	apps, err := ss.ListAppNames()
 	if err != nil {
 		panic(err)
 	}
 
 	// Get the list of scopes by Splitting KAIGARA_SCOPES env
-	scopesList := strings.Split(cnf.Scopes, ",")
+	scopesList := strings.Split(conf.Scopes, ",")
 	if len(scopesList) <= 0 {
 		panic("Wrong KAIGARA_SCOPES")
 	}
@@ -68,11 +70,11 @@ func kaidumpRun(store types.Storage) bytes.Buffer {
 		scopeMap := make(map[string]interface{})
 		scopeInit := make(map[string]interface{})
 		for _, scope := range scopesList {
-			err := store.Read(app, scope)
+			err := ss.Read(app, scope)
 			if err != nil {
 				panic(err)
 			}
-			secrets, err := store.GetEntries(app, scope)
+			secrets, err := ss.GetEntries(app, scope)
 			if err != nil {
 				panic(err)
 			}

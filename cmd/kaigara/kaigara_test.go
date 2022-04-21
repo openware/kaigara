@@ -6,14 +6,15 @@ import (
 
 	"github.com/openware/kaigara/cmd/env"
 	"github.com/openware/kaigara/pkg/config"
-	"github.com/openware/kaigara/pkg/storage/sql"
+	"github.com/openware/kaigara/pkg/logstream"
+	"github.com/openware/kaigara/pkg/storage"
 	"github.com/openware/pkg/database"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 )
 
 var deploymentID = "opendax_uat"
-var sqlCnf = database.Config{
+var sqlconf = database.Config{
 	Driver: "mysql",
 	Host:   os.Getenv("DATABASE_HOST"),
 	Port:   os.Getenv("DATABASE_PORT"),
@@ -46,14 +47,14 @@ var vars = []string{
 }
 
 func TestMain(m *testing.M) {
-	cnf = &config.KaigaraConfig{
+	conf = &config.KaigaraConfig{
 		VaultAddr:     os.Getenv("KAIGARA_VAULT_ADDR"),
 		VaultToken:    os.Getenv("KAIGARA_VAULT_TOKEN"),
 		DeploymentID:  deploymentID,
 		Scopes:        "public,private,secret",
 		AppNames:      "finex,frontdex,gotrue,postgrest,realtime,storage",
 		EncryptMethod: "transit",
-		DBConfig:      sqlCnf,
+		DBConfig:      sqlconf,
 	}
 
 	// exec test and this returns an exit code to pass to os
@@ -63,20 +64,23 @@ func TestMain(m *testing.M) {
 }
 
 func TestAppNamesToLoggingName(t *testing.T) {
-	cnf.AppNames = "peatio,peatio_daemons"
+	conf.AppNames = "peatio,peatio_daemons"
 	assert.Equal(t, "peatio&peatio_daemons", appNamesToLoggingName())
 
-	cnf.AppNames = "peatio"
+	conf.AppNames = "peatio"
 	assert.Equal(t, "peatio", appNamesToLoggingName())
 	assert.NotEqual(t, "peatio&", appNamesToLoggingName())
 	assert.NotEqual(t, "&peatio", appNamesToLoggingName())
 }
 
 func TestKaigaraPrintenvVault(t *testing.T) {
-	cnf.Storage = "vault"
-	cnf.AppNames = "finex,frontdex,gotrue,postgrest,realtime,storage"
-	store := env.GetStorage(cnf)
-	ls := initLogStream()
+	conf.Storage = "vault"
+	conf.AppNames = "finex,frontdex,gotrue,postgrest,realtime,storage"
+	store := env.GetStorage(conf)
+	ls, err := logstream.NewRedisClient(conf.RedisURL)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	for _, v := range vars {
 		kaigaraRun(ls, store, "printenv", []string{v})
@@ -84,22 +88,26 @@ func TestKaigaraPrintenvVault(t *testing.T) {
 }
 
 func TestKaigaraPrintenvSql(t *testing.T) {
-	cnf.Storage = "sql"
-	cnf.AppNames = "finex,frontdex,gotrue,postgrest,realtime,storage"
-	store := env.GetStorage(cnf)
-	ls := initLogStream()
+	conf.Storage = "sql"
+	conf.AppNames = "finex,frontdex,gotrue,postgrest,realtime,storage"
+	store := env.GetStorage(conf)
+	ls, err := logstream.NewRedisClient(conf.RedisURL)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	for _, v := range vars {
 		kaigaraRun(ls, store, "printenv", []string{v})
 	}
 
 	// Cleanup data
-	sqlDB, err := database.Connect(&sqlCnf)
+	sqlDB, err := database.Connect(&sqlconf)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
-	tx := sqlDB.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(&sql.Data{})
+
+	tx := sqlDB.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(&storage.SqlModel{})
 	if tx.Error != nil {
-		panic(tx.Error)
+		t.Fatal(tx.Error)
 	}
 }

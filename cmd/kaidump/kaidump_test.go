@@ -45,7 +45,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestKaidumpListAppNames(t *testing.T) {
-	cnf = &config.KaigaraConfig{
+	conf = &config.KaigaraConfig{
 		Storage:       "sql",
 		VaultAddr:     os.Getenv("KAIGARA_VAULT_ADDR"),
 		VaultToken:    os.Getenv("KAIGARA_VAULT_TOKEN"),
@@ -56,7 +56,7 @@ func TestKaidumpListAppNames(t *testing.T) {
 		AesKey:        "changemechangemechangeme",
 		DBConfig:      sqlConfig,
 	}
-	store := env.GetStorage(cnf)
+	store := env.GetStorage(conf)
 	b := kaidumpRun(store)
 	assert.NotNil(t, b)
 	fmt.Print(b.String())

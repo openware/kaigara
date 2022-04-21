@@ -43,7 +43,10 @@ func TestBuildCmdEnvFromSecretStore(t *testing.T) {
 	err = store.Write("global", scopes[0])
 	assert.NoError(t, err)
 
-	r := BuildCmdEnv(appNames, store, env, scopes)
+	r, err := BuildCmdEnv(appNames, store, env, scopes)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	assert.Equal(t, map[string]*File{}, r.Files)
 	assert.ElementsMatch(t, []string{
@@ -72,7 +75,10 @@ func TestLoadNumberAndBool(t *testing.T) {
 	err = store.Write(appName, scopes[0])
 	assert.NoError(t, err)
 
-	r := BuildCmdEnv(appNames, store, env, scopes)
+	r, err := BuildCmdEnv(appNames, store, env, scopes)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	assert.Equal(t, map[string]*File{}, r.Files)
 	assert.ElementsMatch(t, []string{
@@ -101,6 +107,11 @@ func TestBuildCmdEnvFileUpperCase(t *testing.T) {
 	assert.NoError(t, err)
 
 	env := []string{}
+	r, err := BuildCmdEnv(appNames, store, env, scopes)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	assert.Equal(t, &Env{
 		Vars: []string{
 			"ANYTHING=must_be_set",
@@ -111,7 +122,7 @@ func TestBuildCmdEnvFileUpperCase(t *testing.T) {
 				Content: `{"app":"example"}`,
 			},
 		},
-	}, BuildCmdEnv(appNames, store, env, scopes))
+	}, r)
 }
 
 func TestBuildCmdEnvFileLowerCase(t *testing.T) {
@@ -134,6 +145,11 @@ func TestBuildCmdEnvFileLowerCase(t *testing.T) {
 	assert.NoError(t, err)
 
 	env := []string{}
+	r, err := BuildCmdEnv(appNames, store, env, scopes)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	assert.Equal(t, &Env{
 		Vars: []string{
 			"ANYTHING=must_be_set",
@@ -144,7 +160,7 @@ func TestBuildCmdEnvFileLowerCase(t *testing.T) {
 				Content: `{"app":"example"}`,
 			},
 		},
-	}, BuildCmdEnv(appNames, store, env, scopes))
+	}, r)
 }
 
 func TestBuildCmdEnvSeveralAppNames(t *testing.T) {
@@ -171,11 +187,16 @@ func TestBuildCmdEnvSeveralAppNames(t *testing.T) {
 	assert.NoError(t, err)
 
 	env := []string{}
+	r, err := BuildCmdEnv(appNames, store, env, scopes)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	assert.Equal(t, &Env{
 		Vars: []string{
 			"ANYTHING_5=must_be_set",
 			"ANYTHING_6=must_be_set",
 		},
 		Files: map[string]*File{},
-	}, BuildCmdEnv(appNames, store, env, scopes))
+	}, r)
 }

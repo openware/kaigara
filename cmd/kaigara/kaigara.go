@@ -15,18 +15,19 @@ import (
 
 	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/logstream"
+	"github.com/openware/kaigara/pkg/storage"
 	"github.com/openware/kaigara/types"
 	"github.com/openware/pkg/ika"
 )
 
-var cnf = &config.KaigaraConfig{}
+var conf = &config.KaigaraConfig{}
 
 func parseScopes() []string {
-	return strings.Split(cnf.Scopes, ",")
+	return strings.Split(conf.Scopes, ",")
 }
 
 func parseAppNames() []string {
-	return strings.Split(cnf.AppNames, ",")
+	return strings.Split(conf.AppNames, ",")
 }
 
 func appNamesToLoggingName() string {
@@ -34,10 +35,13 @@ func appNamesToLoggingName() string {
 }
 
 func kaigaraRun(ls logstream.LogStream, store types.Storage, cmd string, cmdArgs []string) {
-	log.Printf("Starting command: %s %v", cmd, cmdArgs)
+	log.Printf("INF: starting command: %s %v\n", cmd, cmdArgs)
 	scopes := parseScopes()
 	c := exec.Command(cmd, cmdArgs...)
-	env := config.BuildCmdEnv(parseAppNames(), store, os.Environ(), scopes)
+	env, err := config.BuildCmdEnv(parseAppNames(), store, os.Environ(), scopes)
+	if err != nil {
+		panic(err)
+	}
 
 	c.Env = env.Vars
 
@@ -64,7 +68,7 @@ func kaigaraRun(ls logstream.LogStream, store types.Storage, cmd string, cmdArgs
 		for {
 			line, isPrefix, err := r.ReadLine()
 			if err == io.EOF {
-				log.Printf("Reached EOF on STDIN")
+				log.Printf("INF: reached EOF on STDIN\n")
 				stdin.Close()
 				break
 			} else if err != nil {
@@ -96,17 +100,21 @@ func kaigaraRun(ls logstream.LogStream, store types.Storage, cmd string, cmdArgs
 
 	channelOut := fmt.Sprintf("log.%s.%s", appNamesToLoggingName(), "stdout")
 	channelErr := fmt.Sprintf("log.%s.%s", appNamesToLoggingName(), "stderr")
-	log.Printf("Publishing on %s and %s\n", channelOut, channelErr)
+	log.Printf("INF: publishing on %s and %s\n", channelOut, channelErr)
 
 	var wg sync.WaitGroup
 	wg.Add(3)
 	go func() {
-		ls.Publish(channelOut, stdout)
+		if err := ls.Publish(channelOut, stdout); err != nil {
+			log.Fatal(err)
+		}
 		wg.Done()
 	}()
 
 	go func() {
-		ls.Publish(channelErr, stderr)
+		if err := ls.Publish(channelErr, stderr); err != nil {
+			log.Fatal(err)
+		}
 		wg.Done()
 	}()
 
@@ -131,11 +139,6 @@ func kaigaraRun(ls logstream.LogStream, store types.Storage, cmd string, cmdArgs
 	wg.Wait()
 }
 
-func initLogStream() logstream.LogStream {
-	url := os.Getenv("KAIGARA_REDIS_URL")
-	return logstream.NewRedisClient(url)
-}
-
 func exitWhenSecretsOutdated(c *exec.Cmd, store types.Storage, scopes []string) {
 	appNames := append(parseAppNames(), "global")
 
@@ -157,9 +160,9 @@ func exitWhenSecretsOutdated(c *exec.Cmd, store types.Storage, scopes []string) 
 					break
 				}
 				if current != latest {
-					log.Printf("Found secrets updated on '%v' scope. from: v%v, to: v%v. killing process...\n", scope, current, latest)
+					log.Printf("INF: found secrets updated on '%v' scope. from: v%v, to: v%v. killing process...\n", scope, current, latest)
 					if err := c.Process.Kill(); err != nil {
-						log.Fatal("Failed to kill process", err)
+						log.Fatalf("FTL: failed to kill process: %s", err.Error())
 					}
 				}
 			}
@@ -172,13 +175,17 @@ func main() {
 	if len(os.Args) < 2 {
 		panic("Usage: kaigara CMD [ARGS...]")
 	}
-	ls := initLogStream()
 
-	if err := ika.ReadConfig("", cnf); err != nil {
+	if err := ika.ReadConfig("", conf); err != nil {
 		panic(err)
 	}
 
-	store, err := config.GetStorageService(cnf)
+	ls, err := logstream.NewRedisClient(conf.RedisURL)
+	if err != nil {
+		panic(err)
+	}
+
+	store, err := storage.GetStorageService(conf)
 	if err != nil {
 		panic(err)
 	}

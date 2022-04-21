@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/openware/kaigara/pkg/config"
+	"github.com/openware/kaigara/pkg/storage"
 	"github.com/openware/kaigara/types"
 	"github.com/openware/pkg/ika"
 )
@@ -17,7 +18,7 @@ func main() {
 		panic(err)
 	}
 
-	ss, err := config.GetStorageService(conf)
+	ss, err := storage.GetStorageService(conf)
 	if err != nil {
 		panic(err)
 	}

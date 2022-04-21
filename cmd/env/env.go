@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/openware/kaigara/pkg/config"
+	"github.com/openware/kaigara/pkg/storage"
 	"github.com/openware/kaigara/types"
 	"gopkg.in/yaml.v3"
 )
@@ -44,8 +45,8 @@ func setupStore(store types.Storage) {
 	}
 }
 
-func GetStorage(cfg *config.KaigaraConfig) types.Storage {
-	store, err := config.GetStorageService(cfg)
+func GetStorage(conf *config.KaigaraConfig) types.Storage {
+	ss, err := storage.GetStorageService(conf)
 	if err != nil {
 		panic(err)
 	}
@@ -64,7 +65,7 @@ func GetStorage(cfg *config.KaigaraConfig) types.Storage {
 	if err != nil {
 		panic(err)
 	}
-	setupStore(store)
+	setupStore(ss)
 
-	return store
+	return ss
 }

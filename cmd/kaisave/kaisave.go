@@ -6,11 +6,12 @@ import (
 	"io/ioutil"
 
 	"github.com/openware/kaigara/pkg/config"
+	"github.com/openware/kaigara/pkg/storage"
 	"github.com/openware/pkg/ika"
 	"gopkg.in/yaml.v3"
 )
 
-var cnf = &config.KaigaraConfig{}
+var conf = &config.KaigaraConfig{}
 
 // App contains a map of scopes(public, private, secret) with secrets to be loaded
 type App struct {
@@ -24,7 +25,7 @@ type SecretsFile struct {
 
 func main() {
 	// Parse flags
-	filepath := flag.String("filepath", "secrets.yaml", "Path to the file containing secrets")
+	filepath := flag.String("f", "secrets.yaml", "Path to the file containing secrets")
 	flag.Parse()
 
 	// Read the file
@@ -43,18 +44,18 @@ func main() {
 	}
 
 	// Initialize and write to Vault stores for every component
-	if err := ika.ReadConfig("", cnf); err != nil {
+	if err := ika.ReadConfig("", conf); err != nil {
 		panic(err)
 	}
 
-	secretStore, err := config.GetStorageService(cnf)
+	ss, err := storage.GetStorageService(conf)
 	if err != nil {
 		panic(err)
 	}
 
 	for app, scopes := range secrets.Secrets {
 		for scope, data := range scopes.Scopes {
-			err := secretStore.Read(app, scope)
+			err := ss.Read(app, scope)
 			if err != nil {
 				panic(err)
 			}
@@ -62,13 +63,13 @@ func main() {
 			for k, v := range data {
 				fmt.Println("Setting", k)
 
-				err := secretStore.SetEntry(app, scope, k, v)
+				err := ss.SetEntry(app, scope, k, v)
 				if err != nil {
 					panic(err)
 				}
 			}
 
-			err = secretStore.Write(app, scope)
+			err = ss.Write(app, scope)
 			if err != nil {
 				panic(err)
 			}

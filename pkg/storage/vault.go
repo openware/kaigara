@@ -1,4 +1,4 @@
-package vault
+package storage
 
 import (
 	"encoding/base64"
@@ -20,15 +20,17 @@ type Service struct {
 }
 
 // NewService instantiates a Vault service
-func NewService(addr, token, deploymentID string) *Service {
+func NewVaultService(addr, token, deploymentID string) (*Service, error) {
 	if addr == "" {
 		addr = "http://localhost:8200"
 	}
+
 	if token == "" {
-		panic("KAIGARA_VAULT_TOKEN is missing")
+		return nil, fmt.Errorf("KAIGARA_VAULT_TOKEN is missing")
 	}
+
 	if deploymentID == "" {
-		panic("KAIGARA_DEPLOYMENT_ID is missing")
+		return nil, fmt.Errorf("KAIGARA_DEPLOYMENT_ID is missing")
 	}
 
 	config := &api.Config{
@@ -37,7 +39,7 @@ func NewService(addr, token, deploymentID string) *Service {
 	}
 	client, err := api.NewClient(config)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	client.SetToken(token)
 
@@ -48,10 +50,10 @@ func NewService(addr, token, deploymentID string) *Service {
 
 	err = s.startRenewToken(token)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	return s
+	return s, nil
 }
 
 func (vs *Service) startRenewToken(token string) error {
@@ -210,7 +212,7 @@ func (vs *Service) Read(appName, scope string) error {
 		vs.data[appName][scope] = secret.Data["data"].(map[string]interface{})
 		rawMetadata := secret.Data["metadata"]
 		if rawMetadata == nil {
-			panic("Metadata not found. Make sure you have enabled KV v2 enabled:\nvault secrets enable -version=2 -path=secret kv\n")
+			return fmt.Errorf("metadata not found, make sure you have enabled KV v2 enabled: vault secrets enable -version=2 -path=secret kv")
 		}
 		vs.metadata[appName][scope] = rawMetadata.(map[string]interface{})
 	}

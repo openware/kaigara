@@ -15,44 +15,43 @@ type RedisLogStream struct {
 	client *redis.Client
 }
 
-func NewRedisClient(url string) *RedisLogStream {
+func NewRedisClient(url string) (*RedisLogStream, error) {
 	if url == "" {
-		log.Println("KAIGARA_REDIS_URL unset, do not connect to redis")
-		return &RedisLogStream{client: nil}
+		return nil, fmt.Errorf("redis url is empty")
 	}
+
 	opt, err := redis.ParseURL(url)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
+
 	client := redis.NewClient(opt)
-	_, err = client.Ping().Result()
-	if err != nil {
-		panic(err)
+	if _, err = client.Ping().Result(); err != nil {
+		return nil, err
 	}
-	log.Println("Connected to redis")
-	return &RedisLogStream{client: client}
+
+	return &RedisLogStream{client: client}, nil
 }
 
-func (r *RedisLogStream) Publish(channel string, stream io.ReadCloser) {
+func (r *RedisLogStream) Publish(channel string, stream io.ReadCloser) error {
 	buf := make([]byte, 64)
 	for {
 		n, err := stream.Read(buf)
 		os.Stdout.Write(buf[:n])
 
 		if r.client != nil {
-			e := r.client.Publish(channel, buf).Err()
-			if e != nil {
-				panic(e)
+			err := r.client.Publish(channel, buf).Err()
+			if err != nil {
+				return err
 			}
-		}
-		if errors.Is(err, io.EOF) || errors.Is(err, os.ErrClosed){
-			break
+		} else if errors.Is(err, io.EOF) || errors.Is(err, os.ErrClosed) {
+			return err
 		}
 
 		// Debug block in case of unexpected error is returned
 		if n == 0 {
-			log.Println(fmt.Sprintf("ERR: %v", err))
-			log.Println(fmt.Sprintf("Additional infromation:\n Bytes read: %d\n,Buf: %s", n, buf))
+			log.Printf("ERR: %s\n", err.Error())
+			log.Printf("INF: bytes read - %d, buf: %s\n", n, buf)
 		}
 	}
 }
