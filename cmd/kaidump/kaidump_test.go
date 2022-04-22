@@ -41,11 +41,11 @@ func TestKaidumpListAppNames(t *testing.T) {
 		DeploymentID:  deploymentID,
 		Scopes:        "private,secret",
 		AppNames:      "finex,frontdex,gotrue,postgrest,realtime,storage",
-		EncryptMethod: "aes",
-		AesKey:        "changemechangemechangeme",
+		EncryptMethod: "plaintext",
 		DBConfig:      sqlConfig,
 	}
 	ss := testenv.GetStorage(conf)
+	fmt.Println(conf)
 	b := kaidumpRun(ss)
 	assert.NotNil(t, b)
 	fmt.Print(b.String())

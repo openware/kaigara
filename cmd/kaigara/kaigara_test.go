@@ -6,23 +6,11 @@ import (
 
 	"github.com/openware/kaigara/cmd/testenv"
 	"github.com/openware/kaigara/pkg/config"
-	"github.com/openware/kaigara/pkg/logstream"
-	"github.com/openware/kaigara/pkg/storage"
+	"github.com/openware/kaigara/pkg/sql"
 	"github.com/openware/pkg/database"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 )
-
-var deploymentID = "opendax_uat"
-var sqlconf = database.Config{
-	Driver: "mysql",
-	Host:   os.Getenv("DATABASE_HOST"),
-	Port:   os.Getenv("DATABASE_PORT"),
-	Name:   "kaigara_" + deploymentID,
-	User:   "root",
-	Pass:   "",
-	Pool:   1,
-}
 
 var vars = []string{
 	"FINEX_DATABASE_USERNAME",
@@ -47,15 +35,11 @@ var vars = []string{
 }
 
 func TestMain(m *testing.M) {
-	conf = &config.KaigaraConfig{
-		VaultAddr:     os.Getenv("KAIGARA_VAULT_ADDR"),
-		VaultToken:    os.Getenv("KAIGARA_VAULT_TOKEN"),
-		DeploymentID:  deploymentID,
-		Scopes:        "public,private,secret",
-		AppNames:      "finex,frontdex,gotrue,postgrest,realtime,storage",
-		EncryptMethod: "",
-		DBConfig:      sqlconf,
+	var err error
+	if conf, err = config.NewKaigaraConfig(); err != nil {
+		panic(err)
 	}
+	ls = nil
 
 	// exec test and this returns an exit code to pass to os
 	code := m.Run()
@@ -78,13 +62,6 @@ func TestKaigaraPrintenvVault(t *testing.T) {
 	conf.AppNames = "finex,frontdex,gotrue,postgrest,realtime,storage"
 	ss := testenv.GetStorage(conf)
 
-	var err error
-	ls, err = logstream.NewRedisClient(conf.RedisURL)
-	if err != nil {
-		t.Logf("WRN: %s", err.Error())
-		ls = nil
-	}
-
 	for _, v := range vars {
 		kaigaraRun(ss, "printenv", []string{v})
 	}
@@ -95,24 +72,17 @@ func TestKaigaraPrintenvSql(t *testing.T) {
 	conf.AppNames = "finex,frontdex,gotrue,postgrest,realtime,storage"
 	ss := testenv.GetStorage(conf)
 
-	var err error
-	ls, err = logstream.NewRedisClient(conf.RedisURL)
-	if err != nil {
-		t.Logf("WRN: %s", err.Error())
-		ls = nil
-	}
-
 	for _, v := range vars {
 		kaigaraRun(ss, "printenv", []string{v})
 	}
 
 	// Cleanup data
-	sqlDB, err := database.Connect(&sqlconf)
+	sqlDB, err := database.Connect(&conf.DBConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	tx := sqlDB.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(&storage.SqlModel{})
+	tx := sqlDB.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(&sql.Model{})
 	if tx.Error != nil {
 		t.Fatal(tx.Error)
 	}

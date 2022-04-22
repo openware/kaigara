@@ -1,4 +1,4 @@
-package storage
+package sql
 
 import (
 	"fmt"
@@ -11,8 +11,10 @@ import (
 	"gopkg.in/yaml.v3"
 	"gorm.io/gorm"
 
-	"github.com/openware/kaigara/pkg/encryptor"
-	"github.com/openware/kaigara/types"
+	"github.com/openware/kaigara/pkg/encryptor/aes"
+	"github.com/openware/kaigara/pkg/encryptor/plaintext"
+	"github.com/openware/kaigara/pkg/encryptor/transit"
+	"github.com/openware/kaigara/pkg/encryptor/types"
 	"github.com/openware/pkg/database"
 )
 
@@ -52,14 +54,14 @@ func TestMain(m *testing.M) {
 		configs[cfg.Name] = cfg.DbConfig
 	}
 
-	aesEncrypt, err := encryptor.NewAESEncryptor([]byte("1234567890123456"))
+	aesEncrypt, err := aes.NewAESEncryptor([]byte("1234567890123456"))
 	if err != nil {
 		panic(err)
 	}
 
-	plainEncrypt := encryptor.NewPlaintextEncryptor()
+	plainEncrypt := plaintext.NewPlaintextEncryptor()
 
-	transitEncrypt, err := encryptor.NewVaultEncryptor(vaultAddr, vaultToken)
+	transitEncrypt, err := transit.NewVaultEncryptor(vaultAddr, vaultToken)
 	if err != nil {
 		panic(err)
 	}
@@ -76,7 +78,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func getEntriesReload(ss *SqlService, appName, scope string) (map[string]interface{}, error) {
+func getEntriesReload(ss *Service, appName, scope string) (map[string]interface{}, error) {
 	err := ss.Read(appName, scope)
 	if err != nil {
 		return nil, err
@@ -90,7 +92,7 @@ func getEntriesReload(ss *SqlService, appName, scope string) (map[string]interfa
 	return data, nil
 }
 
-func getEntryReload(ss *SqlService, appName, scope, name string) (interface{}, error) {
+func getEntryReload(ss *Service, appName, scope, name string) (interface{}, error) {
 	err := ss.Read(appName, scope)
 	if err != nil {
 		return nil, err
@@ -104,7 +106,7 @@ func getEntryReload(ss *SqlService, appName, scope, name string) (interface{}, e
 	return entry, nil
 }
 
-func setEntry(ss *SqlService, appName, scope, name, value string) error {
+func setEntry(ss *Service, appName, scope, name, value string) error {
 	err := ss.SetEntry(appName, scope, name, value)
 	if err != nil {
 		return err
@@ -125,14 +127,14 @@ func clearStorage(conf database.Config) error {
 		return err
 	}
 
-	tx := db.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(&SqlModel{})
+	tx := db.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(&Model{})
 	return tx.Error
 }
 
 func TestSetEntry(t *testing.T) {
 	for _, encryptor := range encryptors {
 		for _, conf := range configs {
-			ss, err := NewSqlService(deploymentID, &conf, encryptor, 1)
+			ss, err := NewService(deploymentID, &conf, encryptor, 1)
 			assert.NoError(t, err)
 
 			for _, scope := range scopes {
@@ -151,7 +153,7 @@ func TestSetEntry(t *testing.T) {
 					}
 
 					// Verify the written data with new storage
-					ssTmp, err := NewSqlService(deploymentID, &conf, encryptor, 1)
+					ssTmp, err := NewService(deploymentID, &conf, encryptor, 1)
 					assert.NoError(t, err)
 
 					result, err := getEntriesReload(ssTmp, appName, scope)
@@ -180,7 +182,7 @@ func TestSetEntry(t *testing.T) {
 func TestDeleteEntry(t *testing.T) {
 	for _, encryptor := range encryptors {
 		for _, conf := range configs {
-			ss, err := NewSqlService(deploymentID, &conf, encryptor, 1)
+			ss, err := NewService(deploymentID, &conf, encryptor, 1)
 			assert.NoError(t, err)
 
 			for _, scope := range scopes {
@@ -208,7 +210,7 @@ func TestDeleteEntry(t *testing.T) {
 					err = ss.Write(appName, scope)
 					assert.NoError(t, err)
 
-					ssTmp, err := NewSqlService(deploymentID, &conf, encryptor, 1)
+					ssTmp, err := NewService(deploymentID, &conf, encryptor, 1)
 					assert.NoError(t, err)
 
 					entry, err = getEntryReload(ssTmp, appName, scope, key)
@@ -229,7 +231,7 @@ func TestDeleteEntry(t *testing.T) {
 func TestListAppNames(t *testing.T) {
 	for _, encryptor := range encryptors {
 		for _, conf := range configs {
-			ss, err := NewSqlService(deploymentID, &conf, encryptor, 1)
+			ss, err := NewService(deploymentID, &conf, encryptor, 1)
 			assert.NoError(t, err)
 
 			for _, appName := range appNames {
@@ -247,7 +249,7 @@ func TestListAppNames(t *testing.T) {
 				}
 			}
 
-			ssTmp, err := NewSqlService(deploymentID, &conf, encryptor, 1)
+			ssTmp, err := NewService(deploymentID, &conf, encryptor, 1)
 			assert.NoError(t, err)
 
 			apps, err := ssTmp.ListAppNames()
@@ -261,10 +263,10 @@ func TestListAppNames(t *testing.T) {
 	}
 }
 
-func TestSqlServiceSetGetEntriesIncreaseVersion(t *testing.T) {
+func TestServiceSetGetEntriesIncreaseVersion(t *testing.T) {
 	for _, encryptor := range encryptors {
 		for _, conf := range configs {
-			ss, err := NewSqlService(deploymentID, &conf, encryptor, 1)
+			ss, err := NewService(deploymentID, &conf, encryptor, 1)
 			assert.NoError(t, err)
 
 			for _, scope := range scopes {
@@ -280,8 +282,8 @@ func TestSqlServiceSetGetEntriesIncreaseVersion(t *testing.T) {
 						t.Fatal(err)
 					}
 
-					// Create a SqlService from scratch
-					ssTmp, err := NewSqlService(deploymentID, &conf, encryptor, 1)
+					// Create a Service from scratch
+					ssTmp, err := NewService(deploymentID, &conf, encryptor, 1)
 					assert.NoError(t, err)
 
 					// Get and assert Entries in each scope after save
@@ -305,7 +307,7 @@ func TestSqlServiceSetGetEntriesIncreaseVersion(t *testing.T) {
 					err = ssTmp.Write(appName, scope)
 					assert.NoError(t, err)
 
-					ssTmp2, err := NewSqlService(deploymentID, &conf, encryptor, 1)
+					ssTmp2, err := NewService(deploymentID, &conf, encryptor, 1)
 					assert.NoError(t, err)
 
 					data, err = getEntriesReload(ssTmp2, appName, scope)

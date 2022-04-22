@@ -8,14 +8,14 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/openware/kaigara/pkg/config"
-	"github.com/openware/kaigara/pkg/storage"
+	"github.com/openware/kaigara/pkg/vault"
 )
 
 var scopes []string = []string{"secret"}
 var vaultAddr string = os.Getenv("KAIGARA_VAULT_ADDR")
 var vaultToken string = os.Getenv("KAIGARA_VAULT_TOKEN")
 var deploymentID string = "kaigara_test"
-var ss, _ = storage.NewVaultService(vaultAddr, vaultToken, deploymentID)
+var ss, _ = vault.NewService(vaultAddr, vaultToken, deploymentID)
 
 func TestBuildCmdEnvFromSecretss(t *testing.T) {
 	appName := "test1"

@@ -25,11 +25,11 @@ var conf = &config.KaigaraConfig{}
 var ls logstream.LogStream
 
 func parseScopes() []string {
-	return strings.Split(conf.Scopes, ",")
+	return strings.Split((*conf).Scopes, ",")
 }
 
 func parseAppNames() []string {
-	return strings.Split(conf.AppNames, ",")
+	return strings.Split((*conf).AppNames, ",")
 }
 
 func appNamesToLoggingName() string {

@@ -1,4 +1,4 @@
-package encryptor
+package plaintext
 
 import (
 	"fmt"

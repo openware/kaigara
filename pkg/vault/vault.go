@@ -1,4 +1,4 @@
-package storage
+package vault
 
 import (
 	"encoding/base64"
@@ -20,7 +20,7 @@ type Service struct {
 }
 
 // NewService instantiates a Vault service
-func NewVaultService(addr, token, deploymentID string) (*Service, error) {
+func NewService(addr, token, deploymentID string) (*Service, error) {
 	if addr == "" {
 		addr = "http://localhost:8200"
 	}

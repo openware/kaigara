@@ -1,4 +1,4 @@
-package storage
+package vault
 
 import (
 	"os"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestVaultServiceSetGetSecrets(t *testing.T) {
+func TestServiceSetGetSecrets(t *testing.T) {
 	vaultAddr := os.Getenv("KAIGARA_VAULT_ADDR")
 	vaultToken := os.Getenv("KAIGARA_VAULT_TOKEN")
 	scopes := []string{"private", "public", "secret"}
@@ -15,7 +15,7 @@ func TestVaultServiceSetGetSecrets(t *testing.T) {
 	appName := "peatio"
 
 	// Initialize Vault SecretStore
-	ss, err := NewVaultService(vaultAddr, vaultToken, deploymentID)
+	ss, err := NewService(vaultAddr, vaultToken, deploymentID)
 	if err != nil {
 		t.Fatal(err)
 	}
