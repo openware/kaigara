@@ -7,10 +7,7 @@ import (
 
 	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/storage"
-	"github.com/openware/pkg/ika"
 )
-
-var conf = &config.KaigaraConfig{}
 
 func main() {
 	// Parse flags
@@ -33,7 +30,8 @@ func main() {
 	}
 
 	// Initialize and write to Vault stores for every component
-	if err := ika.ReadConfig("", conf); err != nil {
+	conf, err := config.NewKaigaraConfig()
+	if err != nil {
 		panic(err)
 	}
 

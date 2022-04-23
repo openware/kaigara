@@ -1,7 +1,6 @@
 package sql
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"sort"
@@ -99,10 +98,10 @@ func getEntryReload(ss *Service, appName, scope, name string) (interface{}, erro
 	}
 
 	entry, err := ss.GetEntry(appName, scope, name)
-	fmt.Printf("entry: %v\n", entry)
 	if err != nil {
 		return nil, err
 	}
+
 	return entry, nil
 }
 

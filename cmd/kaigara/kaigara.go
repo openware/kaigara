@@ -21,7 +21,7 @@ import (
 	"github.com/openware/pkg/ika"
 )
 
-var conf = &config.KaigaraConfig{}
+var conf *config.KaigaraConfig
 var ls logstream.LogStream
 
 func parseScopes() []string {

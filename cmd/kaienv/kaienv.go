@@ -9,12 +9,11 @@ import (
 	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/storage"
 	"github.com/openware/kaigara/types"
-	"github.com/openware/pkg/ika"
 )
 
 func main() {
-	conf := &config.KaigaraConfig{}
-	if err := ika.ReadConfig("", conf); err != nil {
+	conf, err := config.NewKaigaraConfig()
+	if err != nil {
 		panic(err)
 	}
 

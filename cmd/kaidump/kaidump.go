@@ -16,7 +16,7 @@ import (
 	"github.com/openware/kaigara/types"
 )
 
-var conf = &config.KaigaraConfig{}
+var conf *config.KaigaraConfig
 
 func main() {
 	// Parse flags

@@ -8,17 +8,15 @@ import (
 
 	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/logstream"
-	"github.com/openware/pkg/ika"
 )
-
-var conf = &config.KaigaraConfig{}
 
 func main() {
 	channel := flag.String("c", "log.*", "Redis channel pattern to subscribe")
 	showName := flag.Bool("n", false, "Show channel name")
 	flag.Parse()
 
-	if err := ika.ReadConfig("", conf); err != nil {
+	conf, err := config.NewKaigaraConfig()
+	if err != nil {
 		panic(err)
 	}
 

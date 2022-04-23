@@ -7,11 +7,10 @@ import (
 
 	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/storage"
-	"github.com/openware/pkg/ika"
 	"gopkg.in/yaml.v3"
 )
 
-var conf = &config.KaigaraConfig{}
+var conf *config.KaigaraConfig
 
 // App contains a map of scopes(public, private, secret) with secrets to be loaded
 type App struct {
@@ -44,7 +43,7 @@ func main() {
 	}
 
 	// Initialize and write to Vault stores for every component
-	if err := ika.ReadConfig("", conf); err != nil {
+	if conf, err = config.NewKaigaraConfig(); err != nil {
 		panic(err)
 	}
 

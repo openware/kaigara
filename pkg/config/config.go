@@ -47,7 +47,7 @@ type File struct {
 }
 
 func NewKaigaraConfig() (*KaigaraConfig, error) {
-	var conf *KaigaraConfig
+	conf := &KaigaraConfig{DBConfig: database.Config{}}
 	if err := ika.ReadConfig(ConfPath, conf); err != nil {
 		return nil, err
 	}
@@ -86,9 +86,9 @@ func NewKaigaraConfig() (*KaigaraConfig, error) {
 		if conf.DBConfig.Pass == "" {
 			switch conf.DBConfig.Driver {
 			case "mysql":
-				conf.DBConfig.User = ""
+				conf.DBConfig.Pass = ""
 			case "postgres":
-				conf.DBConfig.User = "changeme"
+				conf.DBConfig.Pass = "changeme"
 			}
 		}
 	}

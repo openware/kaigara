@@ -2,11 +2,13 @@ package main
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/openware/kaigara/cmd/testenv"
 	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/sql"
+	"github.com/openware/kaigara/pkg/storage"
 	"github.com/openware/pkg/database"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
@@ -39,7 +41,6 @@ func TestMain(m *testing.M) {
 	if conf, err = config.NewKaigaraConfig(); err != nil {
 		panic(err)
 	}
-	ls = nil
 
 	// exec test and this returns an exit code to pass to os
 	code := m.Run()
@@ -64,6 +65,12 @@ func TestKaigaraPrintenvVault(t *testing.T) {
 
 	for _, v := range vars {
 		kaigaraRun(ss, "printenv", []string{v})
+	}
+
+	appNames := strings.Split(conf.AppNames, ",")
+	scopes := strings.Split(conf.Scopes, ",")
+	if err := storage.CleanAll(ss, appNames, scopes); err != nil {
+		panic(err)
 	}
 }
 

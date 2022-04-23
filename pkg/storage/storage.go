@@ -3,6 +3,7 @@ package storage
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/encryptor/aes"
@@ -65,4 +66,27 @@ func NewEncryptor(conf *config.KaigaraConfig) (enc.Encryptor, error) {
 	}
 
 	return enc, err
+}
+
+func CleanAll(ss types.Storage, appNames []string, scopes []string) error {
+	if !strings.Contains(strings.Join(appNames, ","), "global") {
+		appNames = append(appNames, "global")
+	}
+
+	for _, appName := range appNames {
+		for _, scope := range scopes {
+			entries, err := ss.ListEntries(appName, scope)
+			if err != nil {
+				return err
+			}
+
+			for _, entry := range entries {
+				if err := ss.DeleteEntry(appName, scope, entry); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
 }

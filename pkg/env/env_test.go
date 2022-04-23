@@ -8,43 +8,68 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/openware/kaigara/pkg/config"
+	"github.com/openware/kaigara/pkg/storage"
 	"github.com/openware/kaigara/pkg/vault"
 )
 
-var scopes []string = []string{"secret"}
-var vaultAddr string = os.Getenv("KAIGARA_VAULT_ADDR")
-var vaultToken string = os.Getenv("KAIGARA_VAULT_TOKEN")
-var deploymentID string = "kaigara_test"
-var ss, _ = vault.NewService(vaultAddr, vaultToken, deploymentID)
+var appNames []string = []string{
+	"global",
+	"test1",
+	"test2",
+	"test3",
+	"test4",
+	"test5",
+	"test6",
+}
+var scopes []string = []string{"secret", "public"}
+var ss *vault.Service
+
+func TestMain(m *testing.M) {
+	conf, err := config.NewKaigaraConfig()
+	if err != nil {
+		panic(err)
+	}
+
+	ss, err = vault.NewService(conf.VaultAddr, conf.VaultToken, conf.DeploymentID)
+	if err != nil {
+		panic(err)
+	}
+
+	// exec test and this returns an exit code to pass to os
+	code := m.Run()
+
+	if err := storage.CleanAll(ss, appNames, scopes); err != nil {
+		panic(err)
+	}
+
+	os.Exit(code)
+}
 
 func TestBuildCmdEnvFromSecretss(t *testing.T) {
-	appName := "test1"
-	appNames := []string{"test1"}
-
 	env := []string{
 		"ANYTHING=must_be_kept",
 		"KAIGARA_ANYTHING=must_be_ignored",
 	}
 
-	err := ss.Read(appName, scopes[0])
+	err := ss.Read(appNames[1], scopes[0])
 	assert.NoError(t, err)
 
-	err = ss.SetEntry(appName, scopes[0], "key_"+scopes[0], "value_"+scopes[0])
+	err = ss.SetEntry(appNames[1], scopes[0], "key_"+scopes[0], "value_"+scopes[0])
 	assert.NoError(t, err)
 
-	err = ss.Write(appName, scopes[0])
+	err = ss.Write(appNames[1], scopes[0])
 	assert.NoError(t, err)
 
-	err = ss.Read("global", "secret")
+	err = ss.Read(appNames[0], scopes[0])
 	assert.NoError(t, err)
 
-	err = ss.SetEntry("global", scopes[0], "key_global", "value_global")
+	err = ss.SetEntry(appNames[0], scopes[0], "key_global", "value_global")
 	assert.NoError(t, err)
 
-	err = ss.Write("global", scopes[0])
+	err = ss.Write(appNames[0], scopes[0])
 	assert.NoError(t, err)
 
-	r, err := BuildCmdEnv(appNames, ss, env, scopes)
+	r, err := BuildCmdEnv(appNames[1:2], ss, env, scopes)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,28 +80,36 @@ func TestBuildCmdEnvFromSecretss(t *testing.T) {
 		"KEY_SECRET=value_secret",
 		"KEY_GLOBAL=value_global",
 	}, r.Vars)
+
+	//Cleanup global app
+	entries, err := ss.ListEntries(appNames[0], scopes[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, entry := range entries {
+		if err := ss.DeleteEntry(appNames[0], scopes[0], entry); err != nil {
+			t.Fatal(err)
+		}
+	}
 }
 
 func TestLoadNumberAndBool(t *testing.T) {
-	appName := "test2"
-	appNames := []string{"test2"}
-
-	scopes = []string{"public"}
 	env := []string{}
 
-	err := ss.Read(appName, scopes[0])
+	err := ss.Read(appNames[2], scopes[1])
 	assert.NoError(t, err)
 
-	err = ss.SetEntry(appName, scopes[0], "key_number", json.Number("1337"))
+	err = ss.SetEntry(appNames[2], scopes[1], "key_number", json.Number("1337"))
 	assert.NoError(t, err)
 
-	err = ss.SetEntry(appName, scopes[0], "key_bool", true)
+	err = ss.SetEntry(appNames[2], scopes[1], "key_bool", true)
 	assert.NoError(t, err)
 
-	err = ss.Write(appName, scopes[0])
+	err = ss.Write(appNames[2], scopes[1])
 	assert.NoError(t, err)
 
-	r, err := BuildCmdEnv(appNames, ss, env, scopes)
+	r, err := BuildCmdEnv(appNames[2:3], ss, env, scopes)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,26 +122,23 @@ func TestLoadNumberAndBool(t *testing.T) {
 }
 
 func TestBuildCmdEnvFileUpperCase(t *testing.T) {
-	appName := "test3"
-	appNames := []string{"test3"}
-
-	err := ss.Read(appName, scopes[0])
+	err := ss.Read(appNames[3], scopes[1])
 	assert.NoError(t, err)
 
-	err = ss.SetEntry(appName, scopes[0], "ANYTHING", "must_be_set")
+	err = ss.SetEntry(appNames[3], scopes[1], "ANYTHING", "must_be_set")
 	assert.NoError(t, err)
 
-	err = ss.SetEntry(appName, scopes[0], "KFILE_NAME_PATH", "config/config.json")
+	err = ss.SetEntry(appNames[3], scopes[1], "KFILE_NAME_PATH", "config/config.json")
 	assert.NoError(t, err)
 
-	err = ss.SetEntry(appName, scopes[0], "KFILE_NAME_CONTENT", `{"app":"example"}`)
+	err = ss.SetEntry(appNames[3], scopes[1], "KFILE_NAME_CONTENT", `{"app":"example"}`)
 	assert.NoError(t, err)
 
-	err = ss.Write(appName, scopes[0])
+	err = ss.Write(appNames[3], scopes[1])
 	assert.NoError(t, err)
 
 	env := []string{}
-	r, err := BuildCmdEnv(appNames, ss, env, scopes)
+	r, err := BuildCmdEnv(appNames[3:4], ss, env, scopes)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,26 +157,23 @@ func TestBuildCmdEnvFileUpperCase(t *testing.T) {
 }
 
 func TestBuildCmdEnvFileLowerCase(t *testing.T) {
-	appName := "test4"
-	appNames := []string{"test4"}
-
-	err := ss.Read(appName, scopes[0])
+	err := ss.Read(appNames[4], scopes[1])
 	assert.NoError(t, err)
 
-	err = ss.SetEntry(appName, scopes[0], "anything", "must_be_set")
+	err = ss.SetEntry(appNames[4], scopes[1], "anything", "must_be_set")
 	assert.NoError(t, err)
 
-	err = ss.SetEntry(appName, scopes[0], "kfile_name_path", "config/config.json")
+	err = ss.SetEntry(appNames[4], scopes[1], "kfile_name_path", "config/config.json")
 	assert.NoError(t, err)
 
-	err = ss.SetEntry(appName, scopes[0], "kfile_name_content", `{"app":"example"}`)
+	err = ss.SetEntry(appNames[4], scopes[1], "kfile_name_content", `{"app":"example"}`)
 	assert.NoError(t, err)
 
-	err = ss.Write(appName, scopes[0])
+	err = ss.Write(appNames[4], scopes[1])
 	assert.NoError(t, err)
 
 	env := []string{}
-	r, err := BuildCmdEnv(appNames, ss, env, scopes)
+	r, err := BuildCmdEnv(appNames[4:5], ss, env, scopes)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,30 +192,26 @@ func TestBuildCmdEnvFileLowerCase(t *testing.T) {
 }
 
 func TestBuildCmdEnvSeveralAppNames(t *testing.T) {
-	appNameFirst := "test5"
-	appNameSecond := "test6"
-	appNames := []string{"test5", "test6"}
-
-	err := ss.Read(appNameFirst, scopes[0])
+	err := ss.Read(appNames[5], scopes[1])
 	assert.NoError(t, err)
 
-	err = ss.SetEntry(appNameFirst, scopes[0], "anything_5", "must_be_set")
+	err = ss.SetEntry(appNames[5], scopes[1], "anything_5", "must_be_set")
 	assert.NoError(t, err)
 
-	err = ss.Write(appNameFirst, scopes[0])
+	err = ss.Write(appNames[5], scopes[1])
 	assert.NoError(t, err)
 
-	err = ss.Read(appNameSecond, scopes[0])
+	err = ss.Read(appNames[6], scopes[1])
 	assert.NoError(t, err)
 
-	err = ss.SetEntry(appNameSecond, scopes[0], "anything_6", "must_be_set")
+	err = ss.SetEntry(appNames[6], scopes[1], "anything_6", "must_be_set")
 	assert.NoError(t, err)
 
-	err = ss.Write(appNameSecond, scopes[0])
+	err = ss.Write(appNames[6], scopes[1])
 	assert.NoError(t, err)
 
 	env := []string{}
-	r, err := BuildCmdEnv(appNames, ss, env, scopes)
+	r, err := BuildCmdEnv(appNames[5:], ss, env, scopes)
 	if err != nil {
 		t.Fatal(err)
 	}
