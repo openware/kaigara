@@ -9,12 +9,10 @@ var ConfPath = ""
 
 // KaigaraConfig contains cli options
 type KaigaraConfig struct {
-	Storage string `yaml:"secret-store" env:"KAIGARA_STORAGE_DRIVER" env-default:"sql"`
-
+	Storage      string `yaml:"secret-store" env:"KAIGARA_STORAGE_DRIVER" env-default:"sql"`
 	DeploymentID string `yaml:"deployment-id" env:"KAIGARA_DEPLOYMENT_ID" env-default:"opendax_uat"`
-	AppNames     string `yaml:"vault-app-name" env:"KAIGARA_APP_NAME"`
+	AppNames     string `yaml:"app-names" env:"KAIGARA_APP_NAME"`
 	Scopes       string `yaml:"scopes" env:"KAIGARA_SCOPES" env-default:"public,private,secret"`
-	IgnoreGlobal bool   `yaml:"ignore-global" env:"KAIGARA_IGNORE_GLOBAL"`
 
 	VaultToken string `yaml:"vault-token" env:"KAIGARA_VAULT_TOKEN" env-default:"changeme"`
 	VaultAddr  string `yaml:"vault-addr" env:"KAIGARA_VAULT_ADDR" env-default:"http://127.0.0.1:8200"`
@@ -22,10 +20,8 @@ type KaigaraConfig struct {
 	EncryptMethod string `yaml:"encryption-method" env:"KAIGARA_ENCRYPTOR" env-default:"plaintext"`
 	AesKey        string `yaml:"aes-key" env:"KAIGARA_ENCRYPTOR_AES_KEY" env-default:"changemechangeme"`
 
-	LogLevel int `yaml:"log-level" env:"KAIGARA_LOG_LEVEL" env-default:"1"`
-
-	RedisURL string `yaml:"redis-url" env:"KAIGARA_REDIS_URL"`
-
+	LogLevel int             `yaml:"log-level" env:"KAIGARA_LOG_LEVEL" env-default:"1"`
+	RedisURL string          `yaml:"redis-url" env:"KAIGARA_REDIS_URL"`
 	DBConfig database.Config `yaml:"database"`
 }
 

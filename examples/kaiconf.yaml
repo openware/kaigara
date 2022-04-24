@@ -1,0 +1,16 @@
+secret-store: sql
+deployment-id: opendax_uat
+app-names: "peatio"
+scopes: "public,private,secret"
+vault-addr: "http://localhost:8200"
+vault-token: "changeme"
+encryption-method: "plaintext"
+aes-key: "changemechangeme"
+log-level: 1
+redis-url: "redis://localhost:6379/0"
+database:
+  driver: "postgres"
+  host: "localhost"
+  port: "5432"
+  user: "postgres"
+  pool: 1
