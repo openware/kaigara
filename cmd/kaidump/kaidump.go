@@ -20,7 +20,7 @@ var conf *config.KaigaraConfig
 
 func main() {
 	// Parse flags
-	filepath := flag.String("f", "outputs.yaml", "Outputs file path to save secrets from vault")
+	filepath := flag.String("o", "outputs.yaml", "Outputs file path to save secrets from vault")
 	flag.Parse()
 
 	// Initialize and write to Vault stores for every component

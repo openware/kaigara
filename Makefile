@@ -3,7 +3,7 @@ KAIGARA_VERSION ?= "1.0.0"
 
 build: all
 
-all:	$(APPS) kaigara kaisave
+all:	$(APPS) kaigara kaicli kaisave
 
 $(APPS):
 	CGO_ENABLED=0 go build -a -ldflags '-w' -o bin/$@ ./cmd/$@/*.go
