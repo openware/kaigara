@@ -109,9 +109,6 @@ func (ss *Service) Read(appName, scope string) error {
 	if ss.ds[appName] == nil {
 		ss.ds[appName] = make(map[string]map[string]interface{})
 	}
-	if ss.ds[appName][scope] == nil {
-		ss.ds[appName][scope] = make(map[string]interface{})
-	}
 
 	val := make(map[string]interface{})
 	val["version"] = int64(0)
@@ -190,8 +187,10 @@ func (ss *Service) ListEntries(appName, scope string) ([]string, error) {
 	}
 
 	res := make([]string, len(val))
+	i := 0
 	for k := range val {
-		res = append(res, k)
+		res[i] = k
+		i++
 	}
 
 	return res, nil

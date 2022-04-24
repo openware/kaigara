@@ -69,16 +69,19 @@ func kaidumpRun(ss types.Storage) bytes.Buffer {
 		scopeMap := make(map[string]interface{})
 		scopeInit := make(map[string]interface{})
 		for _, scope := range scopesList {
-			err := ss.Read(app, scope)
-			if err != nil {
+			if err := ss.Read(app, scope); err != nil {
 				panic(err)
 			}
+
 			secrets, err := ss.GetEntries(app, scope)
 			if err != nil {
 				panic(err)
 			}
 
-			scopeMap[scope] = secrets
+			delete(secrets, "version")
+			if len(secrets) > 0 {
+				scopeMap[scope] = secrets
+			}
 		}
 		scopeInit["scopes"] = scopeMap
 		appMap[app] = scopeInit
