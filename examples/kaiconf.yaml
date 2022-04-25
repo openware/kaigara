@@ -1,13 +1,13 @@
-secret-store: sql
-deployment-id: opendax_uat
-app-names: "peatio"
+secret_store: sql
+deployment_id: opendax_uat
+app_names: "peatio"
 scopes: "public,private,secret"
-vault-addr: "http://localhost:8200"
-vault-token: "changeme"
-encryption-method: "plaintext"
-aes-key: "changemechangeme"
-log-level: 1
-redis-url: "redis://localhost:6379/0"
+vault_addr: "http://localhost:8200"
+vault_token: "changeme"
+encryption_method: "plaintext"
+aes_key: "changemechangeme"
+log_level: 1
+redis_url: "redis://localhost:6379/0"
 database:
   driver: "postgres"
   host: "localhost"

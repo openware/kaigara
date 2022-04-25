@@ -9,21 +9,14 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/openware/kaigara/pkg/storage"
 	"github.com/openware/kaigara/types"
 )
 
-func kaidumpCmd() error {
-	ss, err := storage.GetStorageService(conf)
-	if err != nil {
-		return err
-	}
-
+func dumpCmd() error {
 	b := kaidumpRun(ss)
 	fmt.Println(b.String())
 
-	err = ioutil.WriteFile(SecretsPath, b.Bytes(), 0644)
-	if err != nil {
+	if err := ioutil.WriteFile(SecretsPath, b.Bytes(), 0644); err != nil {
 		return err
 	}
 

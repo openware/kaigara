@@ -7,23 +7,13 @@ import (
 	"strings"
 
 	"github.com/openware/kaigara/pkg/config"
-	"github.com/openware/kaigara/pkg/storage"
 	"github.com/openware/kaigara/types"
+	"github.com/openware/pkg/kli"
 )
 
-func main() {
-	conf, err := config.NewKaigaraConfig()
-	if err != nil {
-		panic(err)
-	}
-
-	ss, err := storage.GetStorageService(conf)
-	if err != nil {
-		panic(err)
-	}
-
-	if err := kaienvRun(conf, ss, os.Args, os.Stdout); err != nil {
-		panic(err)
+func envCmd(cmd *kli.Command) func() error {
+	return func() error {
+		return kaienvRun(conf, ss, cmd.OtherArgs(), os.Stdout)
 	}
 }
 
@@ -63,6 +53,7 @@ func readAllEnv(conf *config.KaigaraConfig, ss types.Storage) (map[string]interf
 				return nil, err
 			}
 
+			delete(entries, "version")
 			for envVariable, envValue := range entries {
 				env[envVariable] = envValue
 			}

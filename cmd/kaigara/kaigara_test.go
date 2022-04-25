@@ -5,10 +5,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/openware/kaigara/cmd/testenv"
 	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/sql"
 	"github.com/openware/kaigara/pkg/storage"
+	"github.com/openware/kaigara/utils/testenv"
 	"github.com/openware/pkg/database"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
@@ -36,6 +36,8 @@ var vars = []string{
 	"REALTIME_DB_HOST",
 }
 
+var testdataPath = "../testdata/testenv.yml"
+
 func TestMain(m *testing.M) {
 	var err error
 	if conf, err = config.NewKaigaraConfig(); err != nil {
@@ -61,7 +63,7 @@ func TestAppNamesToLoggingName(t *testing.T) {
 func TestKaigaraPrintenvVault(t *testing.T) {
 	conf.Storage = "vault"
 	conf.AppNames = "finex,frontdex,gotrue,postgrest,realtime,storage"
-	ss := testenv.GetStorage(conf)
+	ss := testenv.GetTestStorage(testdataPath, conf)
 
 	for _, v := range vars {
 		kaigaraRun(ss, "printenv", []string{v})
@@ -77,7 +79,7 @@ func TestKaigaraPrintenvVault(t *testing.T) {
 func TestKaigaraPrintenvSql(t *testing.T) {
 	conf.Storage = "sql"
 	conf.AppNames = "finex,frontdex,gotrue,postgrest,realtime,storage"
-	ss := testenv.GetStorage(conf)
+	ss := testenv.GetTestStorage(testdataPath, conf)
 
 	for _, v := range vars {
 		kaigaraRun(ss, "printenv", []string{v})

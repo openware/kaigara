@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -18,7 +19,6 @@ import (
 	"github.com/openware/kaigara/pkg/logstream"
 	"github.com/openware/kaigara/pkg/storage"
 	"github.com/openware/kaigara/types"
-	"github.com/openware/pkg/ika"
 )
 
 var conf *config.KaigaraConfig
@@ -48,14 +48,17 @@ func kaigaraRun(ss types.Storage, cmd string, cmdArgs []string) {
 	c.Env = envs.Vars
 
 	for _, file := range envs.Files {
-		err := os.MkdirAll(path.Dir(file.Path), 0750)
-		if err != nil {
-			panic(fmt.Sprintf("Failed to make dir %s: %s", file.Path, err.Error()))
+		if err := os.MkdirAll(path.Dir(file.Path), 0750); err != nil {
+			log.Printf("ERR: failed to make dir %s: %s", file.Path, err.Error())
 		}
 
-		err = ioutil.WriteFile(file.Path, []byte(file.Content), 0640)
+		contents, err := base64.StdEncoding.DecodeString(file.Content)
 		if err != nil {
-			panic(fmt.Sprintf("Failed to write file %s: %s", file.Path, err.Error()))
+			log.Printf("ERR: failed to decode string %s: %s", file.Content, err.Error())
+		}
+
+		if err := ioutil.WriteFile(file.Path, contents, 0640); err != nil {
+			log.Printf("ERR: failed to write file %s: %s", file.Path, err.Error())
 		}
 	}
 
@@ -186,11 +189,12 @@ func main() {
 		panic("Usage: kaigara CMD [ARGS...]")
 	}
 
-	if err := ika.ReadConfig("", conf); err != nil {
+	var err error
+	conf, err = config.NewKaigaraConfig()
+	if err != nil {
 		panic(err)
 	}
 
-	var err error
 	ls, err = logstream.NewRedisClient(conf.RedisURL)
 	if err != nil {
 		log.Printf("WRN: %s", err.Error())

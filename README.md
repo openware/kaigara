@@ -1,6 +1,6 @@
 # Kaigara
 
-Kaigara is a wrapper arround daemons. It helps to standardize the way daemons are started and configured in a cluster.
+Kaigara is a wrapper around daemons. It helps to standardize the way daemons are started and configured in a cluster.
 
 ## Features
 
@@ -8,8 +8,11 @@ Kaigara is a wrapper arround daemons. It helps to standardize the way daemons ar
  * Support the storage of configuration files and env vars into secret storage
  * Push daemon STDOUT and STDERR to redis
  * Restart process on outdated secrets
+ * Create files based on `KFILE`-like secrets
 
-## Quick start
+See more in the [docs](./docs).
+
+## Configuration
 
 Kaigara supports two types of storage - Vault or SQL database, that can be used with `vault` and `sql` values respectively with env var below:
 
@@ -168,7 +171,7 @@ KAIGARA_SCOPES=private kai dump -s public
 
 Then will be dumped only *public* secrets from the same app.
 
-### Bulk writing secrets to the SecretStore
+### Bulk writing secrets to the secret store
 
 To write secrets from the command line, save in a YAML file with a format similar to [secrets.yaml](./examples/secrets.yaml) and run:
 
@@ -230,7 +233,7 @@ secrets:
 To dump and output secrets from vault, run:
 
 ```bash
-kaidump -o *outputs_path*
+kai dump -o *outputs_path*
 ```
 
 Make sure you've set `KAIGARA_SCOPES` env var before using `kaidump`.
@@ -240,19 +243,43 @@ Make sure you've set `KAIGARA_SCOPES` env var before using `kaidump`.
 To delete secret from vault, run:
 
 ```bash
-kaidel -k *key_name*
+kai del *app.scope.var*
+```
+
+For example, if you want to delete `finex_database_host` from `secret` scope in `finex` app, then you run:
+
+```bash
+kai del finex.secret.finex_database_host
+```
+
+You can also delete all entries from scope:
+
+```bash
+kai del finex.secret.all
+```
+
+Or from whole app:
+
+```bash
+kai del finex.all.all
+```
+
+Or even all present secrets:
+
+```bash
+kai del all.all.all
 ```
 
 ### Print internal environment variables
 
-To print all environment variables, run:
+To print all environment variables including the ones loaded by Kaigara from the secret storage, run:
 
 ```bash
-kaienv
+kai env
 ```
 
 To print exact environment variable, run:
 
 ```
-kaienv *ENV_NAME*
+kai env *ENV_NAME*
 ```

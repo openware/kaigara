@@ -3,6 +3,7 @@ package testenv
 import (
 	"io/ioutil"
 	"os"
+	"path"
 
 	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/storage"
@@ -45,18 +46,19 @@ func setupStore(ss types.Storage) {
 	}
 }
 
-func GetStorage(conf *config.KaigaraConfig) types.Storage {
+func GetTestStorage(relativePath string, conf *config.KaigaraConfig) types.Storage {
 	ss, err := storage.GetStorageService(conf)
 	if err != nil {
 		panic(err)
 	}
 
-	path, err := os.Getwd()
+	workdirPath, err := os.Getwd()
 	if err != nil {
 		panic(err)
 	}
 
-	envFile, err := ioutil.ReadFile(path + "/../testenv/testenv.yml")
+	absolutePath := path.Join(workdirPath, relativePath)
+	envFile, err := ioutil.ReadFile(absolutePath)
 	if err != nil {
 		panic(err)
 	}

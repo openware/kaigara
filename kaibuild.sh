@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 platforms=("darwin/amd64" "linux/amd64" "windows/amd64")
 
 for platform in "${platforms[@]}"
@@ -13,7 +15,7 @@ do
         output_os+='.exe'
     fi
 
-	env GOOS=$GOOS GOARCH=$GOARCH CGO_ENABLED=0 go build -a -ldflags '-w' -o bin/kaisave_$output_os ./cmd/kaisave
+	env GOOS=$GOOS GOARCH=$GOARCH CGO_ENABLED=0 go build -a -ldflags "-w -X main.Version=${KAIGARA_VERSION}" -o bin/kai_$output_os ./cmd/kaicli
     if [ $? -ne 0 ]; then
         echo 'An error has occurred! Aborting the script execution...'
         exit 1

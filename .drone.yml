@@ -92,6 +92,7 @@ steps:
       GO111MODULE: "on"
       KAIGARA_VAULT_ADDR: "http://vault:8200"
       KAIGARA_VAULT_TOKEN: "root-token"
+      DATABASE_HOST: "postgres"
     commands:
       - for gpath in $(find $PWD -name go.mod); do cd $(dirname $gpath); for dir in $(go list ./...); do go clean -testcache; go test $dir; done; done
 

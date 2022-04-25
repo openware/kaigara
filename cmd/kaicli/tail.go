@@ -1,33 +1,28 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"regexp"
 
-	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/logstream"
 )
 
-func main() {
-	channel := flag.String("c", "log.*", "Redis channel pattern to subscribe")
-	showName := flag.Bool("n", false, "Show channel name")
-	flag.Parse()
+var redisChannel = "log.*"
+var showName bool
 
-	conf, err := config.NewKaigaraConfig()
-	if err != nil {
-		panic(err)
-	}
-
+func tailCmd() error {
 	ls, err := logstream.NewRedisClient(conf.RedisURL)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	ch := ls.Subscribe(*channel)
+	ch := ls.Subscribe(redisChannel)
 
-	re := regexp.MustCompile(`^Message<(log\.[A-z.]+?): (.+?)>$`)
+	re, err := regexp.Compile(`^Message<(log\.[A-z.]+?): (.+?)>$`)
+	if err != nil {
+		return err
+	}
 
 	for msg := range ch {
 		rs := re.FindStringSubmatch(msg.String())
@@ -37,10 +32,12 @@ func main() {
 			continue
 		}
 
-		if *showName {
+		if showName {
 			fmt.Printf("%s: %s\n", rs[1], rs[2])
 		} else {
 			fmt.Printf("%s\n", rs[2])
 		}
 	}
+
+	return nil
 }

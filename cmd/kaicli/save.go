@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"log"
 
-	"github.com/openware/kaigara/pkg/storage"
 	"gopkg.in/yaml.v3"
 )
 
@@ -18,7 +17,7 @@ type SecretsFile struct {
 	Secrets map[string]App `yaml:"secrets"`
 }
 
-func kaisaveCmd() error {
+func saveCmd() error {
 	data, err := ioutil.ReadFile(SecretsPath)
 	if err != nil {
 		return err
@@ -29,17 +28,13 @@ func kaisaveCmd() error {
 		return err
 	}
 
-	ss, err := storage.GetStorageService(conf)
-	if err != nil {
-		return err
-	}
-
 	for app, scopes := range secrets.Secrets {
 		for scope, data := range scopes.Scopes {
 			if err := ss.Read(app, scope); err != nil {
 				return err
 			}
 
+			delete(data, "version")
 			for k, v := range data {
 				log.Printf("INF: setting %s.%s.%s", app, scope, k)
 				if err := ss.SetEntry(app, scope, k, v); err != nil {

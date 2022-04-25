@@ -142,7 +142,7 @@ func (ss *Service) Write(appName, scope string) error {
 	data := &Model{
 		AppName: appName,
 		Scope:   scope,
-		Version: int64(ver),
+		Version: ver,
 	}
 
 	var old Model
