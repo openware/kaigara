@@ -26,7 +26,7 @@ func GetStorageService(conf *config.KaigaraConfig) (types.Storage, error) {
 
 	switch conf.Storage {
 	case "vault":
-		storage, err = vault.NewService(conf.VaultAddr, conf.VaultToken, conf.DeploymentID)
+		storage, err = vault.NewService(conf.DeploymentID, enc, conf.VaultAddr, conf.VaultToken)
 	case "sql":
 		storage, err = sql.NewService(conf.DeploymentID, &conf.DBConfig, enc, conf.LogLevel)
 	default:
@@ -75,6 +75,10 @@ func CleanAll(ss types.Storage, appNames []string, scopes []string) error {
 
 	for _, appName := range appNames {
 		for _, scope := range scopes {
+			if err := ss.Read(appName, scope); err != nil {
+				return err
+			}
+
 			entries, err := ss.ListEntries(appName, scope)
 			if err != nil {
 				return err
@@ -84,6 +88,10 @@ func CleanAll(ss types.Storage, appNames []string, scopes []string) error {
 				if err := ss.DeleteEntry(appName, scope, entry); err != nil {
 					return err
 				}
+			}
+
+			if err := ss.Write(appName, scope); err != nil {
+				return err
 			}
 		}
 	}

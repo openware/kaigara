@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/openware/kaigara/pkg/encryptor/transit"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,8 +15,13 @@ func TestServiceSetGetSecrets(t *testing.T) {
 	deploymentID := "opendax_uat"
 	appName := "peatio"
 
+	encryptor, err := transit.NewVaultEncryptor(vaultAddr, vaultToken)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// Initialize Vault SecretStore
-	ss, err := NewService(vaultAddr, vaultToken, deploymentID)
+	ss, err := NewService(deploymentID, encryptor, vaultAddr, vaultToken)
 	if err != nil {
 		t.Fatal(err)
 	}
