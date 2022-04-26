@@ -8,13 +8,12 @@ postgres:
     pass: changeme
     pool: 1
 
-# TODO: using mysql sometimes stucks on AutoMigrate
-# mysql:
-#   name: mysql
-#   database:
-#     driver: mysql
-#     host: mysql
-#     port: 3306
-#     user: root
-#     pass: ""
-#     pool: 1
+mysql:
+  name: mysql
+  database:
+    driver: mysql
+    host: mysql
+    port: 3306
+    user: root
+    pass: ""
+    pool: 1
