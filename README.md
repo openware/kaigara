@@ -1,36 +1,37 @@
 # Kaigara
 
-Kaigara is a wrapper around daemons. It helps to standardize the way daemons are started and configured in a cluster.
+Kaigara is an entrypoint/wrapper for commands, CLI's and beyond.
+It enables teams to build components and deployments with improved configuration and observability our of the box.
 
 ## Features
 
- * Fetch configuration from secret storage and inject in daemon environment
- * Support the storage of configuration files and env vars into secret storage
- * Push daemon STDOUT and STDERR to redis
- * Restart process on outdated secrets
- * Create files based on `KFILE`-like secrets
+ * Fetch configuration from secret storage and inject into target command environment
+ * Support the storage of configuration files and env vars into secret storage(Vault KV, MySQL, PostgreSQL)
+ * Publish target command STDOUT and STDERR to Redis
+ * Restart subprocesses on configuration updates(allows for dynamic configs)
+ * Create files on startup from env vars starting with `KNAME_`
 
-See more in the [docs](./docs).
+See more in the [docs folder](./docs).
 
 ## Configuration
 
 Kaigara supports two types of storage - Vault or SQL database, that can be used with `vault` and `sql` values respectively with env var below:
 
-```bash
+```sh
 export KAIGARA_STORAGE_DRIVER=sql
 ```
 
-If you choose Vault, then here are required **vault** vars for it to work:
+If you choose Vault, here are the required vars:
 
-```bash
+```sh
 export KAIGARA_VAULT_ADDR=http://localhost:8200
 export KAIGARA_VAULT_TOKEN=changeme
 ```
 
-But if you choose SQL driver, then these **database** and **encryptor** vars should be set:
+If you choose SQL driver, then these `database` and `encryptor` vars should be set:
 
-```bash
-# As SQL drivers are supported postgres and mysql
+```sh
+# Supported SQL drivers are postgres and mysql
 export DATABASE_DRIVER=postgres
 export DATABASE_HOST=localhost
 export DATABASE_PORT=5432
@@ -38,34 +39,34 @@ export DATABASE_USER=postgres
 export DATABASE_PASS=changeme
 export KAIGARA_LOG_LEVEL=1
 
-# As encryptors are supported transit (using Vault), aes and plaintext
+# Supported encryptors are transit (using Vault Transit), aes and plaintext
 export KAIGARA_ENCRYPTOR=transit
 
-# If you use AES encryption method you need provide AES key
+# If you use AES encryption method, you need provide an AES key
 export KAIGARA_ENCRYPTOR_AES_KEY=changemechangeme
 
-# If you use Vault transit encryption method you need to set Vault related vars
+# For Vault transit encryption method, use the following
 export KAIGARA_VAULT_ADDR=http://localhost:8200
 export KAIGARA_VAULT_TOKEN=changeme
 ```
 
 After that in most situation you should set these **platform** vars as well:
 
-```bash
+```sh
 # Your platform id used as secretspace in secret storage
 export KAIGARA_DEPLOYMENT_ID=opendax_uat
 
-# App names separated by comma
+# [OPTIONAL] App names separated by comma
 export KAIGARA_APP_NAME=peatio
 
 # Scopes separated by comma
 export KAIGARA_SCOPES=public,private,secret
 ```
 
-If you are using `kaigara` cli, then you could also set:
+If you are using `kaigara` CLI, you could also set:
 
-```bash
-# If you want to redirect logs to Redis channel
+```sh
+# If you want to redirect logs to a Redis channel
 export KAIGARA_REDIS_URL=redis://localhost:6379/0
 
 # If you want to ignore secrets in global app
@@ -76,15 +77,13 @@ Example env vars are stored in [kaigara.env](./examples/kaigara.env).
 
 ## Manage secrets
 
-### Using Vault
+### Vault
 
 **Warning**: If you use Vault as a secret storage, then encryption using `transit` should be set:
 
 ```bash
 vault secrets enable transit
 ```
-
-
 
 To **list** existing **app names**, run:
 
@@ -109,7 +108,7 @@ vault delete secret/data/$KAIGARA_DEPLOYMENT_ID/$KAIGARA_APP_NAME/$KAIGARA_SCOPE
 
 **Warning**: Commands above assume that vars `KAIGARA_APP_NAME` and `KAIGARA_SCOPES` are single (doesn't have commas).
 
-### Using SQL
+### SQL
 
 **Warning**: Queries below assume that you have active connection to Kaigara database, can run queries, and have enough permissions.
 
@@ -139,21 +138,21 @@ To **delete** existing secrets for a given app name and scope, run:
 DELETE FROM models WHERE app_name = '*app_name*'AND scope = '*scope*';
 ```
 
-### Using kaicli
+### Using kai CLI
 
-`kai` CLI tool encapsulates all next tools in one, so if you ran command `kaidump` before, then now you can run it in similar way `kai dump`.
+`kai` CLI tool encapsulates all the previously separated tools(`kaidump`, `kaisave`, `kaidump`, `kaidel`) in one. For example, if you ran command `kaidump` before, now you can run it as `kai dump`.
 
-Most of answers you can get just by running `kai -help` or `kai *cmd* -help`.
+If you're not sure about any subcommand's usage, run `kai -help` or `kai *cmd* -help`.
 
-You can set `KAICONFIG` var in your shell to file path and store there **configuration of Kaigara** to reuse later.
+You can set `KAICONFIG` var in your shell to file path and store there **configuration of Kaigara** there to reuse later.
 
-For example, if create a file `~/.kaigara/kaiconf.yaml` with contents of [kaiconf.yaml](./examples/kaiconf.yaml), set var to its path and run:
+For example, if a file `~/.kaigara/kaiconf.yaml` with contents of [kaiconf.yaml](./examples/kaiconf.yaml) is created, set `KAICONFIG` to its path and run:
 
 ```bash
 kai dump
 ```
 
-Then it will dump secrets from *peatio* app and scopes *public*, *private* and *secret*.
+It will dump secrets from *peatio* app and *public*, *private* and *secret* scopes, exactly as mentioned in the config.
 
 But if you run:
 
@@ -161,7 +160,7 @@ But if you run:
 KAIGARA_SCOPES=private kai dump
 ```
 
-Then will be dumped only *private* secrets from the same app.
+The env var would override the file config and only *private* secrets will be dumped from the configured app.
 
 With `kai` tool you can also redefine vars by passing values to parameters, so if we will continue with previous command:
 
@@ -169,14 +168,14 @@ With `kai` tool you can also redefine vars by passing values to parameters, so i
 KAIGARA_SCOPES=private kai dump -s public
 ```
 
-Then will be dumped only *public* secrets from the same app.
+Then only *public* secrets will be dumped from the same app.
 
 ### Bulk writing secrets to the secret store
 
 To write secrets from the command line, save in a YAML file with a format similar to [secrets.yaml](./examples/secrets.yaml) and run:
 
 ```bash
-kaisave -f *filepath*
+kai save -f *filepath*
 ```
 
 **Warning**: All scopes to be used by a component **must** be initialized(e.g. `public: {}, private: {}, secret: {}`)
@@ -228,9 +227,9 @@ secrets:
           key1: value1
 ```
 
-### Dump and output secrets from the SecretStore
+### Dump and output configs
 
-To dump and output secrets from vault, run:
+To dump and output secrets from the storage, run:
 
 ```bash
 kai dump -o *outputs_path*
@@ -238,33 +237,33 @@ kai dump -o *outputs_path*
 
 Make sure you've set `KAIGARA_SCOPES` env var before using `kaidump`.
 
-### Delete secret from the SecretStore
+### Delete configs
 
-To delete secret from vault, run:
+To delete configs from the storage, run:
 
 ```bash
 kai del *app.scope.var*
 ```
 
-For example, if you want to delete `finex_database_host` from `secret` scope in `finex` app, then you run:
+For example, if you want to delete `finex_database_host` from `secret` scope in `finex` app, you should run:
 
 ```bash
 kai del finex.secret.finex_database_host
 ```
 
-You can also delete all entries from scope:
+You can also delete all entries from a scope:
 
 ```bash
 kai del finex.secret.all
 ```
 
-Or from whole app:
+Or from the whole app:
 
 ```bash
 kai del finex.all.all
 ```
 
-Or even all present secrets:
+Or even all present secrets from the current deployment ID:
 
 ```bash
 kai del all.all.all
