@@ -9,7 +9,7 @@ import (
 
 	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/storage"
-	"github.com/openware/kaigara/pkg/vault"
+	"github.com/openware/kaigara/types"
 )
 
 var appNames []string = []string{
@@ -22,7 +22,7 @@ var appNames []string = []string{
 	"test6",
 }
 var scopes []string = []string{"secret", "public"}
-var ss *vault.Service
+var ss types.Storage
 
 func TestMain(m *testing.M) {
 	conf, err := config.NewKaigaraConfig()
@@ -30,8 +30,7 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
-	ss, err = vault.NewService(conf.VaultAddr, conf.VaultToken, conf.DeploymentID)
-	if err != nil {
+	if ss, err = storage.GetStorageService(conf); err != nil {
 		panic(err)
 	}
 
@@ -45,7 +44,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestBuildCmdEnvFromSecretss(t *testing.T) {
+func TestBuildCmdEnvFromSecrets(t *testing.T) {
 	env := []string{
 		"ANYTHING=must_be_kept",
 		"KAIGARA_ANYTHING=must_be_ignored",
@@ -82,15 +81,8 @@ func TestBuildCmdEnvFromSecretss(t *testing.T) {
 	}, r.Vars)
 
 	//Cleanup global app
-	entries, err := ss.ListEntries(appNames[0], scopes[0])
-	if err != nil {
+	if err := storage.CleanAll(ss, appNames[0:1], scopes[0:1]); err != nil {
 		t.Fatal(err)
-	}
-
-	for _, entry := range entries {
-		if err := ss.DeleteEntry(appNames[0], scopes[0], entry); err != nil {
-			t.Fatal(err)
-		}
 	}
 }
 

@@ -1,7 +1,6 @@
 package vault
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -9,6 +8,8 @@ import (
 
 	"github.com/hashicorp/vault/api"
 	"github.com/iancoleman/strcase"
+
+	"github.com/openware/kaigara/pkg/encryptor/types"
 )
 
 // Service contains scoped secret data, Vault client and configuration
@@ -17,10 +18,11 @@ type Service struct {
 	metadata     map[string]map[string]interface{}
 	vault        *api.Client
 	deploymentID string // Used as vault prefix
+	encryptor    types.Encryptor
 }
 
 // NewService instantiates a Vault service
-func NewService(addr, token, deploymentID string) (*Service, error) {
+func NewService(deploymentID string, encryptor types.Encryptor, addr, token string) (*Service, error) {
 	if addr == "" {
 		addr = "http://localhost:8200"
 	}
@@ -44,8 +46,9 @@ func NewService(addr, token, deploymentID string) (*Service, error) {
 	client.SetToken(token)
 
 	s := &Service{
-		vault:        client,
 		deploymentID: deploymentID,
+		vault:        client,
+		encryptor:    encryptor,
 	}
 
 	err = s.startRenewToken(token)
@@ -97,21 +100,6 @@ func (vs *Service) startRenewToken(token string) error {
 	return nil
 }
 
-func (vs *Service) initTransitKey(appName string) error {
-	ok, err := vs.transitKeyExists(appName)
-	if err != nil {
-		return err
-	}
-
-	if !ok {
-		err = vs.transitKeyCreate(appName)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (vs *Service) secretPath(appName, directory, scope string) string {
 	return fmt.Sprintf("secret/%s/%s/%s/%s", directory, vs.deploymentID, appName, scope)
 }
@@ -128,65 +116,8 @@ func (vs *Service) transitKeyName(appName string) string {
 	return fmt.Sprintf("%s_kaigara_%s", vs.deploymentID, appName)
 }
 
-func (vs *Service) transitKeyExists(appName string) (bool, error) {
-	secret, err := vs.vault.Logical().Read("transit/keys/" + vs.transitKeyName(appName))
-	if err != nil {
-		return false, err
-	}
-	return secret != nil, nil
-}
-
-func (vs *Service) transitKeyCreate(appName string) error {
-	_, err := vs.vault.Logical().Write("transit/keys/"+vs.transitKeyName(appName), map[string]interface{}{
-		"force": true,
-	})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// Encrypt the plaintext argument and return a ciphertext string or an error
-func (vs *Service) Encrypt(appName, plaintext string) (string, error) {
-	secret, err := vs.vault.Logical().Write("transit/encrypt/"+vs.transitKeyName(appName), map[string]interface{}{
-		"plaintext": base64.URLEncoding.EncodeToString([]byte(plaintext)),
-	})
-	if err != nil {
-		return "", err
-	}
-
-	ciphertext, ok := secret.Data["ciphertext"]
-	if !ok {
-		return "", fmt.Errorf("ciphertext not found in vault types.Response")
-	}
-	return ciphertext.(string), nil
-}
-
-// Decrypt the given ciphertext and return the plaintext or an error
-func (vs *Service) Decrypt(appName, ciphertext string) (string, error) {
-	secret, err := vs.vault.Logical().Write("transit/decrypt/"+vs.transitKeyName(appName), map[string]interface{}{
-		"ciphertext": ciphertext,
-	})
-	if err != nil {
-		return "", err
-	}
-
-	data, ok := secret.Data["plaintext"]
-	if !ok {
-		return "", fmt.Errorf("plaintext not found in vault types.Response")
-	}
-
-	plaintext, err := base64.URLEncoding.DecodeString(data.(string))
-	return string(plaintext), err
-}
-
 // LoadSecrets loads existing secrets from vault
 func (vs *Service) Read(appName, scope string) error {
-	err := vs.initTransitKey(appName)
-	if err != nil {
-		return err
-	}
-
 	secret, err := vs.vault.Logical().Read(vs.keyPath(appName, scope))
 	if err != nil {
 		return err
@@ -228,7 +159,7 @@ func (vs *Service) SetEntry(appName, scope, name string, value interface{}) erro
 			return fmt.Errorf("invalid value for %s, must be a string: %v", name, value)
 		}
 
-		encrypted, err := vs.Encrypt(appName, str)
+		encrypted, err := vs.encryptor.Encrypt(str, vs.transitKeyName(appName))
 		if err != nil {
 			return err
 		}
@@ -300,7 +231,7 @@ func (vs *Service) GetEntry(appName, scope, name string) (interface{}, error) {
 			return nil, fmt.Errorf("invalid value for %s, must be a string: %v", name, rawValue)
 		}
 
-		decrypted, err := vs.Decrypt(appName, str)
+		decrypted, err := vs.encryptor.Decrypt(str, vs.transitKeyName(appName))
 		if err != nil {
 			return nil, err
 		}
@@ -373,8 +304,7 @@ func (vs *Service) PushPolicies(policies map[string]string) error {
 		}
 
 		keyName := strcase.ToLowerCamel(component + "_vault_token")
-		err = vs.SetEntry("tokens", keyName, token.Auth.ClientToken, "secret")
-		if err != nil {
+		if err := vs.SetEntry("tokens", keyName, token.Auth.ClientToken, "secret"); err != nil {
 			return err
 		}
 	}

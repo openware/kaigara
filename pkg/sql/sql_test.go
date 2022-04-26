@@ -78,8 +78,7 @@ func TestMain(m *testing.M) {
 }
 
 func getEntriesReload(ss *Service, appName, scope string) (map[string]interface{}, error) {
-	err := ss.Read(appName, scope)
-	if err != nil {
+	if err := ss.Read(appName, scope); err != nil {
 		return nil, err
 	}
 
@@ -92,8 +91,7 @@ func getEntriesReload(ss *Service, appName, scope string) (map[string]interface{
 }
 
 func getEntryReload(ss *Service, appName, scope, name string) (interface{}, error) {
-	err := ss.Read(appName, scope)
-	if err != nil {
+	if err := ss.Read(appName, scope); err != nil {
 		return nil, err
 	}
 
@@ -106,14 +104,12 @@ func getEntryReload(ss *Service, appName, scope, name string) (interface{}, erro
 }
 
 func setEntry(ss *Service, appName, scope, name, value string) error {
-	err := ss.SetEntry(appName, scope, name, value)
-	if err != nil {
+	if err := ss.SetEntry(appName, scope, name, value); err != nil {
 		return err
 	}
 
 	// Save entries from memory to Vault
-	err = ss.Write(appName, scope)
-	if err != nil {
+	if err := ss.Write(appName, scope); err != nil {
 		return err
 	}
 

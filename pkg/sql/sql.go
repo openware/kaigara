@@ -117,8 +117,7 @@ func (ss *Service) Read(appName, scope string) error {
 	if res.Error != nil && !isNotFound {
 		return fmt.Errorf("failed reading from the DB: %s", res.Error)
 	} else if !isNotFound {
-		err := json.Unmarshal([]byte(data.Value), &val)
-		if err != nil {
+		if err := json.Unmarshal([]byte(data.Value), &val); err != nil {
 			return fmt.Errorf("JSON unmarshalling failed: %s", err)
 		}
 
@@ -131,18 +130,14 @@ func (ss *Service) Read(appName, scope string) error {
 }
 
 func (ss *Service) Write(appName, scope string) error {
-	var ver int64
-	if _, ok := ss.ds[appName][scope]["version"]; !ok {
-		ss.ds[appName][scope]["version"] = 0
-	} else if ver, ok = ss.ds[appName][scope]["version"].(int64); !ok {
-		return fmt.Errorf("failed to get %s.%s.version: invalid value: %+v", appName, scope, ss.ds[appName][scope]["version"])
+	val, ok := ss.ds[appName][scope]
+	if !ok {
+		return fmt.Errorf("scope '%s' in '%s' app is: %v", scope, appName, val)
 	}
 
-	val := ss.ds[appName][scope]
 	data := &Data{
 		AppName: appName,
 		Scope:   scope,
-		Version: ver,
 	}
 
 	var old Data
