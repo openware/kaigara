@@ -10,7 +10,7 @@
 
 ## Design
 
-Key-value secret storage with a policy per service to allow to fetch and edit
+Kaigara provides a key-value config/secret storage with access to each app name limited to its user/token
 
 1. Kaigara inject configuration in environment
 2. Kaigara monitor for new version of configuration
@@ -22,9 +22,9 @@ Each platform has its own namespace specified by deployment id.
 
 ### SQL
 
-If you use SQL driver, then Kaigara use separate database for each platform.
+If you use SQL driver, Kaigara would use a separate database per deployment ID.
 
-All data is stored within `data` table in this database. For example, in PostgreSQL this table would look like:
+All data is stored in `data` table inside this database. For example, in PostgreSQL this table would look like:
 
 ```sql
 CREATE TABLE data (
@@ -41,7 +41,7 @@ CREATE TABLE data (
 
 ### Vault	
 
-Each component also has its own namespace within platform's namespace with 3 scopes(`public`, `private`, `secret`) in Vault kv:
+Each component also has its own namespace defined by its `app_name` with 3 scopes(`public`, `private`, `secret`) in [Vault KV](https://www.vaultproject.io/docs/secrets/kv):
 
   - kv/#{platform_id}/peatio/{public,private,secret}
   - kv/#{platform_id}/barong/{public,private,secret}
@@ -56,16 +56,16 @@ default_theme: dark
 
 ## Features
 
-### Wrap secrets as files
+### Write secrets to files
 
-`KFILE`-like secrets can be used for creating files based on their values.
+Config vars starting with `KFILE` would be written to files upon Kaigara startup.
 
 For each file that you want to be created by Kaigara process you should create two secrets:
 
-* `KFILE_*NAME*_PATH`  - path of file to create. If it has nested directories, Kaigara will ensure that all of them are created
-* `KFILE_*NAME*_CONTENT` - base64 encoded content of file to create. This way you can create any files acceptable by string length.
+* `KFILE_*NAME*_PATH`  - path of the file to be created. If it contains nested directories, Kaigara will ensure that all of them are created
+* `KFILE_*NAME*_CONTENT` - base64 encoded content of the file to create. Any content would work as long as it can be put into an env var.
 
-Lets do **some practice**.
+Let's do **some practice**.
 
 First of all, create a file called `temp.txt`:
 
@@ -111,5 +111,7 @@ And finally view the contents of newly created file:
 ```bash
 cat new_file.txt
 ```
+
+![GREAT SUCCESS](https://media.giphy.com/media/a0h7sAqON67nO/giphy.gif)
 
 Yeah, you did it!
