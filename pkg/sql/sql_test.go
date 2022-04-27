@@ -126,7 +126,7 @@ func clearStorage(conf database.Config) error {
 		return err
 	}
 
-	tx := db.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(&Model{})
+	tx := db.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(&Data{})
 	return tx.Error
 }
 

@@ -24,10 +24,10 @@ Each platform has its own namespace specified by deployment id.
 
 If you use SQL driver, then Kaigara use separate database for each platform.
 
-All data is stored within `models` table in this database. For example, in PostgreSQL this table would look like:
+All data is stored within `data` table in this database. For example, in PostgreSQL this table would look like:
 
 ```sql
-CREATE TABLE models (
+CREATE TABLE data (
     id SERIAL PRIMARY KEY,
     created_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ,

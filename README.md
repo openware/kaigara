@@ -117,25 +117,25 @@ The name of Kaigara database is like `kaigara_$KAIGARA_DEPLOYMENT_ID`.
 To **list** existing **app names**, run:
 
 ```sql
-SELECT DISTINCT(app_name) FROM models;
+SELECT DISTINCT(app_name) FROM data;
 ```
 
 To **list** existing **scopes** for an app name, run:
 
 ```sql
-SELECT DISTINCT(scope) FROM models WHERE app_name = '*app_name*';
+SELECT DISTINCT(scope) FROM data WHERE app_name = '*app_name*';
 ```
 
 To **read** existing secrets for a given app name and scope, run:
 
 ```sql
-SELECT value FROM models WHERE app_name = '*app_name*'AND scope = '*scope*';
+SELECT value FROM data WHERE app_name = '*app_name*'AND scope = '*scope*';
 ```
 
 To **delete** existing secrets for a given app name and scope, run:
 
 ```sql
-DELETE FROM models WHERE app_name = '*app_name*'AND scope = '*scope*';
+DELETE FROM data WHERE app_name = '*app_name*'AND scope = '*scope*';
 ```
 
 ### Using kai CLI

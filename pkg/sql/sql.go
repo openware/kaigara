@@ -25,7 +25,7 @@ type Service struct {
 }
 
 // Data represents per-scope data(configs/secrets) which consists of a JSON field
-type Model struct {
+type Data struct {
 	gorm.Model
 	AppName string
 	Scope   string
@@ -45,7 +45,7 @@ func NewService(deploymentID string, conf *database.Config, encryptor types.Encr
 	}
 	db.Logger = logger.Default.LogMode(logger.LogLevel(logLevel))
 
-	err = db.AutoMigrate(&Model{})
+	err = db.AutoMigrate(&Data{})
 	if err != nil {
 		return nil, fmt.Errorf("SQL auto-migration failed: %s", err)
 	}
@@ -100,7 +100,7 @@ func ensureDatabaseExists(conf *database.Config) error {
 }
 
 func (ss *Service) Read(appName, scope string) error {
-	var data Model
+	var data Data
 	res := ss.db.First(&data, "app_name = ? AND scope = ?", appName, scope)
 
 	if ss.ds == nil {
@@ -139,13 +139,13 @@ func (ss *Service) Write(appName, scope string) error {
 	}
 
 	val := ss.ds[appName][scope]
-	data := &Model{
+	data := &Data{
 		AppName: appName,
 		Scope:   scope,
 		Version: ver,
 	}
 
-	var old Model
+	var old Data
 	res := ss.db.Where("app_name = ? AND scope = ?", appName, scope).First(&old)
 	isNotFound := errors.Is(res.Error, gorm.ErrRecordNotFound)
 	isCreate := false
@@ -275,7 +275,7 @@ func (ss *Service) DeleteEntry(appName, scope, name string) error {
 
 func (ss *Service) ListAppNames() ([]string, error) {
 	var appNames []string
-	tx := ss.db.Model(&Model{}).Distinct().Pluck("app_name", &appNames)
+	tx := ss.db.Model(&Data{}).Distinct().Pluck("app_name", &appNames)
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
@@ -297,7 +297,7 @@ func (ss *Service) GetCurrentVersion(appName, scope string) (int64, error) {
 }
 
 func (ss *Service) GetLatestVersion(appName, scope string) (int64, error) {
-	var data Model
+	var data Data
 	req := ss.db.Where("app_name = ? AND scope = ?", appName, scope).First(&data)
 
 	isNotFound := errors.Is(req.Error, gorm.ErrRecordNotFound)

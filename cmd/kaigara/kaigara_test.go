@@ -91,7 +91,7 @@ func TestKaigaraPrintenvSql(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tx := sqlDB.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(&sql.Model{})
+	tx := sqlDB.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(&sql.Data{})
 	if tx.Error != nil {
 		t.Fatal(tx.Error)
 	}
