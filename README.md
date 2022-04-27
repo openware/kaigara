@@ -28,7 +28,7 @@ export KAIGARA_VAULT_ADDR=http://localhost:8200
 export KAIGARA_VAULT_TOKEN=changeme
 ```
 
-If you choose SQL driver, then these `database` and `encryptor` vars should be set:
+If you choose SQL driver, then these vars should be set:
 
 ```sh
 # Supported SQL drivers are postgres and mysql
@@ -38,8 +38,12 @@ export DATABASE_PORT=5432
 export DATABASE_USER=postgres
 export DATABASE_PASS=changeme
 export KAIGARA_LOG_LEVEL=1
+```
 
-# Supported encryptors are transit (using Vault Transit), aes and plaintext
+Both storage drivers are created with **encryptor**, that is used to encrypt/decrypt vars in the secret scope:
+
+```sh
+# Supported encryptors are transit (using Vault Transit), aes and plaintext (default)
 export KAIGARA_ENCRYPTOR=transit
 
 # If you use AES encryption method, you need provide an AES key
@@ -137,6 +141,49 @@ To **delete** existing secrets for a given app name and scope, run:
 ```sql
 DELETE FROM data WHERE app_name = '*app_name*'AND scope = '*scope*';
 ```
+
+### Encryptor
+
+Encryptor is used only to encrypt/decrypt vars from secret scope.
+
+If you use `plaintext` (default setting), then there is no encryption and you can read your secrets freely, but in the case of `transit` or `aes` encryption you won't be able to read their contents.
+
+#### Transit
+
+**Warning**: If you use Vault transit as encryptor, then this setting should be set:
+
+```bash
+vault secrets enable transit
+```
+
+To **find out** whether transit key exists or not:
+
+```sh
+vault list transit/keys | grep *deployment_id*_kaigara_*app_name*
+```
+
+To **create** transit key, run:
+
+```sh
+vault write -f transit/keys/*deployment_id*_kaigara_*app_name*
+```
+
+To **encrypt** a plain text, run:
+
+```sh
+vault write transit/encrypt/*deployment_id*_kaigara_*app_name* -plaintext=*text*
+```
+
+To **decrypt** a cipher text, run:
+```sh
+vault write transit/decrypt/*deployment_id*_kaigara_*app_name* -ciphertext=*text*
+```
+
+### AES
+
+The AES encryptor type is implemented with GCM, that currently is not supported by `openssl` CLI tool.
+
+If you need to debug or just encrypt/decrypt secrets in the same way as Kaigare does it, than try to use something like [this](https://github.com/jforissier/aesgcm).
 
 ### Using kai CLI
 
