@@ -144,37 +144,37 @@ DELETE FROM data WHERE app_name = '*app_name*'AND scope = '*scope*';
 
 ### Encryptor
 
-Encryptor is used only to encrypt/decrypt vars from secret scope.
+Encryptor is used only to encrypt/decrypt vars from `secret` scope.
 
-If you use `plaintext` (default setting), then there is no encryption and you can read your secrets freely, but in the case of `transit` or `aes` encryption you won't be able to read their contents.
+If you use `plaintext` (default setting), then there is no encryption and you can read your secrets freely, but in the case of `transit` or `aes` encryption you won't be able to read their contents directly, you'd only see its encrypted version.
 
 #### Transit
 
-**Warning**: If you use Vault transit as encryptor, then this setting should be set:
+**Warning**: If you `transit` encryptor, make sure to enable Transit engine in Vault:
 
 ```bash
 vault secrets enable transit
 ```
 
-To **find out** whether transit key exists or not:
+To **find out** whether Transit key exists or not:
 
 ```sh
 vault list transit/keys | grep *deployment_id*_kaigara_*app_name*
 ```
 
-To **create** transit key, run:
+To **create** a Transit key, run:
 
 ```sh
 vault write -f transit/keys/*deployment_id*_kaigara_*app_name*
 ```
 
-To **encrypt** a plain text, run:
+To **encrypt** a plain text string, run:
 
 ```sh
 vault write transit/encrypt/*deployment_id*_kaigara_*app_name* -plaintext=*text*
 ```
 
-To **decrypt** a cipher text, run:
+To **decrypt** a cipher text string, run:
 ```sh
 vault write transit/decrypt/*deployment_id*_kaigara_*app_name* -ciphertext=*text*
 ```
@@ -183,7 +183,7 @@ vault write transit/decrypt/*deployment_id*_kaigara_*app_name* -ciphertext=*text
 
 The AES encryptor type is implemented with GCM, that currently is not supported by `openssl` CLI tool.
 
-If you need to debug or just encrypt/decrypt secrets in the same way as Kaigare does it, than try to use something like [this](https://github.com/jforissier/aesgcm).
+If you need to debug or just encrypt/decrypt secrets in the same way as Kaigare does it, you can use something like [this](https://github.com/jforissier/aesgcm).
 
 ### Using kai CLI
 
