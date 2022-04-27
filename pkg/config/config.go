@@ -1,36 +1,28 @@
 package config
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
-	"regexp"
-	"strconv"
-	"strings"
-
-	"github.com/openware/kaigara/pkg/encryptor/aes"
-	"github.com/openware/kaigara/pkg/encryptor/plaintext"
-	"github.com/openware/kaigara/pkg/encryptor/transit"
-	encryptor "github.com/openware/kaigara/pkg/encryptor/types"
-	"github.com/openware/kaigara/pkg/storage/sql"
-	"github.com/openware/kaigara/pkg/storage/vault"
-	"github.com/openware/kaigara/types"
 	"github.com/openware/pkg/database"
-	"gorm.io/gorm/logger"
+	"github.com/openware/pkg/ika"
 )
+
+var ConfPath = ""
 
 // KaigaraConfig contains cli options
 type KaigaraConfig struct {
-	Storage       string `yaml:"secret-store" env:"KAIGARA_STORAGE_DRIVER" env-default:"vault"`
-	VaultToken    string `yaml:"vault-token" env:"KAIGARA_VAULT_TOKEN"`
-	VaultAddr     string `yaml:"vault-addr" env:"KAIGARA_VAULT_ADDR" env-default:"http://127.0.0.1:8200"`
-	AppNames      string `yaml:"vault-app-name" env:"KAIGARA_APP_NAME"`
-	DeploymentID  string `yaml:"deployment-id" env:"KAIGARA_DEPLOYMENT_ID"`
-	Scopes        string `yaml:"scopes" env:"KAIGARA_SCOPES" env-default:"public,private,secret"`
-	EncryptMethod string `yaml:"encryption-method" env:"KAIGARA_ENCRYPTOR" env-default:"transit"`
-	AesKey        string `yaml:"aes-key" env:"KAIGARA_ENCRYPTOR_AES_KEY"`
-	LogLevel      int    `yaml:"log-level" env:"KAIGARA_LOG_LEVEL" env-default:"1"`
-	DBConfig      database.Config
+	Storage      string `yaml:"secret_store" env:"KAIGARA_STORAGE_DRIVER" env-default:"sql"`
+	DeploymentID string `yaml:"deployment_id" env:"KAIGARA_DEPLOYMENT_ID" env-default:"opendax_uat"`
+	AppNames     string `yaml:"app_names" env:"KAIGARA_APP_NAME"`
+	Scopes       string `yaml:"scopes" env:"KAIGARA_SCOPES" env-default:"public,private,secret"`
+
+	VaultToken string `yaml:"vault_token" env:"KAIGARA_VAULT_TOKEN" env-default:"changeme"`
+	VaultAddr  string `yaml:"vault_addr" env:"KAIGARA_VAULT_ADDR" env-default:"http://127.0.0.1:8200"`
+
+	EncryptMethod string `yaml:"encryption_method" env:"KAIGARA_ENCRYPTOR" env-default:"plaintext"`
+	AesKey        string `yaml:"aes_key" env:"KAIGARA_ENCRYPTOR_AES_KEY" env-default:"changemechangeme"`
+
+	LogLevel int             `yaml:"log_level" env:"KAIGARA_LOG_LEVEL" env-default:"1"`
+	RedisURL string          `yaml:"redis_url" env:"KAIGARA_REDIS_URL"`
+	DBConfig database.Config `yaml:"database"`
 }
 
 // Config is the interface definition of generic config storage
@@ -50,121 +42,52 @@ type File struct {
 	Content string
 }
 
-var kfile = regexp.MustCompile("(?i)^KFILE_(.*)_(PATH|CONTENT)$")
+func NewKaigaraConfig() (*KaigaraConfig, error) {
+	conf := &KaigaraConfig{DBConfig: database.Config{}}
+	if err := ika.ReadConfig(ConfPath, conf); err != nil {
+		return nil, err
+	}
 
-func GetStorageService(cnf *KaigaraConfig) (types.Storage, error) {
-	var encryptor encryptor.Encryptor
-	var err error
-
-	if cnf.EncryptMethod == "transit" {
-		log.Println("INFO: Starting vault transit secret engine encryption!")
-
-		encryptor = transit.NewVaultEncryptor(cnf.VaultAddr, cnf.VaultToken)
-	} else if cnf.EncryptMethod == "aes" {
-		log.Println("INFO: Starting in-memory encryption!")
-		// change key insertion
-		encryptor, err = aes.NewAESEncryptor([]byte(cnf.AesKey))
-		if err != nil {
-			return nil, err
+	if conf.Storage == "sql" {
+		if conf.DBConfig.Pool == 0 {
+			conf.DBConfig.Pool = 1
 		}
-	} else {
-		log.Println("INFO: Starting plaintext encryption. KAIGARA_ENCRYPTOR is missing")
-		encryptor = plaintext.NewPlaintextEncryptor()
-	}
 
-	ss := cnf.Storage
-	if ss == "vault" {
-		return vault.NewService(cnf.VaultAddr, cnf.VaultToken, cnf.DeploymentID), nil
-	} else if ss == "sql" {
-		svc, err := sql.NewStorageService(cnf.DeploymentID, &cnf.DBConfig, encryptor, logger.LogLevel(cnf.LogLevel))
-		if err != nil {
-			return nil, err
+		if conf.DBConfig.Driver == "" {
+			conf.DBConfig.Driver = "postgres"
 		}
-		return svc, nil
-	} else {
-		return nil, fmt.Errorf("SecretStore does not support: %s", ss)
-	}
-}
 
-// BuildCmdEnv reads secrets from all secretStores and scopes passed to it and loads them into an Env and returns a *Env
-func BuildCmdEnv(appNames []string, store types.Storage, currentEnv, scopes []string) *Env {
-	env := &Env{
-		Vars:  []string{},
-		Files: map[string]*File{},
-	}
-
-	for _, v := range currentEnv {
-		if !strings.HasPrefix(v, "KAIGARA_") {
-			env.Vars = append(env.Vars, v)
+		if conf.DBConfig.Host == "" {
+			conf.DBConfig.Host = "127.0.0.1"
 		}
-	}
 
-	for _, appName := range append([]string{"global"}, appNames...) {
-		for _, scope := range scopes {
-			err := store.Read(appName, scope)
-			if err != nil {
-				panic(err)
+		if conf.DBConfig.Port == "" {
+			switch conf.DBConfig.Driver {
+			case "mysql":
+				conf.DBConfig.Port = "3306"
+			case "postgres":
+				conf.DBConfig.Port = "5432"
 			}
+		}
 
-			secrets, err := store.GetEntries(appName, scope)
-			if err != nil {
-				panic(err)
+		if conf.DBConfig.User == "" {
+			switch conf.DBConfig.Driver {
+			case "mysql":
+				conf.DBConfig.User = "root"
+			case "postgres":
+				conf.DBConfig.User = "postgres"
 			}
+		}
 
-			for k, v := range secrets {
-				// Avoid trying to put maps and slices into env
-				if _, ok := v.(map[string]interface{}); ok {
-					continue
-				}
-
-				if _, ok := v.([]interface{}); ok {
-					continue
-				}
-
-				var val string
-
-				// Handle bool and json.Number
-				if tmp, ok := v.(bool); ok {
-					val = strconv.FormatBool(tmp)
-				}
-
-				if tmp, ok := v.(json.Number); ok {
-					val = string(tmp)
-				}
-
-				// Skip if the var can't be asserted to string
-				if val == "" {
-					if tmp, ok := v.(string); ok {
-						val = tmp
-					} else {
-						continue
-					}
-				}
-
-				m := kfile.FindStringSubmatch(k)
-
-				if m == nil {
-					env.Vars = append(env.Vars, strings.ToUpper(k)+"="+val)
-					continue
-				}
-				name := strings.ToUpper(m[1])
-				suffix := strings.ToUpper(m[2])
-
-				f, ok := env.Files[name]
-				if !ok {
-					f = &File{}
-					env.Files[name] = f
-				}
-				switch suffix {
-				case "PATH":
-					f.Path = v.(string)
-				case "CONTENT":
-					f.Content = v.(string)
-				default:
-					log.Printf("ERROR: Unexpected prefix in config key: %s", k)
-				}
+		if conf.DBConfig.Pass == "" {
+			switch conf.DBConfig.Driver {
+			case "mysql":
+				conf.DBConfig.Pass = ""
+			case "postgres":
+				conf.DBConfig.Pass = "changeme"
 			}
 		}
 	}
-	return env
+
+	return conf, nil
 }

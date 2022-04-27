@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/hashicorp/vault/api v1.3.1
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 	gotest.tools v2.2.0+incompatible
 )
 

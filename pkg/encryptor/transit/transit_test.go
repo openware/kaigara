@@ -18,7 +18,11 @@ func TestEncrypt(t *testing.T) {
 		return
 	}
 
-	s := NewVaultEncryptor(vaultAddr, vaultToken)
+	s, err := NewVaultEncryptor(vaultAddr, vaultToken)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	cipher, err := s.Encrypt("bonjour", vaultAppName)
 	require.NoError(t, err)
 
