@@ -58,6 +58,10 @@ func BuildCmdEnv(appNames []string, ss types.Storage, currentEnv, scopes []strin
 					val = string(tmp)
 				}
 
+				if tmp, ok := v.(float64); ok {
+					val = strconv.FormatFloat(tmp, 'f', -1, 64)
+				}
+
 				// Skip if the var can't be asserted to string
 				if val == "" {
 					if tmp, ok := v.(string); ok {

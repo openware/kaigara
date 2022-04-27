@@ -9,13 +9,12 @@ import (
 )
 
 func TestEncrypt(t *testing.T) {
-	vaultToken := os.Getenv("VAULT_TOKEN")
-	vaultAddr := os.Getenv("VAULT_ADDR")
-	vaultAppName := os.Getenv("VAULT_APP_NAME")
+	vaultToken := os.Getenv("KAIGARA_VAULT_TOKEN")
+	vaultAddr := os.Getenv("KAIGARA_VAULT_ADDR")
+	vaultAppName := "finex"
 
-	if vaultToken == "" || vaultAddr == "" || vaultAppName == "" {
-		t.Skip()
-		return
+	if vaultToken == "" || vaultAddr == "" {
+		t.Fatal("vault settings are not set")
 	}
 
 	s, err := NewVaultEncryptor(vaultAddr, vaultToken)

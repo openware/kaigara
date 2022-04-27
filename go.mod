@@ -10,7 +10,7 @@ replace github.com/openware/kaigara/pkg/vault => ./pkg/vault
 
 require (
 	github.com/go-redis/redis/v7 v7.2.0
-	github.com/openware/kaigara/pkg/encryptor v0.0.0-00010101000000-000000000000
+	github.com/openware/kaigara/pkg/encryptor v0.0.0-20220225091359-d368f0dfe8db
 	github.com/openware/kaigara/pkg/sql v0.0.0-00010101000000-000000000000
 	github.com/openware/kaigara/pkg/vault v0.0.0-00010101000000-000000000000
 	github.com/openware/pkg v0.0.0-20220225074124-ddad5f429a07

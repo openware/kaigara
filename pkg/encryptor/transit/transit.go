@@ -39,8 +39,7 @@ func NewVaultEncryptor(addr, token string) (*VaultEncryptor, error) {
 		vault: client,
 	}
 
-	err = s.startRenewToken(token)
-	if err != nil {
+	if err := s.startRenewToken(token); err != nil {
 		return nil, err
 	}
 
@@ -52,6 +51,7 @@ func (s *VaultEncryptor) transitKeyExists(appName string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+
 	return secret != nil, nil
 }
 
@@ -62,6 +62,7 @@ func (s *VaultEncryptor) transitKeyCreate(appName string) error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -70,6 +71,7 @@ func (s *VaultEncryptor) createTransitKeyIfNotExist(appName string) error {
 	if err != nil {
 		return err
 	}
+
 	if !ok {
 		err = s.transitKeyCreate(appName)
 		if err != nil {
@@ -77,6 +79,7 @@ func (s *VaultEncryptor) createTransitKeyIfNotExist(appName string) error {
 		}
 		log.Println("INFO: Transit key created")
 	}
+
 	return nil
 }
 
