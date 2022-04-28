@@ -83,12 +83,6 @@ Example env vars are stored in [kaigara.env](./examples/kaigara.env).
 
 ### Vault
 
-**Warning**: If you use Vault as a secret storage, then encryption using `transit` should be set:
-
-```bash
-vault secrets enable transit
-```
-
 To **list** existing **app names**, run:
 
 ```sh
@@ -150,9 +144,9 @@ If you use `plaintext` (default setting), then there is no encryption and you ca
 
 #### Transit
 
-**Warning**: If you `transit` encryptor, make sure to enable Transit engine in Vault:
+**Warning**: If you use `transit` encryptor, make sure to enable Transit engine in Vault:
 
-```bash
+```sh
 vault secrets enable transit
 ```
 
@@ -195,7 +189,7 @@ You can set `KAICONFIG` var in your shell to file path and store there **configu
 
 For example, if a file `~/.kaigara/kaiconf.yaml` with contents of [kaiconf.yaml](./examples/kaiconf.yaml) is created, set `KAICONFIG` to its path and run:
 
-```bash
+```sh
 kai dump
 ```
 
@@ -203,7 +197,7 @@ It will dump secrets from *peatio* app and *public*, *private* and *secret* scop
 
 But if you run:
 
-```bash
+```sh
 KAIGARA_SCOPES=private kai dump
 ```
 
@@ -211,7 +205,7 @@ The env var would override the file config and only *private* secrets will be du
 
 With `kai` tool you can also redefine vars by passing values to parameters, so if we will continue with previous command:
 
-```bash
+```sh
 KAIGARA_SCOPES=private kai dump -s public
 ```
 
@@ -221,7 +215,7 @@ Then only *public* secrets will be dumped from the same app.
 
 To write secrets from the command line, save in a YAML file with a format similar to [secrets.yaml](./examples/secrets.yaml) and run:
 
-```bash
+```sh
 kai save -f *filepath*
 ```
 
@@ -278,7 +272,7 @@ secrets:
 
 To dump and output secrets from the storage, run:
 
-```bash
+```sh
 kai dump -o *outputs_path*
 ```
 
@@ -288,31 +282,31 @@ Make sure you've set `KAIGARA_SCOPES` env var before using `kaidump`.
 
 To delete configs from the storage, run:
 
-```bash
+```sh
 kai del *app.scope.var*
 ```
 
 For example, if you want to delete `finex_database_host` from `secret` scope in `finex` app, you should run:
 
-```bash
+```sh
 kai del finex.secret.finex_database_host
 ```
 
 You can also delete all entries from a scope:
 
-```bash
+```sh
 kai del finex.secret.all
 ```
 
 Or from the whole app:
 
-```bash
+```sh
 kai del finex.all.all
 ```
 
 Or even all present secrets from the current deployment ID:
 
-```bash
+```sh
 kai del all.all.all
 ```
 
@@ -320,12 +314,12 @@ kai del all.all.all
 
 To print all environment variables including the ones loaded by Kaigara from the secret storage, run:
 
-```bash
+```sh
 kai env
 ```
 
 To print exact environment variable, run:
 
-```
+```sh
 kai env *ENV_NAME*
 ```
