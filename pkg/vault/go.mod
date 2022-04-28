@@ -1,4 +1,4 @@
-module github.com/openware/kaigara/pkg/storage/vault
+module github.com/openware/kaigara/pkg/vault
 
 go 1.17
 
