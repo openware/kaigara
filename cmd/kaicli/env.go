@@ -23,12 +23,12 @@ func kaienvRun(conf *config.KaigaraConfig, ss types.Storage, params []string, ou
 		return err
 	}
 
-	if len(params) < 2 {
+	if len(params) < 1 {
 		for envVariable, envValue := range env {
 			fmt.Fprintf(out, "%s=%s\n", strings.ToUpper(envVariable), envValueToString(envValue))
 		}
 	} else {
-		envVariable := params[1]
+		envVariable := params[0]
 		if envValue, ok := env[strings.ToLower(envVariable)]; ok {
 			fmt.Fprint(out, envValue)
 		} else {

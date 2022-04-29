@@ -61,6 +61,11 @@ steps:
       restore: true
       mount:
       - .cache/golangci-lint
+    when:
+      branch:
+        exclude:
+          - "master"
+          - "*stable"
 
   - name: Go lint
     image: golangci/golangci-lint:v1.44-alpine
@@ -85,6 +90,11 @@ steps:
       rebuild: true
       mount:
       - .cache/golangci-lint
+    when:
+      branch:
+        exclude:
+          - "master"
+          - "*stable"
 
   - name: Go test
     image: golang:1.16

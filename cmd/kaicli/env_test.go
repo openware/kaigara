@@ -86,7 +86,7 @@ func TestKaienvRun(t *testing.T) {
 
 					t.Run(fmt.Sprintf("Test print %s %d", envVariable, i), func(t *testing.T) {
 						var buff bytes.Buffer
-						err := kaienvRun(testConf, mockSS, []string{"kaienv", envVariable}, &buff)
+						err := kaienvRun(testConf, mockSS, []string{envVariable}, &buff)
 						envValueActual := buff.String()
 						assert.Equal(t, envValueExpected, envValueActual)
 						assert.NoError(t, err)
