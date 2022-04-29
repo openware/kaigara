@@ -2,12 +2,12 @@ module github.com/openware/kaigara/pkg/vault
 
 go 1.17
 
-replace github.com/openware/kaigara/pkg/encryptor => ../encryptor
+// replace github.com/openware/kaigara/pkg/encryptor => ../encryptor
 
 require (
 	github.com/hashicorp/vault/api v1.3.1
 	github.com/iancoleman/strcase v0.2.0
-	github.com/openware/kaigara/pkg/encryptor v0.0.0-20220428085940-d8b16abed55d
+	github.com/openware/kaigara/pkg/encryptor v0.0.0-20220428165818-6271445f8750
 	github.com/stretchr/testify v1.7.1
 )
 
