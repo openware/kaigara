@@ -5,8 +5,6 @@ go 1.17
 // replace github.com/openware/kaigara/pkg/encryptor => ../encryptor
 
 require (
-	github.com/go-sql-driver/mysql v1.6.0
-	github.com/lib/pq v1.10.2
 	github.com/openware/kaigara/pkg/encryptor v0.0.0-20220428165818-6271445f8750
 	github.com/openware/pkg v0.0.0-20220225074124-ddad5f429a07
 	github.com/stretchr/testify v1.7.1
@@ -21,6 +19,7 @@ require (
 	github.com/cenkalti/backoff/v3 v3.0.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.7.0 // indirect
+	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
