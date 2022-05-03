@@ -6,14 +6,12 @@ import (
 	"fmt"
 
 	"gorm.io/datatypes"
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/encryptor/types"
-
-	"gorm.io/driver/mysql"
-	"gorm.io/driver/postgres"
 )
 
 // Service contains a gorm DB client and a container for data loaded from DB into memory
@@ -33,13 +31,27 @@ type Data struct {
 	Version int64
 }
 
-func NewService(deploymentID string, conf *config.DatabaseConfig, encryptor types.Encryptor, logLevel int) (*Service, error) {
+type DatabaseConfig struct {
+	Driver string `yaml:"driver" env:"KAIGARA_DATABASE_DRIVER" env-description:"Database driver"`
+	Host   string `yaml:"host" env:"KAIGARA_DATABASE_HOST" env-description:"Database host"`
+	Port   string `yaml:"port" env:"KAIGARA_DATABASE_PORT" env-description:"Database port"`
+	Name   string `yaml:"name" env:"KAIGARA_DATABASE_NAME" env-description:"Database name"`
+	User   string `yaml:"user" env:"KAIGARA_DATABASE_USER" env-description:"Database user"`
+	Pass   string `env:"KAIGARA_DATABASE_PASS" env-description:"Database user password"`
+	Pool   int    `yaml:"pool" env:"KAIGARA_DATABASE_POOL" env-description:"Database pool size"`
+}
+
+func NewService(deploymentID string, conf *DatabaseConfig, encryptor types.Encryptor, logLevel int) (*Service, error) {
 	conf.Name = "kaigara_" + deploymentID
 	db, err := Connect(conf)
 	if err != nil {
 		return nil, err
 	}
 	db.Logger = logger.Default.LogMode(logger.LogLevel(logLevel))
+
+	if logLevel > 1 {
+		db = db.Debug()
+	}
 
 	err = db.AutoMigrate(&Data{})
 	if err != nil {
@@ -53,27 +65,27 @@ func NewService(deploymentID string, conf *config.DatabaseConfig, encryptor type
 	}, nil
 }
 
-func Connect(cnf *config.DatabaseConfig) (*gorm.DB, error) {
+func Connect(conf *DatabaseConfig) (*gorm.DB, error) {
 	var err error
 	var dial gorm.Dialector
 	var dsn string
 
-	switch cnf.Driver {
+	switch conf.Driver {
 	case "mysql":
 		dsn = fmt.Sprintf(
 			"%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local",
-			cnf.User, cnf.Pass, cnf.Host, cnf.Port, cnf.Name,
+			conf.User, conf.Pass, conf.Host, conf.Port, conf.Name,
 		)
 		dial = mysql.Open(dsn)
 
 	case "postgres":
 		dsn := fmt.Sprintf(
 			"user=%s password=%s host=%s port=%s dbname=%s sslmode=disable",
-			cnf.User, cnf.Pass, cnf.Host, cnf.Port, cnf.Name,
+			conf.User, conf.Pass, conf.Host, conf.Port, conf.Name,
 		)
 		dial = postgres.Open(dsn)
 	default:
-		return nil, fmt.Errorf("Unsupported DATABASE_DRIVER: %s", cnf.Driver)
+		return nil, fmt.Errorf("unsupported DATABASE_DRIVER: %s", conf.Driver)
 	}
 
 	db, err := gorm.Open(dial, &gorm.Config{})
@@ -85,7 +97,7 @@ func Connect(cnf *config.DatabaseConfig) (*gorm.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	sql.SetMaxOpenConns(cnf.Pool)
+	sql.SetMaxOpenConns(conf.Pool)
 
 	return db, nil
 }

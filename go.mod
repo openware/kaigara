@@ -11,7 +11,7 @@ go 1.17
 require (
 	github.com/go-redis/redis/v7 v7.2.0
 	github.com/openware/kaigara/pkg/encryptor v0.0.0-20220428165818-6271445f8750
-	github.com/openware/kaigara/pkg/sql v0.0.0-20220503082818-a2268ea271de
+	github.com/openware/kaigara/pkg/sql v0.0.0-20220503082904-4684f95227ed
 	github.com/openware/kaigara/pkg/vault v0.0.0-20220428165818-6271445f8750
 	github.com/openware/pkg v0.0.0-20220225074124-ddad5f429a07
 	github.com/stretchr/testify v1.7.1
@@ -60,7 +60,6 @@ require (
 	github.com/jinzhu/now v1.1.4 // indirect
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mattn/go-isatty v0.0.12 // indirect
-	github.com/mattn/go-sqlite3 v1.14.12 // indirect
 	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
@@ -84,5 +83,4 @@ require (
 	gorm.io/datatypes v1.0.6 // indirect
 	gorm.io/driver/mysql v1.3.2 // indirect
 	gorm.io/driver/postgres v1.3.1 // indirect
-	gorm.io/driver/sqlite v1.3.1 // indirect
 )

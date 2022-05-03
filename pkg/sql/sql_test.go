@@ -10,7 +10,6 @@ import (
 	"gopkg.in/yaml.v3"
 	"gorm.io/gorm"
 
-	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/encryptor/aes"
 	"github.com/openware/kaigara/pkg/encryptor/plaintext"
 	"github.com/openware/kaigara/pkg/encryptor/transit"
@@ -18,14 +17,15 @@ import (
 )
 
 var deploymentID = "opendax_uat"
+var testLogLevel = 2
 var appNames = []string{"barong", "finex", "peatio"}
 var scopes = []string{"private", "public", "secret"}
-var configs map[string]config.DatabaseConfig
+var configs map[string]DatabaseConfig
 var encryptors map[string]types.Encryptor
 
 type Config struct {
-	Name     string                `yaml:"name"`
-	DbConfig config.DatabaseConfig `yaml:"database"`
+	Name     string         `yaml:"name"`
+	DbConfig DatabaseConfig `yaml:"database"`
 }
 
 func TestMain(m *testing.M) {
@@ -48,7 +48,7 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
-	configs = make(map[string]config.DatabaseConfig)
+	configs = make(map[string]DatabaseConfig)
 	for _, cfg := range cfgs {
 		configs[cfg.Name] = cfg.DbConfig
 	}
@@ -116,7 +116,7 @@ func setEntry(ss *Service, appName, scope, name, value string) error {
 	return nil
 }
 
-func clearStorage(conf config.DatabaseConfig) error {
+func clearStorage(conf DatabaseConfig) error {
 	db, err := Connect(&conf)
 	if err != nil {
 		return err
@@ -129,7 +129,7 @@ func clearStorage(conf config.DatabaseConfig) error {
 func TestSetEntry(t *testing.T) {
 	for _, encryptor := range encryptors {
 		for _, conf := range configs {
-			ss, err := NewService(deploymentID, &conf, encryptor, 1)
+			ss, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
 			assert.NoError(t, err)
 
 			for _, scope := range scopes {
@@ -148,7 +148,7 @@ func TestSetEntry(t *testing.T) {
 					}
 
 					// Verify the written data with new storage
-					ssTmp, err := NewService(deploymentID, &conf, encryptor, 1)
+					ssTmp, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
 					assert.NoError(t, err)
 
 					result, err := getEntriesReload(ssTmp, appName, scope)
@@ -177,7 +177,7 @@ func TestSetEntry(t *testing.T) {
 func TestDeleteEntry(t *testing.T) {
 	for _, encryptor := range encryptors {
 		for _, conf := range configs {
-			ss, err := NewService(deploymentID, &conf, encryptor, 1)
+			ss, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
 			assert.NoError(t, err)
 
 			for _, scope := range scopes {
@@ -205,7 +205,7 @@ func TestDeleteEntry(t *testing.T) {
 					err = ss.Write(appName, scope)
 					assert.NoError(t, err)
 
-					ssTmp, err := NewService(deploymentID, &conf, encryptor, 1)
+					ssTmp, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
 					assert.NoError(t, err)
 
 					entry, err = getEntryReload(ssTmp, appName, scope, key)
@@ -226,7 +226,7 @@ func TestDeleteEntry(t *testing.T) {
 func TestListAppNames(t *testing.T) {
 	for _, encryptor := range encryptors {
 		for _, conf := range configs {
-			ss, err := NewService(deploymentID, &conf, encryptor, 1)
+			ss, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
 			assert.NoError(t, err)
 
 			for _, appName := range appNames {
@@ -244,7 +244,7 @@ func TestListAppNames(t *testing.T) {
 				}
 			}
 
-			ssTmp, err := NewService(deploymentID, &conf, encryptor, 1)
+			ssTmp, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
 			assert.NoError(t, err)
 
 			apps, err := ssTmp.ListAppNames()
@@ -261,7 +261,7 @@ func TestListAppNames(t *testing.T) {
 func TestServiceSetGetEntriesIncreaseVersion(t *testing.T) {
 	for _, encryptor := range encryptors {
 		for _, conf := range configs {
-			ss, err := NewService(deploymentID, &conf, encryptor, 1)
+			ss, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
 			assert.NoError(t, err)
 
 			for _, scope := range scopes {
@@ -302,7 +302,7 @@ func TestServiceSetGetEntriesIncreaseVersion(t *testing.T) {
 					err = ssTmp.Write(appName, scope)
 					assert.NoError(t, err)
 
-					ssTmp2, err := NewService(deploymentID, &conf, encryptor, 1)
+					ssTmp2, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
 					assert.NoError(t, err)
 
 					data, err = getEntriesReload(ssTmp2, appName, scope)
