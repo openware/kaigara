@@ -11,7 +11,7 @@ go 1.17
 require (
 	github.com/go-redis/redis/v7 v7.2.0
 	github.com/openware/kaigara/pkg/encryptor v0.0.0-20220428165818-6271445f8750
-	github.com/openware/kaigara/pkg/sql v0.0.0-20220502135601-99b1abfc7b23
+	github.com/openware/kaigara/pkg/sql v0.0.0-20220503082818-a2268ea271de
 	github.com/openware/kaigara/pkg/vault v0.0.0-20220428165818-6271445f8750
 	github.com/openware/pkg v0.0.0-20220225074124-ddad5f429a07
 	github.com/stretchr/testify v1.7.1

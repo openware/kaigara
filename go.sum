@@ -334,6 +334,8 @@ github.com/openware/kaigara/pkg/encryptor v0.0.0-20220428165818-6271445f8750 h1:
 github.com/openware/kaigara/pkg/encryptor v0.0.0-20220428165818-6271445f8750/go.mod h1:OgGzmddj4jBM0XQJqG4H3jhHQS0wC/HkjI6/p9FcsEA=
 github.com/openware/kaigara/pkg/sql v0.0.0-20220502135601-99b1abfc7b23 h1:zTLEZiMUtK6Q+KrQoR4miwjQjQYPUOCVqUb9TmTGVDI=
 github.com/openware/kaigara/pkg/sql v0.0.0-20220502135601-99b1abfc7b23/go.mod h1:mSf61j78lnofociA1Z6EQZrsMC0El4YRyjwxed3mEAo=
+github.com/openware/kaigara/pkg/sql v0.0.0-20220503082818-a2268ea271de h1:GHVrMNYlBh4CgIUgGn4Orki8ys002ks0acLehSmyoiE=
+github.com/openware/kaigara/pkg/sql v0.0.0-20220503082818-a2268ea271de/go.mod h1:PJSMaj+KpuaU2MK2kDxsE9856ljYx7Dr7/3uHpRqeOI=
 github.com/openware/kaigara/pkg/storage/vault v0.0.0-20220225071429-1a6cebf94389/go.mod h1:s1pUfsh3agaSgx5/pUS0a6CjuXLZia+A3WjRZ/If0Ko=
 github.com/openware/kaigara/pkg/vault v0.0.0-20220428165818-6271445f8750 h1:zkfxf+xfWuHPGdehTcOjg5GKYjRclJSynlp7QhrdILg=
 github.com/openware/kaigara/pkg/vault v0.0.0-20220428165818-6271445f8750/go.mod h1:2fLWKTPYCCcX2Su64hM5+urf2gpLFMktc09hiCcEfFo=
