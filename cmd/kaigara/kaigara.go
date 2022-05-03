@@ -108,23 +108,33 @@ func kaigaraRun(ss types.Storage, cmd string, cmdArgs []string) {
 	log.Printf("INF: publishing on %s and %s\n", channelOut, channelErr)
 
 	var wg sync.WaitGroup
-	if ls != nil {
-		wg.Add(2)
+	wg.Add(2)
 
-		go func() {
-			if err := ls.Publish(channelOut, stdout); err != nil {
-				log.Printf("ERR: %s", err.Error())
+	go func() {
+		ls.Publish(channelOut, stdout)
+		wg.Done()
+
+		/*  FIXME: BRING BACK ERROR MESSAGES
+		    probably ErrClosed is a symptop of premature buffer closing
+		if err := ls.Publish(channelOut, stdout); err != nil {
+			if err != io.ErrClosedPipe && err != io.EOF && err != io.ErrUnexpectedEOF {
+				log.Printf("ERR: STDOUT: %s", err.Error())
 			}
-			wg.Done()
-		}()
+		} */
+	}()
 
-		go func() {
+	go func() {
+		ls.Publish(channelErr, stderr)
+		wg.Done()
+
+		/*  FIXME: BRING BACK ERROR MESSAGES
+			probably ErrClosed is a symptop of premature buffer closing
 			if err := ls.Publish(channelErr, stderr); err != nil {
-				log.Printf("ERR: %s", err.Error())
-			}
-			wg.Done()
-		}()
-	}
+				if err != io.ErrClosedPipe && err != io.EOF && err != os.ErrClosed && err != io.ErrUnexpectedEOF {
+					log.Printf("ERR: STDERR: %s", err.Error())
+				}
+		 } */
+	}()
 
 	if err := c.Start(); err != nil {
 		log.Fatal(err)
@@ -133,13 +143,11 @@ func kaigaraRun(ss types.Storage, cmd string, cmdArgs []string) {
 	go exitWhenSecretsOutdated(c, ss, scopes)
 
 	quit := make(chan int)
-	if ls != nil {
-		wg.Add(1)
-		go func() {
-			ls.HeartBeat(appNamesToLoggingName(), quit)
-			wg.Done()
-		}()
-	}
+	wg.Add(1)
+	go func() {
+		ls.HeartBeat(appNamesToLoggingName(), quit)
+		wg.Done()
+	}()
 
 	if err := c.Wait(); err != nil {
 		log.Fatal(err)
@@ -198,7 +206,6 @@ func main() {
 	ls, err = logstream.NewRedisClient(conf.RedisURL)
 	if err != nil {
 		log.Printf("WRN: %s", err.Error())
-		ls = nil
 	}
 
 	ss, err := storage.GetStorageService(conf)
