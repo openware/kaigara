@@ -9,7 +9,6 @@ import (
 	"github.com/openware/kaigara/pkg/sql"
 	"github.com/openware/kaigara/pkg/storage"
 	"github.com/openware/kaigara/utils/testenv"
-	"github.com/openware/pkg/database"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 )
@@ -86,7 +85,7 @@ func TestKaigaraPrintenvSql(t *testing.T) {
 	}
 
 	// Cleanup data
-	sqlDB, err := database.Connect(&conf.DBConfig)
+	sqlDB, err := sql.Connect(&conf.DBConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
