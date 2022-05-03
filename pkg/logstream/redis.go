@@ -17,7 +17,7 @@ type RedisLogStream struct {
 
 func NewRedisClient(url string) (*RedisLogStream, error) {
 	if url == "" {
-		return nil, fmt.Errorf("redis url is empty")
+		return &RedisLogStream{client: nil}, fmt.Errorf("redis URL is empty")
 	}
 
 	opt, err := redis.ParseURL(url)
