@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/openware/kaigara/pkg/sql"
 	"github.com/openware/pkg/ika"
 )
 
@@ -19,9 +20,9 @@ type KaigaraConfig struct {
 	EncryptMethod string `yaml:"encryption_method" env:"KAIGARA_ENCRYPTOR" env-default:"plaintext"`
 	AesKey        string `yaml:"aes_key" env:"KAIGARA_ENCRYPTOR_AES_KEY" env-default:"changemechangeme"`
 
-	LogLevel int            `yaml:"log_level" env:"KAIGARA_LOG_LEVEL" env-default:"1"`
-	RedisURL string         `yaml:"redis_url" env:"KAIGARA_REDIS_URL"`
-	DBConfig DatabaseConfig `yaml:"database"`
+	LogLevel int                `yaml:"log_level" env:"KAIGARA_LOG_LEVEL" env-default:"1"`
+	RedisURL string             `yaml:"redis_url" env:"KAIGARA_REDIS_URL"`
+	DBConfig sql.DatabaseConfig `yaml:"database"`
 }
 
 // Config is the interface definition of generic config storage
@@ -41,18 +42,8 @@ type File struct {
 	Content string
 }
 
-type DatabaseConfig struct {
-	Driver string `yaml:"driver" env:"KAIGARA_DATABASE_DRIVER" env-description:"Database driver"`
-	Host   string `yaml:"host" env:"KAIGARA_DATABASE_HOST" env-description:"Database host"`
-	Port   string `yaml:"port" env:"KAIGARA_DATABASE_PORT" env-description:"Database port"`
-	Name   string `yaml:"name" env:"KAIGARA_DATABASE_NAME" env-description:"Database name"`
-	User   string `yaml:"user" env:"KAIGARA_DATABASE_USER" env-description:"Database user"`
-	Pass   string `env:"KAIGARA_DATABASE_PASS" env-description:"Database user password"`
-	Pool   int    `yaml:"pool" env:"KAIGARA_DATABASE_POOL" env-description:"Database pool size"`
-}
-
 func NewKaigaraConfig() (*KaigaraConfig, error) {
-	conf := &KaigaraConfig{DBConfig: DatabaseConfig{}}
+	conf := &KaigaraConfig{DBConfig: sql.DatabaseConfig{}}
 	if err := ika.ReadConfig(ConfPath, conf); err != nil {
 		return nil, err
 	}

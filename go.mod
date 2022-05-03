@@ -11,12 +11,12 @@ go 1.17
 require (
 	github.com/go-redis/redis/v7 v7.2.0
 	github.com/openware/kaigara/pkg/encryptor v0.0.0-20220428165818-6271445f8750
-	github.com/openware/kaigara/pkg/sql v0.0.0-20220503082904-4684f95227ed
+	github.com/openware/kaigara/pkg/sql v0.0.0-20220503095824-e5acdfcbcf79
 	github.com/openware/kaigara/pkg/vault v0.0.0-20220428165818-6271445f8750
 	github.com/openware/pkg v0.0.0-20220225074124-ddad5f429a07
 	github.com/stretchr/testify v1.7.1
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
-	gorm.io/gorm v1.23.2
+	gorm.io/gorm v1.22.5
 )
 
 require (
@@ -24,6 +24,7 @@ require (
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/cenkalti/backoff/v3 v3.0.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/denisenkom/go-mssqldb v0.12.0 // indirect
 	github.com/fatih/color v1.7.0 // indirect
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
@@ -49,17 +50,18 @@ require (
 	github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb // indirect
 	github.com/iancoleman/strcase v0.2.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
-	github.com/jackc/pgconn v1.11.0 // indirect
+	github.com/jackc/pgconn v1.12.0 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
-	github.com/jackc/pgproto3/v2 v2.2.0 // indirect
+	github.com/jackc/pgproto3/v2 v2.3.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
-	github.com/jackc/pgtype v1.10.0 // indirect
-	github.com/jackc/pgx/v4 v4.15.0 // indirect
+	github.com/jackc/pgtype v1.11.0 // indirect
+	github.com/jackc/pgx/v4 v4.16.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jinzhu/now v1.1.4 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mattn/go-isatty v0.0.12 // indirect
+	github.com/mattn/go-sqlite3 v1.14.9 // indirect
 	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
@@ -80,7 +82,7 @@ require (
 	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gorm.io/datatypes v1.0.6 // indirect
-	gorm.io/driver/mysql v1.3.2 // indirect
-	gorm.io/driver/postgres v1.3.1 // indirect
+	gorm.io/datatypes v1.0.5 // indirect
+	gorm.io/driver/mysql v1.2.3 // indirect
+	gorm.io/driver/postgres v1.2.3 // indirect
 )
