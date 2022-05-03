@@ -10,22 +10,22 @@ import (
 	"gopkg.in/yaml.v3"
 	"gorm.io/gorm"
 
+	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/encryptor/aes"
 	"github.com/openware/kaigara/pkg/encryptor/plaintext"
 	"github.com/openware/kaigara/pkg/encryptor/transit"
 	"github.com/openware/kaigara/pkg/encryptor/types"
-	"github.com/openware/pkg/database"
 )
 
 var deploymentID = "opendax_uat"
 var appNames = []string{"barong", "finex", "peatio"}
 var scopes = []string{"private", "public", "secret"}
-var configs map[string]database.Config
+var configs map[string]config.DatabaseConfig
 var encryptors map[string]types.Encryptor
 
 type Config struct {
-	Name     string          `yaml:"name"`
-	DbConfig database.Config `yaml:"database"`
+	Name     string                `yaml:"name"`
+	DbConfig config.DatabaseConfig `yaml:"database"`
 }
 
 func TestMain(m *testing.M) {
@@ -48,7 +48,7 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
-	configs = make(map[string]database.Config)
+	configs = make(map[string]config.DatabaseConfig)
 	for _, cfg := range cfgs {
 		configs[cfg.Name] = cfg.DbConfig
 	}
@@ -116,8 +116,8 @@ func setEntry(ss *Service, appName, scope, name, value string) error {
 	return nil
 }
 
-func clearStorage(conf database.Config) error {
-	db, err := database.Connect(&conf)
+func clearStorage(conf config.DatabaseConfig) error {
+	db, err := Connect(&conf)
 	if err != nil {
 		return err
 	}
