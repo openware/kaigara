@@ -21,7 +21,7 @@ func BuildCmdEnv(appNames []string, ss types.Storage, currentEnv, scopes []strin
 	}
 
 	for _, v := range currentEnv {
-		if !strings.HasPrefix(v, "KAIGARA_") && !strings.HasPrefix(v, "DATABASE_") {
+		if !strings.HasPrefix(v, "KAIGARA_") {
 			env.Vars = append(env.Vars, v)
 		}
 	}
