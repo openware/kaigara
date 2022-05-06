@@ -38,7 +38,7 @@ type DatabaseConfig struct {
 	Name   string `yaml:"name" env:"KAIGARA_DATABASE_NAME" env-description:"Database name"`
 	User   string `yaml:"user" env:"KAIGARA_DATABASE_USER" env-description:"Database user"`
 	Pass   string `env:"KAIGARA_DATABASE_PASS" env-description:"Database user password"`
-	Pool   int    `yaml:"pool" env:"KAIGARA_DATABASE_POOL" env-description:"Database pool size"`
+	Pool   int    `yaml:"pool" env:"KAIGARA_DATABASE_POOL" env-description:"Database pool size" env-default:"0"`
 }
 
 func NewService(deploymentID string, conf *DatabaseConfig, encryptor types.Encryptor, logLevel int) (*Service, error) {
@@ -93,11 +93,16 @@ func Connect(conf *DatabaseConfig) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	sql, err := db.DB()
-	if err != nil {
-		return nil, err
+	// FIXME: Decide whether to keep block
+	// The default value is 0, we should check whether we need to set it or not
+	// Currently, sql.SetMaxOpenConns with conf.Pool set to 1 causes the code to stall infinitely
+	if conf.Pool != 0 {
+		sql, err := db.DB()
+		if err != nil {
+			return nil, err
+		}
+		sql.SetMaxOpenConns(conf.Pool)
 	}
-	sql.SetMaxOpenConns(conf.Pool)
 
 	return db, nil
 }
