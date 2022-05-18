@@ -97,7 +97,7 @@ steps:
           - "*stable"
 
   - name: Go test
-    image: golang:1.16
+    image: golang:1.17
     environment:
       GO111MODULE: "on"
       KAIGARA_VAULT_ADDR: "http://vault:8200"
@@ -107,7 +107,7 @@ steps:
       - for gpath in $(find $PWD -name go.mod); do cd $(dirname $gpath); for dir in $(go list ./...); do go clean -testcache; go test $dir; done; done
 
   - name: Bump and tag
-    image: golang:1.14
+    image: golang:1.17
     environment:
       GITHUB_API_KEY:
         from_secret: github_api_key
@@ -134,7 +134,7 @@ trigger:
 
 steps:
   - name: Build and publish
-    image: golang:1.16
+    image: golang:1.17
     environment:
       GO111MODULE: on
       GITHUB_API_KEY:
