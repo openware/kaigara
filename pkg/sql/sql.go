@@ -46,7 +46,7 @@ type DatabaseConfig struct {
 
 func NewService(deploymentID string, conf *DatabaseConfig, encryptor types.Encryptor, logLevel int) (*Service, error) {
 	conf.Name = "kaigara_" + deploymentID
-	if err := ensureDatabaseExists(conf); err != nil {
+	if err := EnsureDatabaseExists(conf); err != nil {
 		return nil, err
 	}
 	db, err := Connect(conf)
@@ -71,7 +71,7 @@ func NewService(deploymentID string, conf *DatabaseConfig, encryptor types.Encry
 	}, nil
 }
 
-func ensureDatabaseExists(cnf *DatabaseConfig) error {
+func EnsureDatabaseExists(cnf *DatabaseConfig) error {
 	switch cnf.Driver {
 	case "mysql":
 		dsn := fmt.Sprintf(
