@@ -111,7 +111,10 @@ func kaigaraRun(ss types.Storage, cmd string, cmdArgs []string) {
 	wg.Add(2)
 
 	go func() {
-		ls.Publish(channelOut, stdout)
+		// we ignore the error here since we can't really log it at the moment
+		// as it would mess up the output
+		_ = ls.Publish(channelOut, stdout)
+
 		wg.Done()
 
 		/*  FIXME: BRING BACK ERROR MESSAGES
@@ -124,7 +127,9 @@ func kaigaraRun(ss types.Storage, cmd string, cmdArgs []string) {
 	}()
 
 	go func() {
-		ls.Publish(channelErr, stderr)
+		// we ignore the error here since we can't really log it at the moment
+		// as it would mess up the output
+		_ = ls.Publish(channelErr, stderr)
 		wg.Done()
 
 		/*  FIXME: BRING BACK ERROR MESSAGES
