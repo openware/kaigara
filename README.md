@@ -32,11 +32,11 @@ If you choose SQL driver, then these vars should be set:
 
 ```sh
 # Supported SQL drivers are postgres and mysql
-export DATABASE_DRIVER=postgres
-export DATABASE_HOST=localhost
-export DATABASE_PORT=5432
-export DATABASE_USER=postgres
-export DATABASE_PASS=changeme
+export KAIGARA_DATABASE_DRIVER=postgres
+export KAIGARA_DATABASE_HOST=localhost
+export KAIGARA_DATABASE_PORT=5432
+export KAIGARA_DATABASE_USER=postgres
+export KAIGARA_DATABASE_PASS=changeme
 export KAIGARA_LOG_LEVEL=1
 ```
 

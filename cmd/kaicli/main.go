@@ -31,10 +31,6 @@ func main() {
 		panic(err)
 	}
 
-	if ss, err = storage.GetStorageService(conf); err != nil {
-		panic(err)
-	}
-
 	cli := kli.NewCli("kai", "Kaigara CLI tool for managing secrets", Version)
 
 	dump := cli.NewSubCommand("dump", "Get dump of all secrets").Action(dumpCmd)
@@ -56,6 +52,10 @@ func main() {
 	tail := cli.NewSubCommand("tail", "Get logstream of Redis channel").Action(tailCmd)
 	tail.StringFlag("ch", "Redis channel pattern to subscribe", &redisChannel)
 	tail.BoolFlag("sn", "Show Redis channel name", &showName)
+
+	if ss, err = storage.GetStorageService(conf); err != nil {
+		panic(err)
+	}
 
 	if err := cli.Run(); err != nil {
 		panic(err)
