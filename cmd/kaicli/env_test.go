@@ -40,6 +40,14 @@ var testStore = map[string]map[string]map[string]interface{}{
 			"finex_log_level":   "debug",
 			"finex_mode":        "prod",
 			"finex_vault_addr":  "http://vault.core:8200",
+			"finex_struct_env": []interface{}{
+				map[string]interface{}{
+					"field1": "value2",
+				},
+				map[string]interface{}{
+					"field3": "",
+				},
+			},
 		},
 		"public": map[string]interface{}{},
 		"secret": map[string]interface{}{
@@ -82,7 +90,8 @@ func TestKaienvRun(t *testing.T) {
 			for _, entries := range app {
 				for key, value := range entries {
 					envVariable := strings.ToUpper(key)
-					envValueExpected := value
+					envValueExpected, err := envValueToString(value)
+					assert.NoError(t, err)
 
 					t.Run(fmt.Sprintf("Test print %s %d", envVariable, i), func(t *testing.T) {
 						var buff bytes.Buffer

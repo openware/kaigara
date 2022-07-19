@@ -1,6 +1,7 @@
 package env
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"log"
 	"regexp"
@@ -12,6 +13,15 @@ import (
 )
 
 var kfile = regexp.MustCompile("(?i)^KFILE_(.*)_(PATH|CONTENT)$")
+
+func GetCompositeValueB64(v interface{}) (string, error) {
+	raw, err := json.Marshal(v)
+	if err != nil {
+		return "", err
+	}
+
+	return base64.StdEncoding.EncodeToString(raw), nil
+}
 
 // BuildCmdEnv reads secrets from all secretStores and scopes passed to it and loads them into an Env and returns a *Env
 func BuildCmdEnv(appNames []string, ss types.Storage, currentEnv, scopes []string) (*config.Env, error) {
@@ -38,16 +48,17 @@ func BuildCmdEnv(appNames []string, ss types.Storage, currentEnv, scopes []strin
 			}
 
 			for k, v := range secrets {
-				// Avoid trying to put maps and slices into env
-				if _, ok := v.(map[string]interface{}); ok {
-					continue
-				}
-
-				if _, ok := v.([]interface{}); ok {
-					continue
-				}
-
 				var val string
+
+				_, isMap := v.(map[string]interface{})
+				_, isArray := v.([]interface{})
+				if isMap || isArray {
+					if compVal, err := GetCompositeValueB64(v); err != nil {
+						return nil, err
+					} else {
+						val = compVal
+					}
+				}
 
 				// Handle bool and json.Number
 				if tmp, ok := v.(bool); ok {
