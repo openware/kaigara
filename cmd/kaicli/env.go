@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/openware/kaigara/pkg/config"
+	"github.com/openware/kaigara/pkg/env"
 	"github.com/openware/kaigara/types"
 	"github.com/openware/pkg/kli"
 )
@@ -25,14 +26,20 @@ func kaienvRun(conf *config.KaigaraConfig, ss types.Storage, params []string, ou
 
 	if len(params) < 1 {
 		for envVariable, envValue := range env {
-			fmt.Fprintf(out, "%s=%s\n", strings.ToUpper(envVariable), envValueToString(envValue))
+			if compValue, err := envValueToString(envValue); err != nil {
+				return err
+			} else {
+				fmt.Fprintf(out, "%s=%s\n", strings.ToUpper(envVariable), compValue)
+			}
 		}
 	} else {
 		envVariable := params[0]
-		if envValue, ok := env[strings.ToLower(envVariable)]; ok {
-			fmt.Fprint(out, envValue)
-		} else {
+		if envValue, ok := env[strings.ToLower(envVariable)]; !ok {
 			return fmt.Errorf("no value for such key: %s", envVariable)
+		} else if compValue, err := envValueToString(envValue); err != nil {
+			return err
+		} else {
+			fmt.Fprint(out, compValue)
 		}
 	}
 
@@ -63,10 +70,20 @@ func readAllEnv(conf *config.KaigaraConfig, ss types.Storage) (map[string]interf
 	return env, nil
 }
 
-func envValueToString(value interface{}) string {
+func envValueToString(value interface{}) (string, error) {
 	if envValue, ok := value.(string); ok {
-		return fmt.Sprintf("\"%s\"", envValue)
+		return fmt.Sprintf("\"%s\"", envValue), nil
 	}
 
-	return fmt.Sprintf("%v", value)
+	_, isMap := value.(map[string]interface{})
+	_, isArray := value.([]interface{})
+	if isMap || isArray {
+		if rawVal, err := env.GetCompositeValueB64(value); err != nil {
+			return "", err
+		} else {
+			return rawVal, nil
+		}
+	}
+
+	return fmt.Sprintf("%v", value), nil
 }
