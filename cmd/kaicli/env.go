@@ -78,10 +78,10 @@ func envValueToString(value interface{}) (string, error) {
 	_, isMap := value.(map[string]interface{})
 	_, isArray := value.([]interface{})
 	if isMap || isArray {
-		if rawVal, err := env.GetCompositeValueB64(value); err != nil {
+		if compVal, err := env.GetCompositeValueB64(value); err != nil {
 			return "", err
 		} else {
-			return rawVal, nil
+			return compVal, nil
 		}
 	}
 
