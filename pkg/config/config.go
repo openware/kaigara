@@ -20,6 +20,8 @@ type KaigaraConfig struct {
 	EncryptMethod string `yaml:"encryption_method" env:"KAIGARA_ENCRYPTOR" env-default:"plaintext"`
 	AesKey        string `yaml:"aes_key" env:"KAIGARA_ENCRYPTOR_AES_KEY" env-default:"changemechangeme"`
 
+	KubeConfig string `yaml:"kubeconfig" env:"KUBECONFIG"`
+
 	LogLevel int                `yaml:"log_level" env:"KAIGARA_LOG_LEVEL" env-default:"1"`
 	RedisURL string             `yaml:"redis_url" env:"KAIGARA_REDIS_URL"`
 	DBConfig sql.DatabaseConfig `yaml:"database"`

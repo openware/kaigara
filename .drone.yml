@@ -104,7 +104,13 @@ steps:
       KAIGARA_VAULT_TOKEN: "root-token"
       KAIGARA_DATABASE_HOST: "postgres"
     commands:
-      - for gpath in $(find $PWD -name go.mod); do cd $(dirname $gpath); for dir in $(go list ./...); do go clean -testcache; go test $dir; done; done
+      - |
+        for gpath in $(find $PWD -name go.mod); do cd $(dirname $gpath);
+          for dir in $(go list ./...); do
+            go clean -testcache;
+            go test $dir;
+          done;
+        done
 
   - name: Bump and tag
     image: golang:1.17

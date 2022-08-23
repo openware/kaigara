@@ -6,7 +6,7 @@ It enables teams to build components and deployments with improved configuration
 ## Features
 
  * Fetch configuration from secret storage and inject into target command environment
- * Support the storage of configuration files and env vars into secret storage(Vault KV, MySQL, PostgreSQL)
+ * Support the storage of configuration files and env vars into secret storage(Vault KV, MySQL, PostgreSQL, K8s secrets)
  * Publish target command STDOUT and STDERR to Redis
  * Restart subprocesses on configuration updates(allows for dynamic configs)
  * Create files on startup from env vars starting with `KNAME_`
@@ -15,7 +15,7 @@ See more in the [docs folder](./docs).
 
 ## Configuration
 
-Kaigara supports two types of storage - Vault or SQL database, that can be used with `vault` and `sql` values respectively with env var below:
+Kaigara supports three types of storage - Vault, SQL database and K8s secrets, that can be used with `vault`, `sql` and `k8s` values respectively with env var below:
 
 ```sh
 export KAIGARA_STORAGE_DRIVER=sql
@@ -40,7 +40,13 @@ export KAIGARA_DATABASE_PASS=changeme
 export KAIGARA_LOG_LEVEL=1
 ```
 
-Both storage drivers are created with **encryptor**, that is used to encrypt/decrypt vars in the secret scope:
+If you choose K8s secrets driver, KUBECONFIG should be set:
+
+```sh
+export KUBECONFIG=path-to-kube-config
+```
+
+All storage drivers are created with **encryptor**, that is used to encrypt/decrypt vars in the secret scope:
 
 ```sh
 # Supported encryptors are transit (using Vault Transit), aes and plaintext (default)
@@ -135,6 +141,42 @@ To **delete** existing secrets for a given app name and scope, run:
 ```sql
 DELETE FROM data WHERE app_name = '*app_name*'AND scope = '*scope*';
 ```
+
+### K8s
+
+Prepare K8s deployment variables
+
+```sh
+export KUBECONFIG=path-to-kube-config
+export DEPLOYMENT_NS=$(echo $KAIGARA_DEPLOYMENT_ID | sed -e "s/_/-/g")
+```
+
+To **list** existing **app names**, run:
+
+```sh
+kubectl get secret -n ${DEPLOYMENT_NS} | grep kaigara | cut -d "-" -f 2 | awk '{ print $1 }' | uniq
+```
+
+To **list** existing **scopes** for an app name, run:
+
+```sh
+kubectl get secret -n ${DEPLOYMENT_NS} | grep kaigara-${KAIGARA_APP_NAME} | cut -d "-" -f 3 | awk '{ print $1 }'
+```
+
+To **read** existing secrets for a given app name and scope, run:
+
+```sh
+kubectl get secret kaigara-${KAIGARA_APP_NAME}-${KAIGARA_SCOPES} -n ${DEPLOYMENT_NS} \
+  -o go-template='{{range $k,$v := .data}}{{printf "%s: " $k}}{{if not $v}}{{$v}}{{else}}{{$v | base64decode}}{{end}}{{"\n"}}{{end}}'
+```
+
+To **delete** existing secrets for a given app name and scope, run:
+
+```sh
+kubectl delete secret kaigara-${KAIGARA_APP_NAME}-${KAIGARA_SCOPES} -n ${DEPLOYMENT_NS}
+```
+
+**Warning**: Commands above assume that vars `KAIGARA_APP_NAME` and `KAIGARA_SCOPES` are single (doesn't have commas).
 
 ### Encryptor
 
