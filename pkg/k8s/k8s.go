@@ -14,7 +14,7 @@ import (
 type Service struct {
 	client       *kube.K8sClient
 	deploymentID string
-	ds           map[string]map[string]map[string]interface{}
+	ds           map[string]map[string]interface{}
 	encryptor    types.Encryptor
 }
 
@@ -26,8 +26,8 @@ func NewService(deploymentID string, client *kube.K8sClient, encryptor types.Enc
 	}, nil
 }
 
-func secretName(appName, scope string) string {
-	return fmt.Sprintf("kaigara-%s-%s", appName, scope)
+func secretName(appName string) string {
+	return fmt.Sprintf("kaigara-%s", appName)
 }
 
 func (ss *Service) namespace() string {
@@ -35,7 +35,7 @@ func (ss *Service) namespace() string {
 }
 
 func (ss *Service) Read(appName, scope string) error {
-	secretName := secretName(appName, scope)
+	secretName := secretName(appName)
 	val := make(map[string]interface{})
 	val["version"] = int64(0)
 
@@ -58,24 +58,24 @@ func (ss *Service) Read(appName, scope string) error {
 	}
 
 	if ss.ds == nil {
-		ss.ds = make(map[string]map[string]map[string]interface{})
+		ss.ds = make(map[string]map[string]interface{})
 	}
 	if ss.ds[appName] == nil {
-		ss.ds[appName] = make(map[string]map[string]interface{})
+		ss.ds[appName] = make(map[string]interface{})
 	}
-	ss.ds[appName][scope] = val
+	ss.ds[appName] = val
 
 	return nil
 }
 
 func (ss *Service) Write(appName, scope string) error {
 	// verify data stored in secret store
-	val, ok := ss.ds[appName][scope]
+	val, ok := ss.ds[appName]
 	if !ok {
 		return fmt.Errorf("scope '%s' in '%s' app is: %v", scope, appName, val)
 	}
 
-	secretName := secretName(appName, scope)
+	secretName := secretName(appName)
 	namespace := ss.namespace()
 
 	secrets, err := ss.client.ReadSecret(secretName, namespace)
@@ -111,7 +111,9 @@ func (ss *Service) Write(appName, scope string) error {
 }
 
 func (ss *Service) SetEntry(appName, scope, name string, value interface{}) error {
-	if scope == "secret" && name != "version" {
+	if name == "version" {
+		ss.ds[appName][name] = value
+	} else {
 		str, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("invalid value for %s, must be a string: %v", name, value)
@@ -121,9 +123,7 @@ func (ss *Service) SetEntry(appName, scope, name string, value interface{}) erro
 			return err
 		}
 
-		ss.ds[appName][scope][name] = encrypted
-	} else {
-		ss.ds[appName][scope][name] = value
+		ss.ds[appName][name] = encrypted
 	}
 
 	return nil
@@ -140,14 +140,14 @@ func (ss *Service) SetEntries(appName, scope string, data map[string]interface{}
 }
 
 func (ss *Service) GetEntry(appName, scope, name string) (interface{}, error) {
-	// Since secret scope only supports strings, return a decrypted string
-	scopeSecrets, ok := ss.ds[appName][scope]
+	// Since app secret only supports strings, return a decrypted string
+	appSecrets, ok := ss.ds[appName]
 	if !ok {
-		return nil, fmt.Errorf("scope '%s' is not loaded", scope)
+		return nil, fmt.Errorf("app '%s' is not loaded", appName)
 	}
 
-	if scope == "secret" && name != "version" {
-		rawValue, ok := scopeSecrets[name]
+	if name != "version" {
+		rawValue, ok := appSecrets[name]
 		if !ok {
 			return nil, nil
 		}
@@ -165,12 +165,12 @@ func (ss *Service) GetEntry(appName, scope, name string) (interface{}, error) {
 		return decrypted, nil
 	}
 
-	return ss.ds[appName][scope][name], nil
+	return ss.ds[appName][name], nil
 }
 
 func (ss *Service) GetEntries(appName, scope string) (map[string]interface{}, error) {
 	res := make(map[string]interface{})
-	for k := range ss.ds[appName][scope] {
+	for k := range ss.ds[appName] {
 		val, err := ss.GetEntry(appName, scope, k)
 		if err != nil {
 			return nil, err
@@ -182,7 +182,7 @@ func (ss *Service) GetEntries(appName, scope string) (map[string]interface{}, er
 }
 
 func (ss *Service) ListEntries(appName, scope string) ([]string, error) {
-	val, ok := ss.ds[appName][scope]
+	val, ok := ss.ds[appName]
 	if !ok {
 		return []string{}, nil
 	}
@@ -198,7 +198,7 @@ func (ss *Service) ListEntries(appName, scope string) ([]string, error) {
 }
 
 func (ss *Service) DeleteEntry(appName, scope, name string) error {
-	delete(ss.ds[appName][scope], name)
+	delete(ss.ds[appName], name)
 
 	return nil
 }
@@ -233,11 +233,11 @@ func (ss *Service) ListAppNames() ([]string, error) {
 }
 
 func (ss *Service) GetCurrentVersion(appName, scope string) (int64, error) {
-	if ss.ds[appName][scope] == nil {
-		return 0, fmt.Errorf("failed to get %s.%s.version: scope is not loaded", appName, scope)
+	if ss.ds[appName] == nil {
+		return 0, fmt.Errorf("failed to get %s.version: scope is not loaded", appName)
 	}
 
-	res, ok := ss.ds[appName][scope]["version"].(int64)
+	res, ok := ss.ds[appName]["version"].(int64)
 	if !ok {
 		return 0, fmt.Errorf("failed to get %s.%s.version: type assertion to int64 failed, actual value: %v", appName, scope, res)
 	}
@@ -246,7 +246,7 @@ func (ss *Service) GetCurrentVersion(appName, scope string) (int64, error) {
 }
 
 func (ss *Service) GetLatestVersion(appName, scope string) (int64, error) {
-	secretName := secretName(appName, scope)
+	secretName := secretName(appName)
 
 	secrets, err := ss.client.ReadSecret(secretName, ss.namespace())
 	if err != nil {

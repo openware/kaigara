@@ -79,10 +79,6 @@ func TestRead(t *testing.T) {
 				if _, ok := ss.ds[appName]; !ok {
 					assert.Fail(t, fmt.Sprintf("fail to read app %s", appName))
 				}
-
-				if _, ok := ss.ds[appName][scope]; !ok {
-					assert.Fail(t, fmt.Sprintf("fail to read scope %s", scope))
-				}
 			}
 		}
 
@@ -97,30 +93,24 @@ func TestWrite(t *testing.T) {
 
 		ss.client = NewMockClient()
 		if ss.ds == nil {
-			ss.ds = make(map[string]map[string]map[string]interface{})
+			ss.ds = make(map[string]map[string]interface{})
 		}
 
 		for _, appName := range appNames {
 			if ss.ds[appName] == nil {
-				ss.ds[appName] = make(map[string]map[string]interface{})
+				ss.ds[appName] = make(map[string]interface{})
 			}
 
-			for _, scope := range scopes {
-				if ss.ds[appName][scope] == nil {
-					ss.ds[appName][scope] = make(map[string]interface{})
-				}
-
-				for key, val := range data {
-					ss.ds[appName][scope][key] = val
-				}
-
-				err := ss.Write(appName, scope)
-				assert.NoError(t, err)
-
-				// check version should be assigned
-				res := ss.ds[appName][scope]["version"].(int64)
-				assert.Equal(t, int64(0), res)
+			for key, val := range data {
+				ss.ds[appName][key] = val
 			}
+
+			err := ss.Write(appName, "secret")
+			assert.NoError(t, err)
+
+			// check version should be assigned
+			res := ss.ds[appName]["version"].(int64)
+			assert.Equal(t, int64(0), res)
 		}
 	}
 }
@@ -132,32 +122,26 @@ func TestWrite_UpdateVersion(t *testing.T) {
 
 		ss.client = NewMockClient()
 		if ss.ds == nil {
-			ss.ds = make(map[string]map[string]map[string]interface{})
+			ss.ds = make(map[string]map[string]interface{})
 		}
 
 		for _, appName := range appNames {
 			if ss.ds[appName] == nil {
-				ss.ds[appName] = make(map[string]map[string]interface{})
+				ss.ds[appName] = make(map[string]interface{})
 			}
 
-			for _, scope := range scopes {
-				if ss.ds[appName][scope] == nil {
-					ss.ds[appName][scope] = make(map[string]interface{})
-				}
-
-				for key, val := range data {
-					ss.ds[appName][scope][key] = val
-				}
-
-				for i := 0; i < 3; i++ {
-					err := ss.Write(appName, scope)
-					assert.NoError(t, err)
-				}
-
-				// check version should be increased
-				res := ss.ds[appName][scope]["version"].(int64)
-				assert.Equal(t, int64(2), res)
+			for key, val := range data {
+				ss.ds[appName][key] = val
 			}
+
+			for i := 0; i < 3; i++ {
+				err := ss.Write(appName, "secret")
+				assert.NoError(t, err)
+			}
+
+			// check version should be increased
+			res := ss.ds[appName]["version"].(int64)
+			assert.Equal(t, int64(2), res)
 		}
 	}
 }
@@ -169,19 +153,15 @@ func TestSetEntry(t *testing.T) {
 
 		ss.client = NewMockClient()
 		if ss.ds == nil {
-			ss.ds = make(map[string]map[string]map[string]interface{})
+			ss.ds = make(map[string]map[string]interface{})
 		}
 
 		for _, appName := range appNames {
 			if ss.ds[appName] == nil {
-				ss.ds[appName] = make(map[string]map[string]interface{})
+				ss.ds[appName] = make(map[string]interface{})
 			}
 
 			for _, scope := range scopes {
-				if ss.ds[appName][scope] == nil {
-					ss.ds[appName][scope] = make(map[string]interface{})
-				}
-
 				for key, val := range data {
 					err := ss.SetEntry(appName, scope, key, string(val))
 					assert.NoError(t, err)
@@ -190,18 +170,16 @@ func TestSetEntry(t *testing.T) {
 		}
 
 		for _, appName := range appNames {
-			for _, scope := range scopes {
-				isEncoded := false
-				if encrypt != "plaintext" && scope == "secret" {
-					isEncoded = true
-				}
+			isEncoded := false
+			if encrypt != "plaintext" {
+				isEncoded = true
+			}
 
-				for key, val := range ss.ds[appName][scope] {
-					if isEncoded {
-						assert.NotEqual(t, string(data[key]), val)
-					} else {
-						assert.Equal(t, string(data[key]), val)
-					}
+			for key, val := range ss.ds[appName] {
+				if isEncoded {
+					assert.NotEqual(t, string(data[key]), val)
+				} else {
+					assert.Equal(t, string(data[key]), val)
 				}
 			}
 		}
@@ -214,33 +192,27 @@ func TestGetEntry(t *testing.T) {
 		assert.NoError(t, err)
 
 		if ss.ds == nil {
-			ss.ds = make(map[string]map[string]map[string]interface{})
+			ss.ds = make(map[string]map[string]interface{})
 		}
 
 		for _, appName := range appNames {
 			if ss.ds[appName] == nil {
-				ss.ds[appName] = make(map[string]map[string]interface{})
+				ss.ds[appName] = make(map[string]interface{})
 			}
 
-			for _, scope := range scopes {
-				if ss.ds[appName][scope] == nil {
-					ss.ds[appName][scope] = make(map[string]interface{})
+			isEncoded := false
+			if encrypt != "plaintext" {
+				isEncoded = true
+			}
+
+			for key, val := range data {
+				encoded := string(val)
+				if isEncoded {
+					encoded, err = encryptor.Encrypt(string(val), appName)
+					assert.NoError(t, err)
 				}
 
-				isEncoded := false
-				if encrypt != "plaintext" && scope == "secret" {
-					isEncoded = true
-				}
-
-				for key, val := range data {
-					encoded := string(val)
-					if isEncoded {
-						encoded, err = encryptor.Encrypt(string(val), appName)
-						assert.NoError(t, err)
-					}
-
-					ss.ds[appName][scope][key] = encoded
-				}
+				ss.ds[appName][key] = encoded
 			}
 		}
 
@@ -263,33 +235,27 @@ func TestListEntries(t *testing.T) {
 		assert.NoError(t, err)
 
 		if ss.ds == nil {
-			ss.ds = make(map[string]map[string]map[string]interface{})
+			ss.ds = make(map[string]map[string]interface{})
 		}
 
 		for _, appName := range appNames {
 			if ss.ds[appName] == nil {
-				ss.ds[appName] = make(map[string]map[string]interface{})
+				ss.ds[appName] = make(map[string]interface{})
 			}
 
-			for _, scope := range scopes {
-				if ss.ds[appName][scope] == nil {
-					ss.ds[appName][scope] = make(map[string]interface{})
+			isEncoded := false
+			if encrypt != "plaintext" {
+				isEncoded = true
+			}
+
+			for key, val := range data {
+				encoded := string(val)
+				if isEncoded {
+					encoded, err = encryptor.Encrypt(string(val), appName)
+					assert.NoError(t, err)
 				}
 
-				isEncoded := false
-				if encrypt != "plaintext" && scope == "secret" {
-					isEncoded = true
-				}
-
-				for key, val := range data {
-					encoded := string(val)
-					if isEncoded {
-						encoded, err = encryptor.Encrypt(string(val), appName)
-						assert.NoError(t, err)
-					}
-
-					ss.ds[appName][scope][key] = encoded
-				}
+				ss.ds[appName][key] = encoded
 			}
 		}
 
@@ -310,44 +276,36 @@ func TestDeleteEntry(t *testing.T) {
 		assert.NoError(t, err)
 
 		if ss.ds == nil {
-			ss.ds = make(map[string]map[string]map[string]interface{})
+			ss.ds = make(map[string]map[string]interface{})
 		}
 
 		for _, appName := range appNames {
 			if ss.ds[appName] == nil {
-				ss.ds[appName] = make(map[string]map[string]interface{})
+				ss.ds[appName] = make(map[string]interface{})
 			}
 
-			for _, scope := range scopes {
-				if ss.ds[appName][scope] == nil {
-					ss.ds[appName][scope] = make(map[string]interface{})
+			isEncoded := false
+			if encrypt != "plaintext" {
+				isEncoded = true
+			}
+
+			for key, val := range data {
+				encoded := string(val)
+				if isEncoded {
+					encoded, err = encryptor.Encrypt(string(val), appName)
+					assert.NoError(t, err)
 				}
 
-				isEncoded := false
-				if encrypt != "plaintext" && scope == "secret" {
-					isEncoded = true
-				}
-
-				for key, val := range data {
-					encoded := string(val)
-					if isEncoded {
-						encoded, err = encryptor.Encrypt(string(val), appName)
-						assert.NoError(t, err)
-					}
-
-					ss.ds[appName][scope][key] = encoded
-				}
+				ss.ds[appName][key] = encoded
 			}
 		}
 
 		for _, appName := range appNames {
-			for _, scope := range scopes {
-				err := ss.DeleteEntry(appName, scope, "key1")
-				assert.NoError(t, err)
+			err := ss.DeleteEntry(appName, "secret", "key1")
+			assert.NoError(t, err)
 
-				for key := range ss.ds[appName][scope] {
-					assert.NotEqual(t, "key1", key)
-				}
+			for key := range ss.ds[appName] {
+				assert.NotEqual(t, "key1", key)
 			}
 		}
 	}
@@ -382,21 +340,15 @@ func TestGetCurrentVersion(t *testing.T) {
 		assert.NoError(t, err)
 
 		if ss.ds == nil {
-			ss.ds = make(map[string]map[string]map[string]interface{})
+			ss.ds = make(map[string]map[string]interface{})
 		}
 
 		for _, appName := range appNames {
 			if ss.ds[appName] == nil {
-				ss.ds[appName] = make(map[string]map[string]interface{})
+				ss.ds[appName] = make(map[string]interface{})
 			}
 
-			for _, scope := range scopes {
-				if ss.ds[appName][scope] == nil {
-					ss.ds[appName][scope] = make(map[string]interface{})
-				}
-
-				ss.ds[appName][scope]["version"] = int64(3)
-			}
+			ss.ds[appName]["version"] = int64(3)
 		}
 
 		for _, appName := range appNames {

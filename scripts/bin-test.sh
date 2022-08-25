@@ -5,10 +5,8 @@ export VAULT_TOKEN=changeme
 
 GOOS=$(uname -s | tr A-Z a-z)
 GOARCH=$(uname -m)
-FILE=./bin/kai_${GOOS}_${GOARCH}
-if [ -f "$FILE" ]; then
-  mv ${FILE} ./bin/kai
-else
+FILE=./bin/kai
+if [ ! -f "$FILE" ]; then
   env GOOS=${GOOS} GOARCH=${GOARCH} CGO_ENABLED=0 go build -a -ldflags "-w -X main.Version=${KAIGARA_VERSION}" -o ${FILE} ./cmd/kaicli
 fi
 
@@ -55,11 +53,10 @@ ASSERTS=("FINEX_DATABASE_USERNAME:finex_opendax_uat"
 DELETES=("FINEX_DATABASE_HOST"
   "FINEX_DATABASE_PASSWORD")
 
-# SECRET_STORES=("vault:vault"
-#   "sql:mysql"
-#   "sql:postgres")
-
-SECRET_STORES=("k8s:k8s")
+SECRET_STORES=("vault:vault"
+  "sql:mysql"
+  "sql:postgres"
+  "k8s:k8s")
 
 for ss in "${SECRET_STORES[@]}"; do
   ss="${ss%%:*}"
@@ -85,6 +82,10 @@ for ss in "${SECRET_STORES[@]}"; do
     export DATABASE_PORT=5432
     export DATABASE_USER=postgres
     export DATABASE_PASS=changeme
+  fi
+
+  if [ "${ss}" == "k8s" ]; then
+    export KAIGARA_SCOPES=secret
   fi
 
   env | grep KAIGARA

@@ -511,8 +511,8 @@ github.com/openware/kaigara/pkg/sql v0.0.0-20220512125342-51f54b8d8897/go.mod h1
 github.com/openware/kaigara/pkg/vault v0.0.0-20210428072529-c9aa6080bfe8/go.mod h1:WAa5P2btbDtXl0QjGC2ShxeIGQ6gV8N5/bJIc1JZdqY=
 github.com/openware/kaigara/pkg/vault v0.0.0-20220428165818-6271445f8750 h1:zkfxf+xfWuHPGdehTcOjg5GKYjRclJSynlp7QhrdILg=
 github.com/openware/kaigara/pkg/vault v0.0.0-20220428165818-6271445f8750/go.mod h1:2fLWKTPYCCcX2Su64hM5+urf2gpLFMktc09hiCcEfFo=
-github.com/openware/pkg v0.0.0-20220823095518-431adca2e0fd h1:PmDiicAscfSv6LglD8BHIdbdkNXg7y8RfZo8L+XnbG4=
-github.com/openware/pkg v0.0.0-20220823095518-431adca2e0fd/go.mod h1:sxAFLsylkbaB32uXKxQ/4ujMqV5YazYq4AwEWaCJkTU=
+github.com/openware/pkg v0.0.0-20220826090206-baa9aa401ef7 h1:GP4raK+bLBK4J+LRrOEv7wWeBRgFL9pbAYg6QN+4rnw=
+github.com/openware/pkg v0.0.0-20220826090206-baa9aa401ef7/go.mod h1:n3a5IkwZ2ktO4izi3g0uku3w8BuXGZy4n4iI4TiXvN0=
 github.com/openware/pkg/mngapi v0.0.0-20210909215422-545bdd9fd380/go.mod h1:xrL/Wa/WxoeZut/fJ2opcvL4YaIQBgyex+LMioVxLZA=
 github.com/pascaldekloe/goe v0.1.0 h1:cBOtyMzM9HTpWjXfbbunk26uA6nG3a8n06Wieeh0MwY=
 github.com/pascaldekloe/goe v0.1.0/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=

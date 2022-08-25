@@ -7,7 +7,7 @@ secrets:
         finex_database_port: "3306"
         finex_gotrue_pub_key: AeZ0tie1thae6lee9red
         finex_influx_host: influxdb-0.core,influxdb-1.core,influxdb-2.core
-        finex_influx_port: "8086"
+        finex_influx_port: 8086
         finex_influx_scheme: http
         finex_key: ga8eiphahz0Ooph8Eih0
         finex_log_level: debug
@@ -31,7 +31,7 @@ secrets:
   frontdex:
     scopes:
       private:
-        next_public_chain_id: "4"
+        next_public_chain_id: 4
         next_public_custody_contract: Feibie7ooCachie3eePh
       public: {}
       secret:
@@ -44,18 +44,18 @@ secrets:
         database_host: 0.0.0.0
         database_port: "3306"
         postgres_host: 0.0.0.0
-        postgres_port: "5432"
+        postgres_port: 5432
   gotrue:
     scopes:
       private:
         db_namespace: auth
         gotrue_api_host: 0.0.0.0
-        gotrue_cookie_duration: "3600"
+        gotrue_cookie_duration: 3600
         gotrue_db_driver: postgres
         gotrue_jwt_algorithm: RS256
         gotrue_jwt_default_group_name: user
-        gotrue_jwt_exp: "3600"
-        gotrue_mailer_autoconfirm: "true"
+        gotrue_jwt_exp: 3600
+        gotrue_mailer_autoconfirm: true
         gotrue_mailer_urlpaths_confirmation: /verify
         gotrue_mailer_urlpaths_invite: /verify
         gotrue_mailer_urlpaths_recovery: /verify
@@ -63,7 +63,7 @@ secrets:
         gotrue_smtp_admin_email: riashaid7di1HooBoo3z
         gotrue_smtp_host: smtp.mailgun.org
         gotrue_smtp_pass: quoiN0Iegoote7hoik0V
-        gotrue_smtp_port: "25"
+        gotrue_smtp_port: 25
         gotrue_smtp_user: QueeWai1Dailef6ies3y
       public: {}
       secret:
@@ -72,7 +72,7 @@ secrets:
         gotrue_database_name: opendax_odax_example
         gotrue_database_password: eiyehiaFei0eing4Caiy
         gotrue_database_username: gotrue_odax_example
-        gotrue_disable_signup: "false"
+        gotrue_disable_signup: false
         gotrue_jwt_secret: ahteebieHo1Eequ2Eeth
   postgrest:
     scopes:
@@ -82,7 +82,7 @@ secrets:
         pgrst_db_host: postgresql.core
         pgrst_db_name: opendax_odax_example
         pgrst_db_pass: iey2Mei1aib5ioz0Kai3
-        pgrst_db_port: "5432"
+        pgrst_db_port: 5432
         pgrst_db_uri: postgres://postgrest_odax_example:ricuPheechau8feezahb@postgresql.core:5432/opendax_odax_example
         pgrst_db_username: postgrest_odax_example
   realtime:

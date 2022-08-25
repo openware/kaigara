@@ -73,7 +73,7 @@ steps:
       GOLANGCI_LINT_CACHE: "/drone/src/.cache/golangci-lint"
     commands:
       - golangci-lint cache status
-      - golangci-lint run --timeout 2m0s
+      - golangci-lint run --timeout 3m0s
     when:
       branch:
         exclude:
