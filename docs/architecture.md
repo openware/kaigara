@@ -54,6 +54,31 @@ min_deposit_level: 1
 default_theme: dark
 ```
 
+### K8s secrets
+
+Data stored as base64 Kubernetes secrets in the namespace of `KAIGARA_DEPLOYMENT_ID`  
+The secret name format: `kaigara-${app_name}-${scope}`
+
+For example, `kaigara-global-secret` deployment YAML:
+
+```yml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kaigara-global-secret
+  namespace: odax
+  annotations:
+    helm.sh/resource-policy: keep
+type: Opaque
+data:
+  database_host: MC4wLjAuMA==
+  database_port: MzMwNg==
+  postgres_host: MC4wLjAuMA==
+  postgres_port: NTQzMg==
+  version: Ng==
+
+```
+
 ## Features
 
 ### Write secrets to files

@@ -10,9 +10,12 @@ import (
 	"github.com/openware/kaigara/pkg/encryptor/plaintext"
 	"github.com/openware/kaigara/pkg/encryptor/transit"
 	enc "github.com/openware/kaigara/pkg/encryptor/types"
+	"github.com/openware/kaigara/pkg/k8s"
 	"github.com/openware/kaigara/pkg/sql"
 	"github.com/openware/kaigara/pkg/vault"
 	"github.com/openware/kaigara/types"
+	"github.com/openware/pkg/kube"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 func GetStorageService(conf *config.KaigaraConfig) (types.Storage, error) {
@@ -29,6 +32,19 @@ func GetStorageService(conf *config.KaigaraConfig) (types.Storage, error) {
 		storage, err = vault.NewService(conf.DeploymentID, enc, conf.VaultAddr, conf.VaultToken)
 	case "sql":
 		storage, err = sql.NewService(conf.DeploymentID, &conf.DBConfig, enc, conf.LogLevel)
+	case "k8s":
+		// create a new client from kubeconfig
+		config, cfgErr := clientcmd.BuildConfigFromFlags("", conf.KubeConfig)
+		if cfgErr != nil {
+			return nil, cfgErr
+		}
+
+		client, cfgErr := kube.NewClient(config)
+		if cfgErr != nil {
+			return nil, cfgErr
+		}
+
+		storage, err = k8s.NewService(conf.DeploymentID, client, enc)
 	default:
 		return nil, fmt.Errorf("type %s is not supported", conf.Storage)
 	}

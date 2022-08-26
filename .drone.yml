@@ -73,7 +73,7 @@ steps:
       GOLANGCI_LINT_CACHE: "/drone/src/.cache/golangci-lint"
     commands:
       - golangci-lint cache status
-      - golangci-lint run --timeout 2m0s
+      - golangci-lint run --timeout 3m0s
     when:
       branch:
         exclude:
@@ -104,7 +104,13 @@ steps:
       KAIGARA_VAULT_TOKEN: "root-token"
       KAIGARA_DATABASE_HOST: "postgres"
     commands:
-      - for gpath in $(find $PWD -name go.mod); do cd $(dirname $gpath); for dir in $(go list ./...); do go clean -testcache; go test $dir; done; done
+      - |
+        for gpath in $(find $PWD -name go.mod); do cd $(dirname $gpath);
+          for dir in $(go list ./...); do
+            go clean -testcache;
+            go test $dir;
+          done;
+        done
 
   - name: Bump and tag
     image: golang:1.17
