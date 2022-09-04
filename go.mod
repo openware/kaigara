@@ -13,9 +13,9 @@ require (
 	github.com/openware/kaigara/pkg/encryptor v0.0.0-20220428165818-6271445f8750
 	github.com/openware/kaigara/pkg/sql v0.0.0-00010101000000-000000000000
 	github.com/openware/kaigara/pkg/vault v0.0.0-00010101000000-000000000000
-	github.com/openware/pkg/ika v0.0.0-20220904193134-802c2d0f96c7
-	github.com/openware/pkg/kli v0.0.0-20220904193134-802c2d0f96c7
-	github.com/openware/pkg/kube v0.0.0-20220904193134-802c2d0f96c7
+	github.com/openware/pkg/ika v0.0.0-20220904200449-0acd5d70a3c6
+	github.com/openware/pkg/kli v0.0.0-20220904194841-358cc1bbb2e4
+	github.com/openware/pkg/kube v0.0.0-20220904194841-358cc1bbb2e4
 	github.com/stretchr/testify v1.8.0
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/gorm v1.23.8
