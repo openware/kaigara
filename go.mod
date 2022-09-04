@@ -2,23 +2,22 @@ module github.com/openware/kaigara
 
 go 1.18
 
-replace github.com/openware/kaigara/pkg/encryptor => ./pkg/encryptor
-
-replace github.com/openware/kaigara/pkg/sql => ./pkg/sql
-
-replace github.com/openware/kaigara/pkg/vault => ./pkg/vault
-
 require (
 	github.com/go-redis/redis/v7 v7.4.1
-	github.com/openware/kaigara/pkg/encryptor v0.0.0-00010101000000-000000000000
-	github.com/openware/kaigara/pkg/sql v0.0.0-00010101000000-000000000000
-	github.com/openware/kaigara/pkg/vault v0.0.0-00010101000000-000000000000
+	github.com/go-sql-driver/mysql v1.6.0
+	github.com/hashicorp/vault/api v1.7.2
+	github.com/iancoleman/strcase v0.2.0
+	github.com/lib/pq v1.10.6
 	github.com/openware/pkg/ika v0.0.0-20220904204905-d56f4066048c
 	github.com/openware/pkg/kli v0.0.0-20220904204905-d56f4066048c
 	github.com/openware/pkg/kube v0.0.0-20220904204905-d56f4066048c
 	github.com/stretchr/testify v1.8.0
 	gopkg.in/yaml.v3 v3.0.1
+	gorm.io/datatypes v1.0.7
+	gorm.io/driver/mysql v1.3.6
+	gorm.io/driver/postgres v1.3.9
 	gorm.io/gorm v1.23.8
+	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.25.0
 	k8s.io/apimachinery v0.25.0
 	k8s.io/client-go v0.25.0
@@ -45,12 +44,12 @@ require (
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.5 // indirect
 	github.com/go-openapi/swag v0.19.14 // indirect
-	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.2.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
+	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
@@ -68,10 +67,8 @@ require (
 	github.com/hashicorp/go-version v1.2.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/hashicorp/vault/api v1.7.2 // indirect
 	github.com/hashicorp/vault/sdk v0.5.1 // indirect
 	github.com/hashicorp/yamux v0.0.0-20180604194846-3520598351bb // indirect
-	github.com/iancoleman/strcase v0.2.0 // indirect
 	github.com/imdario/mergo v0.3.6 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.12.1 // indirect
@@ -85,7 +82,6 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/lib/pq v1.10.6 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/mattn/go-colorable v0.1.6 // indirect
 	github.com/mattn/go-isatty v0.0.12 // indirect
@@ -118,9 +114,6 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gorm.io/datatypes v1.0.7 // indirect
-	gorm.io/driver/mysql v1.3.6 // indirect
-	gorm.io/driver/postgres v1.3.9 // indirect
 	k8s.io/klog/v2 v2.70.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
 	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed // indirect
