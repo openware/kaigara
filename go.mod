@@ -2,13 +2,19 @@ module github.com/openware/kaigara
 
 go 1.18
 
+replace github.com/openware/kaigara/pkg/encryptor => ./pkg/encryptor
+
+replace github.com/openware/kaigara/pkg/sql => ./pkg/sql
+
+replace github.com/openware/kaigara/pkg/vault => ./pkg/vault
+
 require (
 	github.com/go-redis/redis/v7 v7.4.1
-	github.com/openware/kaigara/pkg/encryptor v0.0.0-20220826121705-c01db9cbd34b
-	github.com/openware/kaigara/pkg/sql v0.0.0-20220826121705-c01db9cbd34b
-	github.com/openware/kaigara/pkg/vault v0.0.0-20220826121705-c01db9cbd34b
-	github.com/openware/pkg/ika v0.0.0-20220904191345-3af2ad698e3b
-	github.com/openware/pkg/kli v0.0.0-20220904191104-4369da80983c
+	github.com/openware/kaigara/pkg/encryptor v0.0.0-20220428165818-6271445f8750
+	github.com/openware/kaigara/pkg/sql v0.0.0-00010101000000-000000000000
+	github.com/openware/kaigara/pkg/vault v0.0.0-00010101000000-000000000000
+	github.com/openware/pkg/ika v0.0.0-20220904193134-802c2d0f96c7
+	github.com/openware/pkg/kli v0.0.0-20220904193134-802c2d0f96c7
 	github.com/openware/pkg/kube v0.0.0-20220904193134-802c2d0f96c7
 	github.com/stretchr/testify v1.8.0
 	gopkg.in/yaml.v3 v3.0.1
