@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/openware/kaigara/pkg/encryptor/types"
+	"github.com/openware/pkg/encryptor/types"
 	"github.com/openware/pkg/kube"
 	"k8s.io/apimachinery/pkg/api/errors"
 )

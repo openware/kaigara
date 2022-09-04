@@ -5,9 +5,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/openware/kaigara/pkg/encryptor/aes"
-	"github.com/openware/kaigara/pkg/encryptor/plaintext"
-	"github.com/openware/kaigara/pkg/encryptor/types"
+	"github.com/openware/pkg/encryptor/aes"
+	"github.com/openware/pkg/encryptor/plaintext"
+	"github.com/openware/pkg/encryptor/types"
 	"github.com/openware/pkg/kube"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"

@@ -10,10 +10,10 @@ import (
 	"gopkg.in/yaml.v3"
 	"gorm.io/gorm"
 
-	"github.com/openware/kaigara/pkg/encryptor/aes"
-	"github.com/openware/kaigara/pkg/encryptor/plaintext"
-	"github.com/openware/kaigara/pkg/encryptor/transit"
-	"github.com/openware/kaigara/pkg/encryptor/types"
+	"github.com/openware/pkg/encryptor/aes"
+	"github.com/openware/pkg/encryptor/plaintext"
+	"github.com/openware/pkg/encryptor/transit"
+	"github.com/openware/pkg/encryptor/types"
 )
 
 var deploymentID = "opendax_uat"
