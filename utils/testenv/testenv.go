@@ -1,7 +1,6 @@
 package testenv
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 
@@ -58,7 +57,7 @@ func GetTestStorage(relativePath string, conf *config.KaigaraConfig) types.Stora
 	}
 
 	absolutePath := path.Join(workdirPath, relativePath)
-	envFile, err := ioutil.ReadFile(absolutePath)
+	envFile, err := os.ReadFile(absolutePath)
 	if err != nil {
 		panic(err)
 	}

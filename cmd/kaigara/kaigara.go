@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -57,7 +56,7 @@ func kaigaraRun(ss types.Storage, cmd string, cmdArgs []string) {
 			log.Printf("ERR: failed to decode string %s: %s", file.Content, err.Error())
 		}
 
-		if err := ioutil.WriteFile(file.Path, contents, 0640); err != nil {
+		if err := os.WriteFile(file.Path, contents, 0640); err != nil {
 			log.Printf("ERR: failed to write file %s: %s", file.Path, err.Error())
 		}
 	}

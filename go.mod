@@ -1,10 +1,10 @@
 module github.com/openware/kaigara
 
-go 1.17
+go 1.18
 
 // replace github.com/openware/kaigara/pkg/encryptor => ./pkg/encryptor
 
-replace github.com/openware/kaigara/pkg/k8s => ./pkg/k8s
+// replace github.com/openware/kaigara/pkg/k8s => ./pkg/k8s
 
 // replace github.com/openware/kaigara/pkg/sql => ./pkg/sql
 
@@ -13,10 +13,12 @@ replace github.com/openware/kaigara/pkg/k8s => ./pkg/k8s
 require (
 	github.com/go-redis/redis/v7 v7.2.0
 	github.com/openware/kaigara/pkg/encryptor v0.0.0-20220428165818-6271445f8750
-	github.com/openware/kaigara/pkg/k8s v0.0.0-00010101000000-000000000000
-	github.com/openware/kaigara/pkg/sql v0.0.0-20220512125342-51f54b8d8897
-	github.com/openware/kaigara/pkg/vault v0.0.0-20220428165818-6271445f8750
-	github.com/openware/pkg v0.0.0-20220826090206-baa9aa401ef7
+	github.com/openware/kaigara/pkg/k8s v0.1.0
+	github.com/openware/kaigara/pkg/sql v0.1.0
+	github.com/openware/kaigara/pkg/vault v0.1.0
+	github.com/openware/pkg/ika v0.1.1
+	github.com/openware/pkg/kli v0.1.1
+	github.com/openware/pkg/kube v0.1.1
 	github.com/stretchr/testify v1.8.0
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/gorm v1.22.5
@@ -96,7 +98,6 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/oklog/run v1.0.0 // indirect
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect

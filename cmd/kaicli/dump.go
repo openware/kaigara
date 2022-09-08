@@ -3,8 +3,8 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -16,7 +16,7 @@ func dumpCmd() error {
 	b := kaidumpRun(ss)
 	fmt.Println(b.String())
 
-	if err := ioutil.WriteFile(SecretsPath, b.Bytes(), 0644); err != nil {
+	if err := os.WriteFile(SecretsPath, b.Bytes(), 0644); err != nil {
 		return err
 	}
 
@@ -35,6 +35,8 @@ func kaidumpRun(ss types.Storage) bytes.Buffer {
 	scopesList := strings.Split(conf.Scopes, ",")
 	if len(scopesList) <= 0 {
 		panic("Wrong KAIGARA_SCOPES")
+	} else if conf.Storage == "k8s" {
+		scopesList = []string{"secret"}
 	}
 
 	// Create Secrets map
