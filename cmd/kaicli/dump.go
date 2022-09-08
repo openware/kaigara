@@ -35,6 +35,8 @@ func kaidumpRun(ss types.Storage) bytes.Buffer {
 	scopesList := strings.Split(conf.Scopes, ",")
 	if len(scopesList) <= 0 {
 		panic("Wrong KAIGARA_SCOPES")
+	} else if conf.Storage == "k8s" {
+		scopesList = []string{"secret"}
 	}
 
 	// Create Secrets map

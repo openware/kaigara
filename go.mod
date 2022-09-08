@@ -4,7 +4,7 @@ go 1.17
 
 // replace github.com/openware/kaigara/pkg/encryptor => ./pkg/encryptor
 
-replace github.com/openware/kaigara/pkg/k8s => ./pkg/k8s
+// replace github.com/openware/kaigara/pkg/k8s => ./pkg/k8s
 
 // replace github.com/openware/kaigara/pkg/sql => ./pkg/sql
 
@@ -13,7 +13,7 @@ replace github.com/openware/kaigara/pkg/k8s => ./pkg/k8s
 require (
 	github.com/go-redis/redis/v7 v7.2.0
 	github.com/openware/kaigara/pkg/encryptor v0.0.0-20220428165818-6271445f8750
-	github.com/openware/kaigara/pkg/k8s v0.0.0-00010101000000-000000000000
+	github.com/openware/kaigara/pkg/k8s v0.0.0-20220908134802-d2827e7b1343
 	github.com/openware/kaigara/pkg/sql v0.0.0-20220512125342-51f54b8d8897
 	github.com/openware/kaigara/pkg/vault v0.0.0-20220428165818-6271445f8750
 	github.com/openware/pkg v0.0.0-20220826090206-baa9aa401ef7
