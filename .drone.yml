@@ -68,7 +68,7 @@ steps:
           - "*stable"
 
   - name: Go lint
-    image: golangci/golangci-lint:v1.44-alpine
+    image: golangci/golangci-lint:v1.49-alpine
     environment:
       GOLANGCI_LINT_CACHE: "/drone/src/.cache/golangci-lint"
     commands:
@@ -97,7 +97,7 @@ steps:
           - "*stable"
 
   - name: Go test
-    image: golang:1.17
+    image: golang:1.18
     environment:
       GO111MODULE: "on"
       KAIGARA_VAULT_ADDR: "http://vault:8200"
@@ -113,7 +113,7 @@ steps:
         done
 
   - name: Bump and tag
-    image: golang:1.17
+    image: golang:1.18
     environment:
       GITHUB_API_KEY:
         from_secret: github_api_key
@@ -140,7 +140,7 @@ trigger:
 
 steps:
   - name: Build and publish
-    image: golang:1.17
+    image: golang:1.18
     environment:
       GO111MODULE: on
       GITHUB_API_KEY:

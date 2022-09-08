@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 
 	"gopkg.in/yaml.v3"
 )
@@ -19,7 +19,7 @@ type SecretsFile struct {
 }
 
 func saveCmd() error {
-	data, err := ioutil.ReadFile(SecretsPath)
+	data, err := os.ReadFile(SecretsPath)
 	if err != nil {
 		return err
 	}

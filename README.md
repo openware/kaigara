@@ -36,14 +36,16 @@ export KAIGARA_DATABASE_DRIVER=postgres
 export KAIGARA_DATABASE_HOST=localhost
 export KAIGARA_DATABASE_PORT=5432
 export KAIGARA_DATABASE_USER=postgres
-export KAIGARA_DATABASE_PASS=changeme
+export KAIGARA_DATABASE_NAME=kaigara_opendax_uat # Optional (by default 'kaigara_*deployment_id*')
+export KAIGARA_DATABASE_SCHEMA=finex             # Optional (by default no schema is used)
+export KAIGARA_DATABASE_TABLE=configs            # Optional (by default 'data')
 export KAIGARA_LOG_LEVEL=1
 ```
 
 If you choose K8s secrets driver, KUBECONFIG should be set:
 
 ```sh
-export KUBECONFIG=path-to-kube-config
+export KUBECONFIG=*path-to-kube-config*
 ```
 
 All storage drivers are created with **encryptor**, that is used to encrypt/decrypt vars in the secret scope:
