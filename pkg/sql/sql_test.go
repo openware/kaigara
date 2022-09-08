@@ -1,6 +1,7 @@
 package sql
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"sort"
@@ -23,11 +24,6 @@ var scopes = []string{"private", "public", "secret"}
 var configs map[string]DatabaseConfig
 var encryptors map[string]types.Encryptor
 
-type Config struct {
-	Name     string         `yaml:"name"`
-	DbConfig DatabaseConfig `yaml:"database"`
-}
-
 func TestMain(m *testing.M) {
 	vaultAddr := os.Getenv("KAIGARA_VAULT_ADDR")
 	vaultToken := os.Getenv("KAIGARA_VAULT_TOKEN")
@@ -42,16 +38,11 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
-	cfgs := make(map[string]Config)
-	err = yaml.Unmarshal(dat, &cfgs)
-	if err != nil {
+	configs = make(map[string]DatabaseConfig)
+	if err := yaml.Unmarshal(dat, &configs); err != nil {
 		panic(err)
 	}
-
-	configs = make(map[string]DatabaseConfig)
-	for _, cfg := range cfgs {
-		configs[cfg.Name] = cfg.DbConfig
-	}
+	fmt.Println(configs)
 
 	aesEncrypt, err := aes.NewAESEncryptor([]byte("1234567890123456"))
 	if err != nil {
@@ -127,195 +118,203 @@ func clearStorage(conf DatabaseConfig) error {
 }
 
 func TestSetEntry(t *testing.T) {
-	for _, encryptor := range encryptors {
-		for _, conf := range configs {
-			ss, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
-			assert.NoError(t, err)
+	for testEncName, encryptor := range encryptors {
+		for testDbName, conf := range configs {
+			t.Run(testDbName+"-"+testEncName, func(t *testing.T) {
+				ss, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
+				assert.NoError(t, err)
 
-			for _, scope := range scopes {
-				for _, appName := range appNames {
-					init, err := getEntriesReload(ss, appName, scope)
-					if err != nil {
-						t.Fatal(err)
+				for _, scope := range scopes {
+					for _, appName := range appNames {
+						init, err := getEntriesReload(ss, appName, scope)
+						if err != nil {
+							t.Error(err)
+						}
+
+						assert.Equal(t, map[string]interface{}{"version": int64(0)}, init)
+
+						name := "key_" + scope
+						val := "value_" + scope
+						if err := setEntry(ss, appName, scope, name, val); err != nil {
+							t.Error(err)
+						}
+
+						// Verify the written data with new storage
+						ssTmp, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
+						assert.NoError(t, err)
+
+						result, err := getEntriesReload(ssTmp, appName, scope)
+						if err != nil {
+							t.Error(err)
+						}
+
+						delete(result, "version")
+						assert.Equal(t, map[string]interface{}{"key_" + scope: "value_" + scope}, result)
+
+						entry, err := getEntryReload(ssTmp, appName, scope, name)
+						if err != nil {
+							t.Error(err)
+						} else {
+							assert.Equal(t, val, entry)
+						}
 					}
-
-					assert.Equal(t, map[string]interface{}{"version": int64(0)}, init)
-
-					name := "key_" + scope
-					val := "value_" + scope
-					if err := setEntry(ss, appName, scope, name, val); err != nil {
-						t.Fatal(err)
-					}
-
-					// Verify the written data with new storage
-					ssTmp, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
-					assert.NoError(t, err)
-
-					result, err := getEntriesReload(ssTmp, appName, scope)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					delete(result, "version")
-					assert.Equal(t, map[string]interface{}{"key_" + scope: "value_" + scope}, result)
-
-					entry, err := getEntryReload(ssTmp, appName, scope, name)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					assert.Equal(t, val, entry.(string))
 				}
-			}
 
-			err = clearStorage(conf)
-			assert.NoError(t, err)
+				err = clearStorage(conf)
+				assert.NoError(t, err)
+			})
 		}
 	}
 }
 
 func TestDeleteEntry(t *testing.T) {
-	for _, encryptor := range encryptors {
-		for _, conf := range configs {
-			ss, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
-			assert.NoError(t, err)
+	for testEncName, encryptor := range encryptors {
+		for testDbName, conf := range configs {
+			t.Run(testDbName+"-"+testEncName, func(t *testing.T) {
+				ss, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
+				assert.NoError(t, err)
 
-			for _, scope := range scopes {
-				for _, appName := range appNames {
-					key := "key_" + scope
-					val := "value_" + scope
+				for _, scope := range scopes {
+					for _, appName := range appNames {
+						key := "key_" + scope
+						val := "value_" + scope
 
-					if _, err := getEntriesReload(ss, appName, scope); err != nil {
-						t.Fatal(err)
+						if _, err := getEntriesReload(ss, appName, scope); err != nil {
+							t.Error(err)
+						}
+
+						if err := setEntry(ss, appName, scope, key, val); err != nil {
+							t.Error(err)
+						}
+
+						// Delete Entry in each scope
+						err = ss.DeleteEntry(appName, scope, key)
+						assert.NoError(t, err)
+
+						entry, err := ss.GetEntry(appName, scope, key)
+						assert.NoError(t, err)
+						assert.Equal(t, nil, entry)
+
+						// Check that Write() will delete redundant data
+						err = ss.Write(appName, scope)
+						assert.NoError(t, err)
+
+						ssTmp, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
+						assert.NoError(t, err)
+
+						entry, err = getEntryReload(ssTmp, appName, scope, key)
+						if err != nil {
+							t.Error(err)
+						}
+
+						assert.Equal(t, nil, entry)
 					}
-
-					if err := setEntry(ss, appName, scope, key, val); err != nil {
-						t.Fatal(err)
-					}
-
-					// Delete Entry in each scope
-					err = ss.DeleteEntry(appName, scope, key)
-					assert.NoError(t, err)
-
-					entry, err := ss.GetEntry(appName, scope, key)
-					assert.NoError(t, err)
-					assert.Equal(t, nil, entry)
-
-					// Check that Write() will delete redundant data
-					err = ss.Write(appName, scope)
-					assert.NoError(t, err)
-
-					ssTmp, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
-					assert.NoError(t, err)
-
-					entry, err = getEntryReload(ssTmp, appName, scope, key)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					assert.Equal(t, nil, entry)
 				}
-			}
 
-			err = clearStorage(conf)
-			assert.NoError(t, err)
+				err = clearStorage(conf)
+				assert.NoError(t, err)
+			})
 		}
 	}
 }
 
 func TestListAppNames(t *testing.T) {
-	for _, encryptor := range encryptors {
-		for _, conf := range configs {
-			ss, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
-			assert.NoError(t, err)
+	for testEncName, encryptor := range encryptors {
+		for testDbName, conf := range configs {
+			t.Run(testDbName+"-"+testEncName, func(t *testing.T) {
+				ss, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
+				assert.NoError(t, err)
 
-			for _, appName := range appNames {
-				for _, scope := range scopes {
-					key := "key_" + scope
-					val := "value_" + scope
+				for _, appName := range appNames {
+					for _, scope := range scopes {
+						key := "key_" + scope
+						val := "value_" + scope
 
-					if _, err := getEntriesReload(ss, appName, scope); err != nil {
-						t.Fatal(err)
-					}
+						if _, err := getEntriesReload(ss, appName, scope); err != nil {
+							t.Error(err)
+						}
 
-					if err := setEntry(ss, appName, scope, key, val); err != nil {
-						t.Fatal(err)
+						if err := setEntry(ss, appName, scope, key, val); err != nil {
+							t.Error(err)
+						}
 					}
 				}
-			}
 
-			ssTmp, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
-			assert.NoError(t, err)
+				ssTmp, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
+				assert.NoError(t, err)
 
-			apps, err := ssTmp.ListAppNames()
-			sort.Strings(apps)
-			assert.NoError(t, err)
-			assert.Equal(t, appNames, apps)
+				apps, err := ssTmp.ListAppNames()
+				sort.Strings(apps)
+				assert.NoError(t, err)
+				assert.Equal(t, appNames, apps)
 
-			err = clearStorage(conf)
-			assert.NoError(t, err)
+				err = clearStorage(conf)
+				assert.NoError(t, err)
+			})
 		}
 	}
 }
 
 func TestServiceSetGetEntriesIncreaseVersion(t *testing.T) {
-	for _, encryptor := range encryptors {
-		for _, conf := range configs {
-			ss, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
-			assert.NoError(t, err)
+	for testEncName, encryptor := range encryptors {
+		for testDbName, conf := range configs {
+			t.Run(testDbName+"-"+testEncName, func(t *testing.T) {
+				ss, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
+				assert.NoError(t, err)
 
-			for _, scope := range scopes {
-				for _, appName := range appNames {
-					data, err := getEntriesReload(ss, appName, scope)
-					if err != nil {
-						t.Fatal(err)
+				for _, scope := range scopes {
+					for _, appName := range appNames {
+						data, err := getEntriesReload(ss, appName, scope)
+						if err != nil {
+							t.Error(err)
+						}
+
+						assert.Equal(t, map[string]interface{}{"version": int64(0)}, data)
+
+						if err := setEntry(ss, appName, scope, "key_"+scope, "value_"+scope); err != nil {
+							t.Error(err)
+						}
+
+						// Create a Service from scratch
+						ssTmp, err := NewService(deploymentID, &conf, encryptor, 1)
+						assert.NoError(t, err)
+
+						// Get and assert Entries in each scope after save
+						entry, err := getEntryReload(ssTmp, appName, scope, "key_"+scope)
+						if err != nil {
+							t.Error(err)
+						}
+
+						assert.Equal(t, "value_"+scope, entry)
+
+						// Delete Entry in each scope
+						err = ssTmp.DeleteEntry(appName, scope, "key_"+scope)
+						assert.NoError(t, err)
+
+						// Get and assert Entries in each scope after the deletion
+						entry, err = ssTmp.GetEntry(appName, scope, "key_"+scope)
+						assert.NoError(t, err)
+						assert.Equal(t, nil, entry)
+
+						// Check that Write() will delete redundant data
+						err = ssTmp.Write(appName, scope)
+						assert.NoError(t, err)
+
+						ssTmp2, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
+						assert.NoError(t, err)
+
+						data, err = getEntriesReload(ssTmp2, appName, scope)
+						if err != nil {
+							t.Error(err)
+						}
+
+						assert.Equal(t, map[string]interface{}{"version": int64(1)}, data)
 					}
-
-					assert.Equal(t, map[string]interface{}{"version": int64(0)}, data)
-
-					if err := setEntry(ss, appName, scope, "key_"+scope, "value_"+scope); err != nil {
-						t.Fatal(err)
-					}
-
-					// Create a Service from scratch
-					ssTmp, err := NewService(deploymentID, &conf, encryptor, 1)
-					assert.NoError(t, err)
-
-					// Get and assert Entries in each scope after save
-					entry, err := getEntryReload(ssTmp, appName, scope, "key_"+scope)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					assert.Equal(t, "value_"+scope, entry.(string))
-
-					// Delete Entry in each scope
-					err = ssTmp.DeleteEntry(appName, scope, "key_"+scope)
-					assert.NoError(t, err)
-
-					// Get and assert Entries in each scope after the deletion
-					entry, err = ssTmp.GetEntry(appName, scope, "key_"+scope)
-					assert.NoError(t, err)
-					assert.Equal(t, nil, entry)
-
-					// Check that Write() will delete redundant data
-					err = ssTmp.Write(appName, scope)
-					assert.NoError(t, err)
-
-					ssTmp2, err := NewService(deploymentID, &conf, encryptor, testLogLevel)
-					assert.NoError(t, err)
-
-					data, err = getEntriesReload(ssTmp2, appName, scope)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					assert.Equal(t, map[string]interface{}{"version": int64(1)}, data)
 				}
-			}
 
-			err = clearStorage(conf)
-			assert.NoError(t, err)
+				err = clearStorage(conf)
+				assert.NoError(t, err)
+			})
 		}
 	}
 }
