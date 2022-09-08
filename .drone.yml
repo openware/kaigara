@@ -41,7 +41,7 @@ steps:
     image: jwilder/dockerize
     pull: if-not-exists
     commands:
-      - dockerize -wait tcp://postgres:5432 -wait tcp://mysql:3306 -wait tcp://vault:8200 -timeout 1m
+      - dockerize -wait tcp://postgres:5432 -wait tcp://mysql:3306 -wait tcp://vault:8200 -timeout 2m
 
   - name: Enable Vault Transit
     image: vault:1.5.3

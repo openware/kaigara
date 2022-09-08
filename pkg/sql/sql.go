@@ -12,6 +12,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"gorm.io/gorm/schema"
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
@@ -35,20 +36,35 @@ type Data struct {
 }
 
 type DatabaseConfig struct {
-	Driver string `yaml:"driver" env:"KAIGARA_DATABASE_DRIVER" env-description:"Database driver"`
-	Host   string `yaml:"host" env:"KAIGARA_DATABASE_HOST" env-description:"Database host"`
-	Port   string `yaml:"port" env:"KAIGARA_DATABASE_PORT" env-description:"Database port"`
-	Name   string `yaml:"name" env:"KAIGARA_DATABASE_NAME" env-description:"Database name"`
-	User   string `yaml:"user" env:"KAIGARA_DATABASE_USER" env-description:"Database user"`
-	Pass   string `env:"KAIGARA_DATABASE_PASS" env-description:"Database user password"`
-	Pool   int    `yaml:"pool" env:"KAIGARA_DATABASE_POOL" env-description:"Database pool size" env-default:"0"`
+	Driver string               `yaml:"driver" env:"KAIGARA_DATABASE_DRIVER" env-description:"Database driver"`
+	Host   string               `yaml:"host" env:"KAIGARA_DATABASE_HOST" env-description:"Database host"`
+	Port   string               `yaml:"port" env:"KAIGARA_DATABASE_PORT" env-description:"Database port"`
+	Name   string               `yaml:"name" env:"KAIGARA_DATABASE_NAME" env-description:"Database name"`
+	Schema string               `yaml:"schema" env:"KAIGARA_DATABASE_SCHEMA" env-description:"Database schema"`
+	Table  TableNameReplaceable `yaml:"table" env:"KAIGARA_DATABASE_TABLE" env-description:"Database table"`
+	User   string               `yaml:"user" env:"KAIGARA_DATABASE_USER" env-description:"Database user"`
+	Pass   string               `env:"KAIGARA_DATABASE_PASS" env-description:"Database user password"`
+	Pool   int                  `yaml:"pool" env:"KAIGARA_DATABASE_POOL" env-description:"Database pool size" env-default:"0"`
+}
+
+type TableNameReplaceable string
+
+func (customName TableNameReplaceable) Replace(name string) string {
+	if customName != "" && name == "Data" {
+		return string(customName)
+	}
+	return name
 }
 
 func NewService(deploymentID string, conf *DatabaseConfig, encryptor types.Encryptor, logLevel int) (*Service, error) {
-	conf.Name = "kaigara_" + deploymentID
+	if conf.Name == "" {
+		conf.Name = "kaigara_" + deploymentID
+	}
+
 	if err := EnsureDatabaseExists(conf); err != nil {
 		return nil, err
 	}
+
 	db, err := Connect(conf)
 	if err != nil {
 		return nil, err
@@ -136,7 +152,19 @@ func Connect(conf *DatabaseConfig) (*gorm.DB, error) {
 		return nil, fmt.Errorf("unsupported DATABASE_DRIVER: %s", conf.Driver)
 	}
 
-	db, err := gorm.Open(dial, &gorm.Config{})
+	tablePrefix := ""
+	if conf.Schema != "" {
+		tablePrefix = conf.Schema + "."
+	}
+
+	namingStrategy := schema.NamingStrategy{
+		TablePrefix:  tablePrefix,
+		NameReplacer: conf.Table,
+	}
+
+	db, err := gorm.Open(dial, &gorm.Config{
+		NamingStrategy: namingStrategy,
+	})
 	if err != nil {
 		return nil, err
 	}
