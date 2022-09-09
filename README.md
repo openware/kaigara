@@ -39,7 +39,7 @@ export KAIGARA_DATABASE_USER=postgres
 export KAIGARA_LOG_LEVEL=1
 ```
 
-Also, SQL driver supports name overriding for DB, schema and table. Table migration is completely automated, but Database and Schema should exist if you specify them:
+Also, SQL driver supports name overriding for database, schema and table. Table migration is completely automated, but database and schema should exist beforehand if you specify them:
 ```sh
 export KAIGARA_DATABASE_NAME=kaigara_opendax_uat # by default 'kaigara_*deployment_id*'
 export KAIGARA_DATABASE_SCHEMA=finex             # by default no schema is used
