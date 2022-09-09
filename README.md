@@ -36,10 +36,14 @@ export KAIGARA_DATABASE_DRIVER=postgres
 export KAIGARA_DATABASE_HOST=localhost
 export KAIGARA_DATABASE_PORT=5432
 export KAIGARA_DATABASE_USER=postgres
-export KAIGARA_DATABASE_NAME=kaigara_opendax_uat # Optional (by default 'kaigara_*deployment_id*')
-export KAIGARA_DATABASE_SCHEMA=finex             # Optional (by default no schema is used)
-export KAIGARA_DATABASE_TABLE=configs            # Optional (by default 'data')
 export KAIGARA_LOG_LEVEL=1
+```
+
+Also, SQL driver supports changing of DB name, schema and table. Table migration is completely automated, but Database and Schema should exist if you specify them:
+```sh
+export KAIGARA_DATABASE_NAME=kaigara_opendax_uat # by default 'kaigara_*deployment_id*'
+export KAIGARA_DATABASE_SCHEMA=finex             # by default no schema is used
+export KAIGARA_DATABASE_TABLE=configs            # by default 'data'
 ```
 
 If you choose K8s secrets driver, KUBECONFIG should be set:
