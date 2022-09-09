@@ -120,7 +120,7 @@ steps:
       GITHUB_API_USER:
         from_secret: github_api_user
     commands:
-      - go get github.com/guilhem/bump
+      - go install github.com/guilhem/bump@v0.2.1
       - git remote add authenticated-origin https://$GITHUB_API_USER:$GITHUB_API_KEY@github.com/$DRONE_REPO
       - git fetch --tags authenticated-origin
       - bump patch --allow-dirty
@@ -146,7 +146,8 @@ steps:
       GITHUB_API_KEY:
         from_secret: github_api_key
     commands:
+      - echo $DRONE_TAG | grep -v / || exit 78 # Skip if submodule is tagged
       - go mod download
       - KAIGARA_VERSION=${DRONE_TAG} make build
-      - go get github.com/tcnksm/ghr
+      - go install github.com/tcnksm/ghr@v0.15.0
       - ghr -t $GITHUB_API_KEY -u ${DRONE_REPO_NAMESPACE} -r ${DRONE_REPO_NAME} -c ${DRONE_COMMIT} -delete ${DRONE_TAG} ./bin
