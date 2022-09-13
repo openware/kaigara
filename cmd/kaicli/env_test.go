@@ -36,11 +36,11 @@ func (mockSS *mockSecretStorage) GetEntries(appName, scope string) (map[string]i
 var testStore = map[string]map[string]map[string]interface{}{
 	"finex": {
 		"private": map[string]interface{}{
-			"finex_influx_host": "influxdb-0.core,influxdb-1.core,influxdb-2.core",
-			"finex_log_level":   "debug",
-			"finex_mode":        "prod",
-			"finex_vault_addr":  "http://vault.core:8200",
-			"finex_struct_env": []interface{}{
+			"FINEX_INFLUX_HOST": "influxdb-0.core,influxdb-1.core,influxdb-2.core",
+			"FINEX_LOG_LEVEL":   "debug",
+			"FINEX_MODE":        "prod",
+			"FINEX_VAULT_ADDR":  "http://vault.core:8200",
+			"FINEX_STRUCT_ENV": []interface{}{
 				map[string]interface{}{
 					"field1": "value2",
 				},
@@ -51,29 +51,29 @@ var testStore = map[string]map[string]map[string]interface{}{
 		},
 		"public": map[string]interface{}{},
 		"secret": map[string]interface{}{
-			"finex_license_key":              "eiJohdo9eish3Cooshus",
-			"finex_vault_broker_private_key": "ujahDoo1ohmie7taipox",
-			"finex_vault_rpc_url":            "wss://rinkeby.infura.io/ws/v3/Uzeep6eiGoozui7ohsh9",
+			"FINEX_LICENSE_KEY":              "eiJohdo9eish3Cooshus",
+			"FINEX_VAULT_BROKER_PRIVATE_KEY": "ujahDoo1ohmie7taipox",
+			"FINEX_VAULT_RPC_URL":            "wss://rinkeby.infura.io/ws/v3/Uzeep6eiGoozui7ohsh9",
 		},
 	},
 	"frontdex": {
 		"private": map[string]interface{}{
-			"next_public_chain_id":         "4",
-			"next_public_custody_contract": "Feibie7ooCachie3eePh",
+			"NEXT_PUBLIC_CHAIN_ID":         "4",
+			"NEXT_PUBLIC_CUSTODY_CONTRACT": "Feibie7ooCachie3eePh",
 		},
 		"public": map[string]interface{}{},
 		"secret": map[string]interface{}{
-			"next_public_infura_id": "bie9niNgoohadoorai5a",
+			"NEXT_PUBLIC_INFURA_ID": "bie9niNgoohadoorai5a",
 		},
 	},
 	"global": {
 		"private": map[string]interface{}{},
 		"public":  map[string]interface{}{},
 		"secret": map[string]interface{}{
-			"database_host": "0.0.0.0",
-			"database_port": "3306",
-			"postgres_host": "0.0.0.0",
-			"postgres_port": "5432",
+			"DATABASE_HOST": "0.0.0.0",
+			"DATABASE_PORT": "3306",
+			"POSTGRES_HOST": "0.0.0.0",
+			"POSTGRES_PORT": "5432",
 		},
 	},
 }

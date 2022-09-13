@@ -27,11 +27,11 @@ func NewService(deploymentID string, client *kube.K8sClient, encryptor types.Enc
 }
 
 func secretName(appName string) string {
-	return fmt.Sprintf("kaigara-%s", appName)
+	return fmt.Sprintf("kaigara-%s", toDashCase(appName))
 }
 
-func (ss *Service) namespace() string {
-	return strings.ReplaceAll(ss.deploymentID, "_", "-")
+func toDashCase(s string) string {
+	return strings.ReplaceAll(s, "_", "-")
 }
 
 func (ss *Service) Read(appName, scope string) error {
@@ -39,7 +39,7 @@ func (ss *Service) Read(appName, scope string) error {
 	val := make(map[string]interface{})
 	val["version"] = int64(0)
 
-	secrets, err := ss.client.ReadSecret(secretName, ss.namespace())
+	secrets, err := ss.client.ReadSecret(secretName, toDashCase(ss.deploymentID))
 	if err == nil {
 		for name, secret := range secrets {
 			data := string(secret)
@@ -76,7 +76,7 @@ func (ss *Service) Write(appName, scope string) error {
 	}
 
 	secretName := secretName(appName)
-	namespace := ss.namespace()
+	namespace := toDashCase(ss.deploymentID)
 
 	secrets, err := ss.client.ReadSecret(secretName, namespace)
 	if err != nil {
@@ -197,7 +197,7 @@ func (ss *Service) DeleteEntry(appName, scope, name string) error {
 }
 
 func (ss *Service) ListAppNames() ([]string, error) {
-	secrets, err := ss.client.GetSecrets(ss.namespace())
+	secrets, err := ss.client.GetSecrets(toDashCase(ss.deploymentID))
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +241,7 @@ func (ss *Service) GetCurrentVersion(appName, scope string) (int64, error) {
 func (ss *Service) GetLatestVersion(appName, scope string) (int64, error) {
 	secretName := secretName(appName)
 
-	secrets, err := ss.client.ReadSecret(secretName, ss.namespace())
+	secrets, err := ss.client.ReadSecret(secretName, toDashCase(ss.deploymentID))
 	if err != nil {
 		if errors.IsNotFound(err) {
 			ver, err := ss.GetCurrentVersion(appName, scope)
