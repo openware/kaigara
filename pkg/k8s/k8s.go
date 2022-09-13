@@ -96,13 +96,6 @@ func (ss *Service) Write(appName, scope string) error {
 	}
 	val["version"] = newVersion
 
-	// delete and re-create a K8s secret with a secretName from a val
-	if err := ss.client.DeleteSecret(secretName, namespace); err != nil {
-		if !errors.IsNotFound(err) {
-			return err
-		}
-	}
-
 	if err := ss.client.UpdateSecret(secretName, namespace, val); err != nil {
 		return err
 	}

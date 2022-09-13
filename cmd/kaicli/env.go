@@ -29,12 +29,12 @@ func kaienvRun(conf *config.KaigaraConfig, ss types.Storage, params []string, ou
 			if compVal, err := envValueToString(envValue); err != nil {
 				return err
 			} else {
-				fmt.Fprintf(out, "%s=%s\n", strings.ToUpper(envVariable), compVal)
+				fmt.Fprintf(out, "%s=%s\n", envVariable, compVal)
 			}
 		}
 	} else {
 		envVariable := params[0]
-		if envValue, ok := env[strings.ToLower(envVariable)]; !ok {
+		if envValue, ok := env[envVariable]; !ok {
 			return fmt.Errorf("no value for such key: %s", envVariable)
 		} else if compVal, err := envValueToString(envValue); err != nil {
 			return err
