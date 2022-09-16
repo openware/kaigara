@@ -124,7 +124,7 @@ steps:
       - git remote add authenticated-origin https://$GITHUB_API_USER:$GITHUB_API_KEY@github.com/$DRONE_REPO
       - git fetch --tags authenticated-origin
       - bump patch --allow-dirty
-      - git push authenticated-origin --tags
+      # - git push authenticated-origin --tags
     when:
       branch:
         - master
@@ -151,3 +151,4 @@ steps:
       - KAIGARA_VERSION=${DRONE_TAG} make build
       - go install github.com/tcnksm/ghr@v0.15.0
       - ghr -t $GITHUB_API_KEY -u ${DRONE_REPO_NAMESPACE} -r ${DRONE_REPO_NAME} -c ${DRONE_COMMIT} -delete ${DRONE_TAG} ./bin
+
