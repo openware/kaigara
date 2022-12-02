@@ -5,6 +5,7 @@ name: default
 trigger:
   event:
     - push
+    - tag
 
 services:
   - name: vault
@@ -100,16 +101,21 @@ steps:
     image: golang:1.18
     environment:
       GO111MODULE: "on"
+      COVER_OUT: cover.out
       KAIGARA_VAULT_ADDR: "http://vault:8200"
       KAIGARA_VAULT_TOKEN: "root-token"
       KAIGARA_DATABASE_HOST: "postgres"
     commands:
       - |
+        counter=0
         for gpath in $(find $PWD -name go.mod); do cd $(dirname $gpath);
           for dir in $(go list ./...); do
-            go clean -testcache;
-            go test $dir;
-          done;
+            tmpcover=cover$counter
+            go clean -testcache
+            go test $dir --cover -coverprofile $tmpcover
+            cat $tmpcover >> $COVER_OUT
+            counter=$(( counter + 1 ))
+          done
         done
 
   - name: Bump and tag
@@ -126,19 +132,39 @@ steps:
       - bump patch --allow-dirty
       - git push authenticated-origin --tags
     when:
+      event:
+        - push
       branch:
         - master
 
----
-kind: pipeline
-type: docker
-name: publish
+  - name: Go Coverage
+    image: golang:1.18
+    environment:
+      GO111MODULE: "on"
+      COVER_OUT: cover.out
+      ANALYTICS_DATABASE_HOST: pg.opendax.app
+      ANALYTICS_DATABASE_PORT: 30432
+      ANALYTICS_DATABASE_USERNAME: postgres
+      ANALYTICS_DATABASE_USERNAME: coverage_analytics
+      ANALYTICS_DATABASE_PASSWORD:
+        from_secret: pgpass_coverage
+      ANALYTICS_DATABASE_NAME: coverage_analytics
+      ANALYTICS_COMPONENT: kaigara
+    commands:
+      - apt-get update
+      - apt-get install -y p7zip-full
+      - |
+        curl -s -L "https://github.com/boumenot/gocover-cobertura/releases/download/v1.1.0/gocover-cobertura.linux.x64.7z" -o ./gocover-cobertura.7z
+        curl -s -L https://github.com/openware/go-coverage/releases/download/v1.0.0-alpha/go-coverage -o ./go-coverage
+        7z x ./gocover-cobertura.7z
+        chmod +x ./gocover-cobertura
+        chmod +x ./go-coverage
+      - ./gocover-cobertura < $COVER_OUT > coverage.xml
+      - ./go-coverage coverage.xml
+    when:
+      event:
+        - tag
 
-trigger:
-  event:
-    - tag
-
-steps:
   - name: Build and publish
     image: golang:1.18
     environment:
@@ -151,3 +177,6 @@ steps:
       - KAIGARA_VERSION=${DRONE_TAG} make build
       - go install github.com/tcnksm/ghr@v0.15.0
       - ghr -t $GITHUB_API_KEY -u ${DRONE_REPO_NAMESPACE} -r ${DRONE_REPO_NAME} -c ${DRONE_COMMIT} -delete ${DRONE_TAG} ./bin
+    when:
+      event:
+        - tag
