@@ -137,9 +137,9 @@ steps:
       branch:
         - master
 
-  - name: Go Coverage
+  - name: Go Coverage master
     image: golang:1.18
-    environment:
+    environment: &envs
       GO111MODULE: "on"
       COVER_OUT: cover.out
       ANALYTICS_DATABASE_HOST: pg.opendax.app
@@ -150,7 +150,7 @@ steps:
         from_secret: pgpass_coverage
       ANALYTICS_DATABASE_NAME: coverage_analytics
       ANALYTICS_COMPONENT: kaigara
-    commands:
+    commands: &cmds
       - apt-get update
       - apt-get install -y p7zip-full
       - |
@@ -161,6 +161,17 @@ steps:
         chmod +x ./go-coverage
       - ./gocover-cobertura < $COVER_OUT > coverage.xml
       - ./go-coverage coverage.xml
+    when:
+      event:
+        - push
+      branch:
+        - master
+
+  - name: Go coverage tag
+    image: golang:1.18
+    environment:
+      <<: *envs
+    commands: *cmds
     when:
       event:
         - tag
