@@ -90,17 +90,21 @@ func NewService(deploymentID string, conf *DatabaseConfig, encryptor types.Encry
 func EnsureDatabaseExists(cnf *DatabaseConfig) error {
 	switch cnf.Driver {
 	case "mysql":
-		dsn := fmt.Sprintf(
-			"%s:%s@tcp(%s:%s)/?charset=utf8&parseTime=True&loc=Local",
-			cnf.User, cnf.Pass, cnf.Host, cnf.Port,
-		)
-		conn, err := sql.Open(cnf.Driver, dsn)
-		if err != nil {
-			return err
-		}
-		defer conn.Close()
-		if _, err = conn.Exec("CREATE DATABASE IF NOT EXISTS " + cnf.Name); err != nil {
-			return err
+		if cnf.User == "root" {
+			dsn := fmt.Sprintf(
+				"%s:%s@tcp(%s:%s)/?charset=utf8&parseTime=True&loc=Local",
+				cnf.User, cnf.Pass, cnf.Host, cnf.Port,
+			)
+			conn, err := sql.Open(cnf.Driver, dsn)
+			if err != nil {
+				return err
+			}
+			defer conn.Close()
+			if _, err = conn.Exec("CREATE DATABASE IF NOT EXISTS " + cnf.Name); err != nil {
+				return err
+			}
+		} else {
+			fmt.Println("Skipping database existence check due to a non-root user")
 		}
 	case "postgres":
 		dsn := fmt.Sprintf(
