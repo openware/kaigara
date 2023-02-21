@@ -469,8 +469,8 @@ github.com/openware/kaigara/pkg/encryptor v0.0.0-20220428165818-6271445f8750 h1:
 github.com/openware/kaigara/pkg/encryptor v0.0.0-20220428165818-6271445f8750/go.mod h1:OgGzmddj4jBM0XQJqG4H3jhHQS0wC/HkjI6/p9FcsEA=
 github.com/openware/kaigara/pkg/k8s v0.1.2 h1:8hlTJXZAU04DdKxSXWg03sk7UVIaj9b7QKvpkXGp17A=
 github.com/openware/kaigara/pkg/k8s v0.1.2/go.mod h1:wqqitlOfeeyNncInx5/LLsZN+Am8osJMgDIcpdK3aS4=
-github.com/openware/kaigara/pkg/sql v0.1.0 h1:FhQvJXTLHd+RGIHS77D5VlckJ/b2UCeO+6zzcHQOQQ0=
-github.com/openware/kaigara/pkg/sql v0.1.0/go.mod h1:nJehJ+iAUg9MmqtHf2MqBczPBvhF/ARGMKSaUCkC9XA=
+github.com/openware/kaigara/pkg/sql v0.1.1 h1:ESpePHXWlkCAEZR5v/EoYvh0jH0hsw/nkobrZYbiwkc=
+github.com/openware/kaigara/pkg/sql v0.1.1/go.mod h1:nJehJ+iAUg9MmqtHf2MqBczPBvhF/ARGMKSaUCkC9XA=
 github.com/openware/kaigara/pkg/vault v0.1.0 h1:ozkY+2zUw09v9LEJKjnMAfs9AmFGh9AhTGqyfLMDSMU=
 github.com/openware/kaigara/pkg/vault v0.1.0/go.mod h1:l36urKZdsQRF0Mxrb+TG+zpGsSKiPSP9AqbLfGjzGeQ=
 github.com/openware/pkg/ika v0.1.1 h1:Ka6Aue/vwLywpuMWzVhn7GJikuSmz7l/QTR5pRhouRE=
