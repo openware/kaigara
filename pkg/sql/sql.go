@@ -103,8 +103,6 @@ func EnsureDatabaseExists(cnf *DatabaseConfig) error {
 			if _, err = conn.Exec("CREATE DATABASE IF NOT EXISTS " + cnf.Name); err != nil {
 				return err
 			}
-		} else {
-			fmt.Println("Skipping database existence check due to a non-root user")
 		}
 	case "postgres":
 		dsn := fmt.Sprintf(
