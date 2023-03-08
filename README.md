@@ -7,7 +7,6 @@ It enables teams to build components and deployments with improved configuration
 
  * Fetch configuration from secret storage and inject into target command environment
  * Support the storage of configuration files and env vars into secret storage(Vault KV, MySQL, PostgreSQL, K8s secrets)
- * Publish target command STDOUT and STDERR to Redis
  * Restart subprocesses on configuration updates(allows for dynamic configs)
  * Create files on startup from env vars starting with `KNAME_`
 
@@ -82,9 +81,6 @@ export KAIGARA_SCOPES=public,private,secret
 If you are using `kaigara` CLI, you could also set:
 
 ```sh
-# If you want to redirect logs to a Redis channel
-export KAIGARA_REDIS_URL=redis://localhost:6379/0
-
 # If you want to ignore secrets in global app
 export KAIGARA_IGNORE_GLOBAL=true
 ```

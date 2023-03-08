@@ -23,7 +23,6 @@ type KaigaraConfig struct {
 	KubeConfig string `yaml:"kubeconfig" env:"KUBECONFIG"`
 
 	LogLevel int                `yaml:"log_level" env:"KAIGARA_LOG_LEVEL" env-default:"1"`
-	RedisURL string             `yaml:"redis_url" env:"KAIGARA_REDIS_URL"`
 	DBConfig sql.DatabaseConfig `yaml:"database"`
 }
 

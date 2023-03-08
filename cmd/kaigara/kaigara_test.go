@@ -1,17 +1,14 @@
 package main
 
 import (
-	"log"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/openware/kaigara/pkg/config"
-	"github.com/openware/kaigara/pkg/logstream"
 	"github.com/openware/kaigara/pkg/sql"
 	"github.com/openware/kaigara/pkg/storage"
 	"github.com/openware/kaigara/utils/testenv"
-	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 )
 
@@ -45,25 +42,10 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
-	ls, err = logstream.NewRedisClient(conf.RedisURL)
-	if err != nil {
-		log.Printf("WRN: %s", err.Error())
-	}
-
 	// exec test and this returns an exit code to pass to os
 	code := m.Run()
 
 	os.Exit(code)
-}
-
-func TestAppNamesToLoggingName(t *testing.T) {
-	conf.AppNames = "peatio,peatio_daemons"
-	assert.Equal(t, "peatio&peatio_daemons", appNamesToLoggingName())
-
-	conf.AppNames = "peatio"
-	assert.Equal(t, "peatio", appNamesToLoggingName())
-	assert.NotEqual(t, "peatio&", appNamesToLoggingName())
-	assert.NotEqual(t, "&peatio", appNamesToLoggingName())
 }
 
 func TestKaigaraPrintenvVault(t *testing.T) {
