@@ -11,7 +11,6 @@ go 1.18
 // replace github.com/openware/kaigara/pkg/vault => ./pkg/vault
 
 require (
-	github.com/go-redis/redis/v7 v7.2.0
 	github.com/openware/kaigara/pkg/encryptor v0.0.0-20220428165818-6271445f8750
 	github.com/openware/kaigara/pkg/k8s v0.1.2
 	github.com/openware/kaigara/pkg/sql v0.1.2

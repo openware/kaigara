@@ -1,27 +1,21 @@
 package main
 
 import (
-	"bufio"
 	"encoding/base64"
-	"fmt"
-	"io"
 	"log"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/env"
-	"github.com/openware/kaigara/pkg/logstream"
 	"github.com/openware/kaigara/pkg/storage"
 	"github.com/openware/kaigara/types"
 )
 
 var conf *config.KaigaraConfig
-var ls logstream.LogStream
 
 func parseScopes() []string {
 	return strings.Split((*conf).Scopes, ",")
@@ -31,12 +25,7 @@ func parseAppNames() []string {
 	return strings.Split((*conf).AppNames, ",")
 }
 
-func appNamesToLoggingName() string {
-	return strings.Join(parseAppNames(), "&")
-}
-
 func kaigaraRun(ss types.Storage, cmd string, cmdArgs []string) {
-	log.Printf("INF: starting command: %s %v\n", cmd, cmdArgs)
 	scopes := parseScopes()
 	c := exec.Command(cmd, cmdArgs...)
 	envs, err := env.BuildCmdEnv(parseAppNames(), ss, os.Environ(), scopes)
@@ -45,6 +34,9 @@ func kaigaraRun(ss types.Storage, cmd string, cmdArgs []string) {
 	}
 
 	c.Env = envs.Vars
+	c.Stdout = os.Stdout
+	c.Stdin = os.Stdin
+	c.Stderr = os.Stderr
 
 	for _, file := range envs.Files {
 		if err := os.MkdirAll(path.Dir(file.Path), 0750); err != nil {
@@ -61,107 +53,16 @@ func kaigaraRun(ss types.Storage, cmd string, cmdArgs []string) {
 		}
 	}
 
-	stdin, err := c.StdinPipe()
-	if err != nil {
-		panic(err)
-	}
-
-	// Read STDIN and write it to the command
-	go func() {
-		r := bufio.NewReader(os.Stdin)
-		for {
-			line, isPrefix, err := r.ReadLine()
-			if err == io.EOF {
-				log.Printf("INF: reached EOF on STDIN\n")
-				stdin.Close()
-				break
-			} else if err != nil {
-				panic(err)
-			}
-			_, err = stdin.Write(line)
-			if err != nil {
-				panic(err)
-			}
-
-			if !isPrefix {
-				_, err = stdin.Write([]byte("\n"))
-				if err != nil {
-					panic(err)
-				}
-			}
-		}
-	}()
-
-	stdout, err := c.StdoutPipe()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	stderr, err := c.StderrPipe()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	channelOut := fmt.Sprintf("log.%s.%s", appNamesToLoggingName(), "stdout")
-	channelErr := fmt.Sprintf("log.%s.%s", appNamesToLoggingName(), "stderr")
-	log.Printf("INF: publishing on %s and %s\n", channelOut, channelErr)
-
-	var wg sync.WaitGroup
-	wg.Add(2)
-
-	go func() {
-		// we ignore the error here since we can't really log it at the moment
-		// as it would mess up the output
-		_ = ls.Publish(channelOut, stdout)
-
-		wg.Done()
-
-		/*  FIXME: BRING BACK ERROR MESSAGES
-		    probably ErrClosed is a symptop of premature buffer closing
-		if err := ls.Publish(channelOut, stdout); err != nil {
-			if err != io.ErrClosedPipe && err != io.EOF && err != io.ErrUnexpectedEOF {
-				log.Printf("ERR: STDOUT: %s", err.Error())
-			}
-		} */
-	}()
-
-	go func() {
-		// we ignore the error here since we can't really log it at the moment
-		// as it would mess up the output
-		_ = ls.Publish(channelErr, stderr)
-		wg.Done()
-
-		/*  FIXME: BRING BACK ERROR MESSAGES
-			probably ErrClosed is a symptop of premature buffer closing
-			if err := ls.Publish(channelErr, stderr); err != nil {
-				if err != io.ErrClosedPipe && err != io.EOF && err != os.ErrClosed && err != io.ErrUnexpectedEOF {
-					log.Printf("ERR: STDERR: %s", err.Error())
-				}
-		 } */
-	}()
-
+	log.Printf("INF: starting command: %s %v\n", cmd, cmdArgs)
 	if err := c.Start(); err != nil {
 		log.Fatal(err)
 	}
 
 	go exitWhenSecretsOutdated(c, ss, scopes)
 
-	quit := make(chan int)
-	wg.Add(1)
-	go func() {
-		ls.HeartBeat(appNamesToLoggingName(), quit)
-		wg.Done()
-	}()
-
 	if err := c.Wait(); err != nil {
 		log.Fatal(err)
 	}
-
-	if ls != nil {
-		quit <- 0
-	}
-
-	wg.Wait()
 }
 
 func exitWhenSecretsOutdated(c *exec.Cmd, ss types.Storage, scopes []string) {
@@ -205,11 +106,6 @@ func main() {
 	conf, err = config.NewKaigaraConfig()
 	if err != nil {
 		panic(err)
-	}
-
-	ls, err = logstream.NewRedisClient(conf.RedisURL)
-	if err != nil {
-		log.Printf("WRN: %s", err.Error())
 	}
 
 	ss, err := storage.GetStorageService(conf)

@@ -49,10 +49,6 @@ func main() {
 	save.StringFlag("f", "Input file to save secrets from", &SecretsPath)
 	applyCommonFlags(save)
 
-	tail := cli.NewSubCommand("tail", "Get logstream of Redis channel").Action(tailCmd)
-	tail.StringFlag("ch", "Redis channel pattern to subscribe", &redisChannel)
-	tail.BoolFlag("sn", "Show Redis channel name", &showName)
-
 	if ss, err = storage.GetStorageService(conf); err != nil {
 		panic(err)
 	}
