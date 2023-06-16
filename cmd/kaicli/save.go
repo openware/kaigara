@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -38,8 +37,7 @@ func saveCmd() error {
 			delete(data, "version")
 			for k, v := range data {
 				log.Printf("INF: setting %s.%s.%s", app, scope, k)
-				value := fmt.Sprint(v)
-				if err := ss.SetEntry(app, scope, k, value); err != nil {
+				if err := ss.SetEntry(app, scope, k, v); err != nil {
 					return err
 				}
 			}
