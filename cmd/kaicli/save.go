@@ -18,6 +18,11 @@ type SecretsFile struct {
 }
 
 func saveCmd() error {
+	ss, err := loadStorageService()
+	if err != nil {
+		return fmt.Errorf("storage service init failed: %s", err)
+	}
+
 	data, err := os.ReadFile(SecretsPath)
 	if err != nil {
 		return err

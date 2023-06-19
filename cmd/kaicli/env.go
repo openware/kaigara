@@ -9,13 +9,15 @@ import (
 	"github.com/openware/kaigara/pkg/config"
 	"github.com/openware/kaigara/pkg/env"
 	"github.com/openware/kaigara/types"
-	"github.com/openware/pkg/kli"
 )
 
-func envCmd(cmd *kli.Command) func() error {
-	return func() error {
-		return kaienvRun(conf, ss, cmd.OtherArgs(), os.Stdout)
+func envCmd() error {
+	ss, err := loadStorageService()
+	if err != nil {
+		return fmt.Errorf("storage service init failed: %s", err)
 	}
+
+	return kaienvRun(conf, ss, os.Args[2:], os.Stdout)
 }
 
 func kaienvRun(conf *config.KaigaraConfig, ss types.Storage, params []string, out io.Writer) error {
