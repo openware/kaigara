@@ -13,6 +13,11 @@ import (
 )
 
 func dumpCmd() error {
+	ss, err := loadStorageService()
+	if err != nil {
+		return fmt.Errorf("storage service init failed: %s", err)
+	}
+
 	b := kaidumpRun(ss)
 	fmt.Println(b.String())
 

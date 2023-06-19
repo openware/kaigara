@@ -3,24 +3,26 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
-	"github.com/openware/pkg/kli"
+	"github.com/openware/kaigara/types"
 )
 
-func delCmd(cmd *kli.Command) func() error {
-	return func() error {
-		args := cmd.OtherArgs()
-		if len(args) == 0 {
-			return fmt.Errorf("not enough arguments")
-		}
-
-		entryPattern := args[0]
-		return kaidelRun(entryPattern)
+func delCmd() error {
+	ss, err := loadStorageService()
+	if err != nil {
+		return fmt.Errorf("storage service init failed: %s", err)
 	}
+
+	if len(os.Args[2:]) == 0 {
+		return fmt.Errorf("not enough arguments, please pass the deletion pattern")
+	}
+
+	return kaidelRun(ss, os.Args[2])
 }
 
-func kaidelRun(entryPattern string) error {
+func kaidelRun(ss types.Storage, entryPattern string) error {
 	patternValues := strings.Split(entryPattern, ".")
 	if len(patternValues) != 3 {
 		return fmt.Errorf("string '%s' doesn't match pattern 'app.scope.var'", entryPattern)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 
 	"github.com/openware/pkg/kli"
@@ -12,8 +13,7 @@ import (
 
 var KaiConfPath = "./kaiconf.yaml"
 var conf *config.KaigaraConfig
-var ss types.Storage
-var Version = "1.0.0"
+var Version = "dev"
 var SecretsPath = "outputs.yaml"
 
 func main() {
@@ -37,24 +37,26 @@ func main() {
 	dump.StringFlag("o", "Outputs file path to save secrets", &SecretsPath)
 	applyCommonFlags(dump)
 
-	del := cli.NewSubCommand("del", "Delete entry by pattern 'app.scope.var'")
-	del.Action(delCmd(del))
+	del := cli.NewSubCommand("del", "Delete entry by pattern 'app.scope.var'").Action(delCmd)
 	del.StringFlag("d", "Set deployment id", &conf.DeploymentID)
 
-	env := cli.NewSubCommand("env", "Kaigara version of printenv CLI")
-	env.Action(envCmd(env))
+	env := cli.NewSubCommand("env", "Kaigara version of printenv CLI").Action(envCmd)
 	applyCommonFlags(env)
 
 	save := cli.NewSubCommand("save", "Save secrets from file to storage").Action(saveCmd)
 	save.StringFlag("f", "Input file to save secrets from", &SecretsPath)
 	applyCommonFlags(save)
 
-	if ss, err = storage.GetStorageService(conf); err != nil {
-		panic(err)
-	}
-
 	if err := cli.Run(); err != nil {
-		panic(err)
+		log.Fatal(err)
+	}
+}
+
+func loadStorageService() (types.Storage, error) {
+	if ss, err := storage.GetStorageService(conf); err != nil {
+		return nil, err
+	} else {
+		return ss, nil
 	}
 }
 
