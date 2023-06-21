@@ -462,6 +462,8 @@ github.com/openware/kaigara/pkg/k8s v0.1.2 h1:8hlTJXZAU04DdKxSXWg03sk7UVIaj9b7QK
 github.com/openware/kaigara/pkg/k8s v0.1.2/go.mod h1:wqqitlOfeeyNncInx5/LLsZN+Am8osJMgDIcpdK3aS4=
 github.com/openware/kaigara/pkg/sql v0.1.2 h1:GO46J2LjqG2HH/jt06SzIc50FeJpQ8IlQCUum+EsI08=
 github.com/openware/kaigara/pkg/sql v0.1.2/go.mod h1:nJehJ+iAUg9MmqtHf2MqBczPBvhF/ARGMKSaUCkC9XA=
+github.com/openware/kaigara/pkg/sql v0.1.3 h1:M2TEaDbIiGwWn1NAm5CNkb/08VCN3ZNAAW/97jv6zI8=
+github.com/openware/kaigara/pkg/sql v0.1.3/go.mod h1:nJehJ+iAUg9MmqtHf2MqBczPBvhF/ARGMKSaUCkC9XA=
 github.com/openware/kaigara/pkg/vault v0.1.0 h1:ozkY+2zUw09v9LEJKjnMAfs9AmFGh9AhTGqyfLMDSMU=
 github.com/openware/kaigara/pkg/vault v0.1.0/go.mod h1:l36urKZdsQRF0Mxrb+TG+zpGsSKiPSP9AqbLfGjzGeQ=
 github.com/openware/pkg/ika v0.1.1 h1:Ka6Aue/vwLywpuMWzVhn7GJikuSmz7l/QTR5pRhouRE=
