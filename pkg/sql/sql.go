@@ -185,6 +185,10 @@ func Connect(conf *DatabaseConfig) (*gorm.DB, error) {
 	return db, nil
 }
 
+func (ss *Service) transitKeyName(appName string) string {
+	return fmt.Sprintf("%s_kaigara_%s", ss.deploymentID, appName)
+}
+
 func (ss *Service) Read(appName, scope string) error {
 	var data Data
 	res := ss.db.First(&data, "app_name = ? AND scope = ?", appName, scope)
@@ -283,7 +287,7 @@ func (ss *Service) SetEntry(appName, scope, name string, value interface{}) erro
 		if !ok {
 			return fmt.Errorf("invalid value for %s, must be a string: %v", name, value)
 		}
-		encrypted, err := ss.encryptor.Encrypt(str, appName)
+		encrypted, err := ss.encryptor.Encrypt(str, ss.transitKeyName(appName))
 		if err != nil {
 			return err
 		}
@@ -324,7 +328,7 @@ func (ss *Service) GetEntry(appName, scope, name string) (interface{}, error) {
 			return nil, fmt.Errorf("invalid value for %s, must be a string: %v", name, rawValue)
 		}
 
-		decrypted, err := ss.encryptor.Decrypt(str, appName)
+		decrypted, err := ss.encryptor.Decrypt(str, ss.transitKeyName(appName))
 		if err != nil {
 			return nil, err
 		}
