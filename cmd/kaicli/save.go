@@ -10,12 +10,12 @@ import (
 
 // App contains a map of scopes(public, private, secret) with secrets to be loaded
 type App struct {
-	Scopes map[string]map[string]interface{} `yaml:"scopes"`
+	Scopes map[string]map[string]interface{}
 }
 
 // SecretsFile contains secrets a map of Apps containing secrets to be loaded into the SecretStore
-type SecretsFile struct {
-	Secrets map[string]App `yaml:"secrets"`
+type Secrets struct {
+	Secrets map[string]App
 }
 
 func saveCmd() error {
@@ -29,13 +29,13 @@ func saveCmd() error {
 		return err
 	}
 
-	secrets := SecretsFile{}
+	secrets := make(map[string]map[string]map[string]interface{})
 	if err := yaml.Unmarshal(data, &secrets); err != nil {
 		return err
 	}
 
-	for app, scopes := range secrets.Secrets {
-		for scope, data := range scopes.Scopes {
+	for app, scopes := range secrets {
+		for scope, data := range scopes {
 			if err := ss.Read(app, scope); err != nil {
 				return err
 			}
