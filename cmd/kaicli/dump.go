@@ -30,30 +30,34 @@ func dumpCmd() error {
 }
 
 func kaidumpRun(ss types.Storage) bytes.Buffer {
-	// Get the list of App names from vault
-	apps, err := ss.ListAppNames()
-	if err != nil {
-		panic(err)
+	var (
+		apps []string
+		err  error
+	)
+
+	if conf.AppNames == "" {
+		apps, err = ss.ListAppNames()
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		apps = strings.Split(conf.AppNames, ",")
 	}
 
 	// Get the list of scopes by Splitting KAIGARA_SCOPES env
 	scopesList := strings.Split(conf.Scopes, ",")
 	if len(scopesList) <= 0 {
-		panic("Wrong KAIGARA_SCOPES")
+		panic("Please specify KAIGARA_SCOPES env var")
 	} else if conf.Storage == "k8s" {
 		scopesList = []string{"secret"}
 	}
 
 	// Create Secrets map
-	secretsMap := make(map[string]interface{})
-
-	// Create App map
-	appMap := make(map[string]interface{})
+	secretsMap := make(map[string]map[string]map[string]interface{})
 
 	// Get the secrets from vault
 	for _, app := range apps {
-		scopeMap := make(map[string]interface{})
-		scopeInit := make(map[string]interface{})
+		appMap := make(map[string]map[string]interface{})
 		for _, scope := range scopesList {
 			if err := ss.Read(app, scope); err != nil {
 				panic(err)
@@ -66,14 +70,11 @@ func kaidumpRun(ss types.Storage) bytes.Buffer {
 
 			delete(secrets, "version")
 			if len(secrets) > 0 {
-				scopeMap[scope] = secrets
+				appMap[scope] = secrets
 			}
 		}
-		scopeInit["scopes"] = scopeMap
-		appMap[app] = scopeInit
+		secretsMap[app] = appMap
 	}
-
-	secretsMap["secrets"] = appMap
 
 	// Encode into YAML
 	var b bytes.Buffer
