@@ -15,7 +15,10 @@ import (
 	"github.com/openware/kaigara/types"
 )
 
-var conf *config.KaigaraConfig
+var (
+	conf    *config.KaigaraConfig
+	restart chan int
+)
 
 func parseScopes() []string {
 	return strings.Split((*conf).Scopes, ",")
@@ -61,18 +64,18 @@ func kaigaraRun(ss types.Storage, cmd string, cmdArgs []string) {
 	go exitWhenSecretsOutdated(c, ss, scopes)
 
 	if err := c.Wait(); err != nil {
-		log.Fatal(err)
+		log.Printf("Process completed: %s\n", err)
 	}
 }
 
 func exitWhenSecretsOutdated(c *exec.Cmd, ss types.Storage, scopes []string) {
-	appNames := append(parseAppNames(), "global")
+	appNames := parseAppNames()
 
-	if ignore, ok := os.LookupEnv("KAIGARA_IGNORE_GLOBAL"); ok && ignore == "true" {
-		appNames = appNames[:len(appNames)-1]
+	if ignore, ok := os.LookupEnv("KAIGARA_IGNORE_GLOBAL"); !ok || ignore != "true" {
+		appNames = append(appNames, "global")
 	}
 
-	for range time.Tick(time.Second * 20) {
+	for range time.Tick(time.Second * 5) {
 		for _, appName := range appNames {
 			for _, scope := range scopes {
 				current, err := ss.GetCurrentVersion(appName, scope)
@@ -86,10 +89,12 @@ func exitWhenSecretsOutdated(c *exec.Cmd, ss types.Storage, scopes []string) {
 					break
 				}
 				if current != latest {
-					log.Printf("INF: found secrets updated on '%v' scope. from: v%v, to: v%v. killing process...\n", scope, current, latest)
+					log.Printf("INF: found secrets updated on '%v' scope. from: v%v, to: v%v. restarting process...\n", scope, current, latest)
+					restart <- 1
 					if err := c.Process.Kill(); err != nil {
-						log.Fatalf("FTL: failed to kill process: %s", err.Error())
+						log.Printf("FTL: failed to kill process: %s", err.Error())
 					}
+					return
 				}
 			}
 		}
@@ -113,5 +118,16 @@ func main() {
 		panic(err)
 	}
 
-	kaigaraRun(ss, os.Args[1], os.Args[2:])
+	restart = make(chan int)
+
+	for {
+		kaigaraRun(ss, os.Args[1], os.Args[2:])
+
+		select {
+		case <-restart:
+			continue
+		default:
+			return
+		}
+	}
 }
