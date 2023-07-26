@@ -89,11 +89,11 @@ func exitWhenSecretsOutdated(c *exec.Cmd, ss types.Storage, scopes []string) {
 					break
 				}
 				if current != latest {
-					log.Printf("INF: found secrets updated on '%v' scope. from: v%v, to: v%v. restarting process...\n", scope, current, latest)
-					restart <- 1
-					if err := c.Process.Kill(); err != nil {
+					log.Printf("INF: found secrets updated on '%v' scope. from: v%v, to: v%v, restarting process...\n", scope, current, latest)
+					if err := c.Process.Signal(os.Kill); err != nil {
 						log.Printf("FTL: failed to kill process: %s", err.Error())
 					}
+					restart <- 1
 					return
 				}
 			}
