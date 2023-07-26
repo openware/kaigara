@@ -18,6 +18,7 @@ import (
 var (
 	conf    *config.KaigaraConfig
 	restart chan int
+	Version = "master"
 )
 
 func parseScopes() []string {
@@ -106,6 +107,8 @@ func main() {
 	if len(os.Args) < 2 {
 		panic("Usage: kaigara CMD [ARGS...]")
 	}
+
+	log.Printf("INF: Starting Kaigara version %s\n", Version)
 
 	var err error
 	conf, err = config.NewKaigaraConfig()

@@ -17,3 +17,5 @@ bin/*
 
 tmp
 .vscode
+
+.DS_Store
